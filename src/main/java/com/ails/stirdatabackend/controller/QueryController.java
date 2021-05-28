@@ -19,7 +19,7 @@ public class QueryController {
 
     @GetMapping("/test/belgium")
     public ResponseEntity<?> testEndpointConnectionBelgium() {
-        List<String> res = testService.testSparqlQueryBelgium();
+        String res = testService.testNutsLevel0();
         return ResponseEntity.ok(res);
     }
 
