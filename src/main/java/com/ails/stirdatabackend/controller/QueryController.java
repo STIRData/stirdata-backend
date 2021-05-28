@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/query")
 public class QueryController {
@@ -17,13 +19,13 @@ public class QueryController {
 
     @GetMapping("/test/belgium")
     public ResponseEntity<?> testEndpointConnectionBelgium() {
-        String res = testService.testSparqlQueryBelgium();
+        List<String> res = testService.testSparqlQueryBelgium();
         return ResponseEntity.ok(res);
     }
 
     @GetMapping("/test/czech")
     public ResponseEntity<?> testEndpointConnectionCzech() {
-        String res = testService.testSparqlQueryCzech();
+        List<String> res = testService.testSparqlQueryCzech();
         return ResponseEntity.ok(res);
     }
 }

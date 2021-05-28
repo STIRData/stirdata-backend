@@ -19,13 +19,13 @@ public class ApplicationConfiguration {
 
     @Bean(name = "czech-sparql-endpoint")
     public SparqlEndpoint getCzechSparqlEndpoint() {
-        logger.info("creating czech endpoint...");
+        logger.info("Creating czech endpoint...");
         return new SparqlEndpoint("czech-endpoint", czechEndpoint);
     }
 
     @Bean(name = "belgium-sparql-endpoint")
     public SparqlEndpoint getBelgiumSparqlEndpoint() {
-        logger.info("creating belgium endpoint...");
+        logger.info("Creating belgium endpoint...");
         return new SparqlEndpoint("belgium-endpoint", belgiumEndpoint);
     }
 }

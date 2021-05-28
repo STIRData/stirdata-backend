@@ -9,6 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.apache.jena.util.URIref.encode;
 
 @Service
@@ -22,31 +25,31 @@ public class TestService {
     @Qualifier("belgium-sparql-endpoint")
     private SparqlEndpoint belgiumSparqlEndpoint;
 
-    public String testSparqlQueryCzech() {
+    public List<String> testSparqlQueryCzech() {
         String sparql = "SELECT * WHERE {?p ?q ?r } LIMIT 10";
-        String prop = "";
+        List<String> prop = new ArrayList<String>();
         try (QueryExecution qe = QueryExecutionFactory.sparqlService(czechSparqlEndpoint.getSparqlEndpoint(), sparql)) {
 
             ResultSet rs = qe.execSelect();
 
             while (rs.hasNext()) {
                 QuerySolution sol = rs.next();
-                prop = sol.get("p").toString();
+                prop.add(sol.get("p").toString());
             }
         }
         return prop;
     }
 
-    public String testSparqlQueryBelgium() {
+    public List<String> testSparqlQueryBelgium() {
         String sparql = "SELECT * WHERE {?p ?q ?r } LIMIT 10";
-        String prop = "";
+        List<String> prop = new ArrayList<String>();
         try (QueryExecution qe = QueryExecutionFactory.sparqlService(belgiumSparqlEndpoint.getSparqlEndpoint(), sparql)) {
 
             ResultSet rs = qe.execSelect();
 
             while (rs.hasNext()) {
                 QuerySolution sol = rs.next();
-                prop = sol.get("p").toString();
+                prop.add(sol.get("p").toString());
             }
         }
         return prop;
