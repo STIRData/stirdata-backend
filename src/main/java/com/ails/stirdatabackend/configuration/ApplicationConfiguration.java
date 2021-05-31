@@ -20,6 +20,9 @@ public class ApplicationConfiguration {
     @Value("${sparql.endpoint.nuts}")
     private String nutsEndpoint;
 
+    @Value("${sparql.endpoint.nace}")
+    private String naceEndpoint;
+
     @Bean(name = "czech-sparql-endpoint")
     public SparqlEndpoint getCzechSparqlEndpoint() {
 
@@ -37,5 +40,11 @@ public class ApplicationConfiguration {
     public SparqlEndpoint getNutsSparqlEndpoint() {
         logger.info("Creating NUTS endpoint...");
         return new SparqlEndpoint("nuts-endpoint", nutsEndpoint);
+    }
+
+    @Bean(name = "nace-sparql-endpoint")
+    public SparqlEndpoint getNaceSparqlEndpoint() {
+        logger.info("Creating NACE endpoint...");
+        return new SparqlEndpoint("nace-endpoint", naceEndpoint);
     }
 }
