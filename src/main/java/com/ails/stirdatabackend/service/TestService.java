@@ -12,9 +12,11 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.net.IDN;
 import static org.apache.jena.util.URIref.encode;
 
 @Service
@@ -35,10 +37,8 @@ public class TestService {
     public List<String> testSparqlQueryCzech() {
         String sparql = "SELECT * WHERE {?p ?q ?r } LIMIT 10";
         List<String> prop = new ArrayList<String>();
-        try (QueryExecution qe = QueryExecutionFactory.sparqlService(czechSparqlEndpoint.getSparqlEndpoint(), sparql)) {
-
+        try (QueryExecution qe = QueryExecutionFactory.sparqlService(IDN.toASCII(czechSparqlEndpoint.getSparqlEndpoint()), sparql)) {
             ResultSet rs = qe.execSelect();
-
             while (rs.hasNext()) {
                 QuerySolution sol = rs.next();
                 prop.add(sol.get("p").toString());

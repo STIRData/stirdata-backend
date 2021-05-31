@@ -5,6 +5,7 @@ import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.query.ResultSetFormatter;
+import org.apache.jena.sparql.resultset.ResultsFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,7 @@ public class NutsService {
             ResultSet rs = qe.execSelect();
             ByteArrayOutputStream outStream = new ByteArrayOutputStream();
             ResultSetFormatter.outputAsJSON(outStream, rs);
+//            ResultSetFormatter.output(outStream, rs, ResultsFormat.FMT_RDF_JSONLD);
             json = new String(outStream.toByteArray());
         }
         return json;
