@@ -18,11 +18,11 @@ public class NaceController {
     private NaceService naceService;
 
     @GetMapping
-    public ResponseEntity<?> getNace(@RequestParam(required = false) Optional<String> parentOpt,
-                                     @RequestParam(required = false) Optional<String> languageOpt) {
-        String language = languageOpt.isPresent() ? languageOpt.get() : "en";
-        String parent = parentOpt.isPresent() ? parentOpt.get() : null;
-        String res = naceService.getNace(parent, language);
+    public ResponseEntity<?> getNace(@RequestParam(required = false) Optional<String> parent,
+                                     @RequestParam(required = false) Optional<String> language) {
+        String lang = language.isPresent() ? language.get() : "en";
+        String pnt = parent.isPresent() ? parent.get() : null;
+        String res = naceService.getNace(pnt, lang);
 
         return ResponseEntity.ok(res);
     }
