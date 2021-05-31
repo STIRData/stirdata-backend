@@ -10,11 +10,21 @@ import org.springframework.stereotype.Service;
 
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.List;
 
 
 @Service
 public class QueryService {
 
+    @Autowired
+    @Qualifier("czech-sparql-endpoint")
+    private SparqlEndpoint czechSparqlEndpoint;
 
+    @Autowired
+    @Qualifier("belgium-sparql-endpoint")
+    private SparqlEndpoint belgiumSparqlEndpoint;
 
+    public String query(List<String> nutsList, List<String> naceList) {
+
+    }
 }
