@@ -37,7 +37,8 @@ public class QueryController {
     @GetMapping
     public ResponseEntity<?> performQuery(@RequestParam(required = false) List<String> nutsList,
                                           @RequestParam(required = false) List<String> naceList) {
-        String res = queryService.query(nutsList, naceList);
-        return ResponseEntity.ok(res);
+//        String res = queryService.query(nutsList, naceList);
+        queryService.getCountryOfNuts(nutsList.get(0));
+        return ResponseEntity.ok(null);
     }
 }
