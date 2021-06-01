@@ -89,15 +89,10 @@ public class QueryService {
                 }
                 sparql += "}\n" +
                         "}\n";
-                System.out.println("Will query endpoint: "+endpoint.getSparqlEndpoint());
-                System.out.println(sparql);
-            }
-
-
-            if (endpoint.getName().equals("czech-endpoint")) {
-                HashMap<String, String> mappedNuts = uriMapper.mapCzechNutsUri(requestMap.get(endpoint));
 
             }
+            System.out.println("Will query endpoint: "+endpoint.getSparqlEndpoint());
+            System.out.println(sparql);
         }
     }
 }
