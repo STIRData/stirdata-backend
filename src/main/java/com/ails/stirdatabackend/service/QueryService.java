@@ -48,7 +48,7 @@ public class QueryService {
     }
 
     // We suppose that NUTS3 is provided.
-    // Only NUTS is handled
+    // Only NUTS is handled right now.
     public void query(List<String> nutsList, List<String> naceList) {
         HashMap<SparqlEndpoint, List<String>> requestMap = endpointManager.getEndpointsByNuts(nutsList);
         System.out.println(requestMap.toString());
