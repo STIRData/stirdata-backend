@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.HashMap;
 import java.util.List;
 
 
@@ -39,33 +40,10 @@ public class QueryService {
         NORWAY
     }
 
-    public SparqlEndpoint getCountryOfNuts(String uri) {
-        String sparql = "SELECT ?nuts0 WHERE {\n" +
-                        "<" +  uri + ">" + "<http://www.w3.org/2004/02/skos/core#broader>* ?nuts0 .\n" +
-                        "?nuts0 <https://lod.stirdata.eu/nuts/ont/level> 0 .\n" +
-                        "} ";
-        String json;
-        try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsSparqlEndpoint.getSparqlEndpoint(), sparql)) {
-            ResultSet rs = qe.execSelect();
-            SparqlEndpoint res = null;
-            while (rs.hasNext()) {
-                QuerySolution sol = rs.next();
-                String nuts0 = sol.get("nuts0").asResource().toString();
-                res = endpointManager.getEndpointFromNutsUri(nuts0);
-                System.out.println("Will query here: " + res.getSparqlEndpoint());
-
-            }
-            return res;
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+    // We suppose that NUTS3 is provided.
+    public void query(List<String> nutsList, List<String> naceList) {
+        String sparql = "";
+        HashMap<SparqlEndpoint, List<String>> requestMap = endpointManager.getEndpointsByNuts(nutsList);
+        System.out.println(requestMap.toString());
     }
-
-//    public String query(List<String> nutsList, List<String> naceList) {
-//        for (String nuts : nutsList) {
-//
-//        }
-//    }
 }
