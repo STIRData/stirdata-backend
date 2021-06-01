@@ -1,16 +1,16 @@
 package com.ails.stirdatabackend.service;
 
 import com.ails.stirdatabackend.model.SparqlEndpoint;
-import org.apache.jena.query.QueryExecution;
-import org.apache.jena.query.QueryExecutionFactory;
-import org.apache.jena.query.ResultSet;
-import org.apache.jena.query.ResultSetFormatter;
+import org.apache.jena.query.*;
 import org.apache.jena.sparql.resultset.ResultsFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class NutsService {
@@ -44,5 +44,22 @@ public class NutsService {
         }
         return json;
     }
+
+    public String getTopLevelNuts(String uri) {
+        String sparql = "SELECT ?nuts0 WHERE {\n" +
+                "<" +  uri + ">" + "<http://www.w3.org/2004/02/skos/core#broader>* ?nuts0 .\n" +
+                "?nuts0 <https://lod.stirdata.eu/nuts/ont/level> 0 .\n" +
+                "} ";
+        try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsSparqlEndpoint.getSparqlEndpoint(), sparql)) {
+            ResultSet rs = qe.execSelect();
+            while (rs.hasNext()) {
+                QuerySolution sol = rs.next();
+                String nuts0 = sol.get("nuts0").asResource().toString();
+                return nuts0;
+            }
+        }
+        return null;
+    }
+
 
 }

@@ -11,5 +11,6 @@ public class SparqlEndpoint {
 
     private String name;
     private String sparqlEndpoint;
+    private String topLevelNuts;
 
 }
