@@ -1,0 +1,40 @@
+package com.ails.stirdatabackend.utils;
+
+import com.sun.jndi.toolkit.url.Uri;
+import lombok.NoArgsConstructor;
+import org.springframework.stereotype.Component;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@NoArgsConstructor
+@Component
+public class URIMapper {
+
+    public HashMap<String, String> mapCzechNutsUri(List<String> uris) {
+        HashMap<String, String> response = new HashMap<String, String>();
+        for (String s : uris) {
+            URI uri = URI.create(s);
+            String path = uri.getPath();
+            String lastPart = path.substring(path.lastIndexOf('/') + 1);
+            response.put(s, "http://nuts.geovocab.org/id/" + lastPart);
+        }
+        return response;
+    }
+
+    public HashMap<String, String> mapEuropaNutsUri(List<String> uris) {
+        HashMap<String, String> response = new HashMap<String, String>();
+        for (String s : uris) {
+            URI uri = URI.create(s);
+            String path = uri.getPath();
+            String lastPart = path.substring(path.lastIndexOf('/') + 1);
+            response.put(s, "http://data.europa.eu/nuts/code/" + lastPart);
+        }
+        return response;
+    }
+
+
+}

@@ -61,21 +61,5 @@ public class NutsService {
         return null;
     }
 
-    public List<String> normalizeNuts(List<String> nuts) {
-        List<String> res = new ArrayList<String>();
-        for (String nut : nuts) {
-            try {
-                URI uri = new URI(nut);
-                String path = uri.getPath();
-                String lastPart = path.substring(path.lastIndexOf('/') + 1);
-                res.add("https://lod.stirdata.eu/nuts/code/" + lastPart);
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
-        return res;
-    }
 
 }
