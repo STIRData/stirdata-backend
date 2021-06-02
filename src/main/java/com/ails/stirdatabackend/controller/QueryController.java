@@ -36,11 +36,11 @@ public class QueryController {
     }
 
     @GetMapping
-    public ResponseEntity<?> performQuery(@RequestParam(required = false) List<String> nutsList,
-                                          @RequestParam(required = false) List<String> naceList,
+    public ResponseEntity<?> performQuery(@RequestParam(required = false) List<String> NUTS,
+                                          @RequestParam(required = false) List<String> NACE,
                                           @RequestParam(required = false, defaultValue="1") int page) {
 //        String res = queryService.query(nutsList, naceList);
-        List<EndpointResponse> res = queryService.paginatedQuery(nutsList,naceList, page);
+        List<EndpointResponse> res = queryService.paginatedQuery(NUTS,NACE, page);
         return ResponseEntity.ok(res);
     }
 }
