@@ -1,5 +1,6 @@
 package com.ails.stirdatabackend.controller;
 
+import com.ails.stirdatabackend.payload.EndpointResponse;
 import com.ails.stirdatabackend.service.QueryService;
 import com.ails.stirdatabackend.service.TestService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,9 +37,10 @@ public class QueryController {
 
     @GetMapping
     public ResponseEntity<?> performQuery(@RequestParam(required = false) List<String> nutsList,
-                                          @RequestParam(required = false) List<String> naceList) {
+                                          @RequestParam(required = false) List<String> naceList,
+                                          @RequestParam(required = false, defaultValue="1") int page) {
 //        String res = queryService.query(nutsList, naceList);
-        queryService.query(nutsList,naceList);
-        return ResponseEntity.ok(null);
+        List<EndpointResponse> res = queryService.paginatedQuery(nutsList,naceList, page);
+        return ResponseEntity.ok(res);
     }
 }
