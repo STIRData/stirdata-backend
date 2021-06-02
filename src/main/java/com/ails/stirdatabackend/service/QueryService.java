@@ -21,6 +21,7 @@ import java.net.IDN;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 
 
 @Service
@@ -58,8 +59,7 @@ public class QueryService {
 
     // We suppose that NUTS3 is provided.
     // Only NUTS is handled right now.
-    public List<EndpointResponse> paginatedQuery(List<String> nutsList, List<String> naceList, int page) {
-        Writer sw = new StringWriter();
+    public List<EndpointResponse> paginatedQuery(List<String> nutsList, List<String> naceList, Optional<String> startDateOpt, Optional<String> endDateOpt, int page) {
         List<EndpointResponse> responseList = new ArrayList<EndpointResponse>();
         HashMap<SparqlEndpoint, List<String>> requestMap = endpointManager.getEndpointsByNuts(nutsList);
         System.out.println(requestMap.toString());
@@ -72,7 +72,10 @@ public class QueryService {
                             "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n"+
                             "PREFIX regorg: <http://www.w3.org/ns/regorg#>\n" +
                             "PREFIX ebg: <http://data.businessgraph.io/ontology#>\n" +
-                            "PREFIX org: <http://www.w3.org/ns/org#>\n";
+                            "PREFIX org: <http://www.w3.org/ns/org#>\n" +
+                            "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
+                            "PREFIX schema: <http://schema.org/>";
+
 
             sparql +=       "SELECT ?organization WHERE {\n" +
                             "SELECT DISTINCT ?organization\n" +
@@ -95,8 +98,28 @@ public class QueryService {
                 sparql += "<" + mappedNutsUris.get(uri) + "> ";
             }
 
-            sparql += "}\n" +
-                    "}\n";
+            sparql += "}\n";
+
+            // Date filter (if requested)
+            if (startDateOpt.isPresent() || endDateOpt.isPresent()) {
+                sparql += "?organization schema:foundingDate ?foundingDate\n";
+
+                if (startDateOpt.isPresent() && !endDateOpt.isPresent()) {
+                    String startDate = startDateOpt.get();
+                    sparql += "FILTER( ?foundingDate > \"" + startDate + "\"^^xsd:date)";
+                }
+                else if (!startDateOpt.isPresent() && endDateOpt.isPresent()) {
+                    String endDate = endDateOpt.get();
+                    sparql += "FILTER( ?foundingDate < \"" + endDate + "\"^^xsd:date)";
+                }
+                else {
+                    String startDate = startDateOpt.get();
+                    String endDate = endDateOpt.get();
+                    sparql += "FILTER( ?foundingDate > \"" + startDate + "\"^^xsd:date && ?foundingDate < \"" + endDate + "\"^^xsd:date)";
+
+                }
+            }
+            sparql += "}\n";
             sparql += "ORDER BY ?organizationName\n" +
                     " } LIMIT " + pageSize + " OFFSET " + offset;
 
@@ -104,6 +127,7 @@ public class QueryService {
             System.out.println(sparql);
             List<String> companyUris = new ArrayList<String>();
 
+            Writer sw = new StringWriter();
             try (QueryExecution qe = QueryExecutionFactory.sparqlService(endpoint.getSparqlEndpoint(), sparql)) {
                 ResultSet rs = qe.execSelect();
                 while (rs.hasNext()) {

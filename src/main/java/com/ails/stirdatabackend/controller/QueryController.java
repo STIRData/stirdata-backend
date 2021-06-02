@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/query")
@@ -38,9 +39,11 @@ public class QueryController {
     @GetMapping
     public ResponseEntity<?> performQuery(@RequestParam(required = false) List<String> NUTS,
                                           @RequestParam(required = false) List<String> NACE,
+                                          @RequestParam(required = false) Optional<String> startDate,
+                                          @RequestParam(required = false) Optional<String> endDate,
                                           @RequestParam(required = false, defaultValue="1") int page) {
 //        String res = queryService.query(nutsList, naceList);
-        List<EndpointResponse> res = queryService.paginatedQuery(NUTS,NACE, page);
+        List<EndpointResponse> res = queryService.paginatedQuery(NUTS,NACE, startDate, endDate, page );
         return ResponseEntity.ok(res);
     }
 }
