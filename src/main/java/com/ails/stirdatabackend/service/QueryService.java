@@ -84,9 +84,14 @@ public class QueryService {
 
             sparql +=       "SELECT DISTINCT ?organization\n" +
                             "WHERE {\n" +
-                            "  ?organization a regorg:RegisteredOrganization ;\n" +
-                            "    regorg:legalName ?organizationName ;\n" +
-                            "    org:hasRegisteredSite ?registeredSite .\n" +
+                            "  ?organization a regorg:RegisteredOrganization ;\n";
+            if (endpoint.getName().equals("czech-endpoint")) {
+//                sparql +=   " <https://xn--slovnk-7va.gov.cz/legislativní/sbírka/90/2012/pojem/firma-obchodní-korporace> ?organizationName ;";
+            }
+            else {
+                sparql += "    regorg:legalName ?organizationName ;\n";
+            }
+            sparql += "    org:hasRegisteredSite ?registeredSite .\n" +
                             " \n" +
                             "  ?registeredSite org:siteAddress ?address .\n" +
                             " \n";
