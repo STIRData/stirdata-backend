@@ -127,7 +127,7 @@ public class QueryService {
             System.out.println(sparql);
             List<String> companyUris = new ArrayList<String>();
 
-            Writer sw = new StringWriter();
+            StringWriter sw = new StringWriter();
             try (QueryExecution qe = QueryExecutionFactory.sparqlService(endpoint.getSparqlEndpoint(), sparql)) {
                 ResultSet rs = qe.execSelect();
                 while (rs.hasNext()) {
