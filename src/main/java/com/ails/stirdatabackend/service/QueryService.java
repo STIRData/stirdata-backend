@@ -73,8 +73,13 @@ public class QueryService {
                             "PREFIX regorg: <http://www.w3.org/ns/regorg#>\n" +
                             "PREFIX ebg: <http://data.businessgraph.io/ontology#>\n" +
                             "PREFIX org: <http://www.w3.org/ns/org#>\n" +
-                            "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n" +
-                            "PREFIX schema: <http://schema.org/>";
+                            "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n";
+
+            if (endpoint.getName().equals("czech-endpoint")) {
+                sparql += "PREFIX schema: <http://schema.org/>";
+            } else {
+                sparql += "PREFIX schema: <https://schema.org/>";
+            }
 
 
             sparql +=       "SELECT ?organization WHERE {\n" +
@@ -124,7 +129,7 @@ public class QueryService {
                     " } LIMIT " + pageSize + " OFFSET " + offset;
 
             System.out.println("Will query endpoint: "+endpoint.getSparqlEndpoint());
-            System.out.println(sparql);
+            System.out.println(QueryFactory.create(sparql));
             List<String> companyUris = new ArrayList<String>();
 
             StringWriter sw = new StringWriter();
