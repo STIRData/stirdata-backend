@@ -82,8 +82,7 @@ public class QueryService {
             }
 
 
-            sparql +=       "SELECT ?organization WHERE {\n" +
-                            "SELECT DISTINCT ?organization\n" +
+            sparql +=       "SELECT DISTINCT ?organization\n" +
                             "WHERE {\n" +
                             "  ?organization a regorg:RegisteredOrganization ;\n" +
                             "    regorg:legalName ?organizationName ;\n" +
@@ -125,8 +124,7 @@ public class QueryService {
                 }
             }
             sparql += "}\n";
-            sparql += "ORDER BY ?organizationName\n" +
-                    " } LIMIT " + pageSize + " OFFSET " + offset;
+            sparql +=  "LIMIT " + pageSize + " OFFSET " + offset;
 
             System.out.println("Will query endpoint: "+endpoint.getSparqlEndpoint());
             System.out.println(QueryFactory.create(sparql));
