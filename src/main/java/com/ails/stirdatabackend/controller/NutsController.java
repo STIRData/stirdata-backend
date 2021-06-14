@@ -19,11 +19,20 @@ public class NutsController {
     public ResponseEntity<?> getNuts(@RequestParam(required = false) Optional<String> parent) {
         String res;
         if (parent.isPresent()) {
-            res = nutsService.getNuts(parent.get());
+            res = nutsService.getNextNutsLevel(parent.get());
         }
         else {
-            res = nutsService.getNuts(null);
+            res = nutsService.getNextNutsLevel(null);
         }
+        return ResponseEntity.ok(res);
+    }
+    
+    
+    @GetMapping("/nuts3")
+    public ResponseEntity<?> getNuts3(@RequestParam(required = true) String uri) {
+        String res = nutsService.getNuts3Descendents(uri).toString();
+        
+        
         return ResponseEntity.ok(res);
     }
 }

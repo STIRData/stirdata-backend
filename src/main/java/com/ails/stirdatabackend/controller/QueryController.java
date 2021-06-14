@@ -35,8 +35,8 @@ public class QueryController {
     }
 
     @GetMapping
-    public ResponseEntity<?> performQuery(@RequestParam(required = false) List<String> NUTS,
-                                          @RequestParam(required = false) List<String> NACE,
+    public ResponseEntity<?> performQuery(@RequestParam(required = false) Optional<List<String>> NUTS,
+                                          @RequestParam(required = false) Optional<List<String>> NACE,
                                           @RequestParam(required = false) Optional<String> startDate,
                                           @RequestParam(required = false) Optional<String> endDate,
                                           @RequestParam(required = false, defaultValue="1") int page) {
