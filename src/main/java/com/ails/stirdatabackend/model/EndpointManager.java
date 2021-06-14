@@ -24,22 +24,30 @@ public class EndpointManager {
 
 
     public SparqlEndpoint getEndpointFromNutsUri(String uri) {
-        SparqlEndpoint res = null;
-        String topLevelNut = nutsService.getTopLevelNuts(uri);
+//        SparqlEndpoint res = null;
+//        String topLevelNut = nutsService.getTopLevelNuts(uri);
+        
+        // should make sure it is a valid nuts uri first!
+        int pos = uri.lastIndexOf("/");
+        String topLevelNut = uri.substring(0, pos + 3);
+        
         for (SparqlEndpoint endpoint : endpointList) {
-            System.out.println("Testing: " + endpoint.getTopLevelNuts());
-            if (endpoint.getTopLevelNuts().equals(topLevelNut)) {
-                res = endpoint;
-                break;
-            }
+        	if (endpoint.getTopLevelNuts() != null) {
+	            System.out.println("Testing: " + endpoint.getTopLevelNuts());
+	            if (endpoint.getTopLevelNuts().equals(topLevelNut)) {
+	                return endpoint;
+	            }
+        	}
         }
-        return res;
+        return null;
     }
 
     public HashMap<SparqlEndpoint, List<String>> getEndpointsByNuts(List<String> nutsUri) {
         HashMap<SparqlEndpoint, List<String>> response = new HashMap<SparqlEndpoint, List<String>>();
         for (String uri : nutsUri) {
             SparqlEndpoint tmp = getEndpointFromNutsUri(uri);
+            System.out.println(">> " + tmp);
+
             if (response.containsKey(tmp)) {
                 response.get(tmp).add(uri);
             } else {
@@ -48,8 +56,19 @@ public class EndpointManager {
                 response.put(tmp, tmpLst);
             }
         }
+        
+        
         return response;
     }
-
+    
+    public HashMap<SparqlEndpoint, List<String>> getEndpointsByNuts() {
+        HashMap<SparqlEndpoint, List<String>> response = new HashMap<SparqlEndpoint, List<String>>();
+        for (SparqlEndpoint se : endpointList) {
+        	if (se.getTopLevelNuts() != null) {
+       			response.put(se, null);
+        	}
+        }
+        return response;
+    }
 
 }

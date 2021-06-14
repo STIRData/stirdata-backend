@@ -10,7 +10,9 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class NutsService {
@@ -19,20 +21,18 @@ public class NutsService {
     @Qualifier("nuts-sparql-endpoint")
     private SparqlEndpoint nutsSparqlEndpoint;
 
-    public String getNuts(String parentNode) {
-        String sparql = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
-                        "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
-                        "SELECT ?code ?label WHERE {\n";
+    public String getNextNutsLevel(String parentNode) {
+        String sparql = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
+                        "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
+                        "SELECT ?code ?label WHERE { ";
+        
         if (parentNode == null) {
-            sparql += "?code <https://lod.stirdata.eu/nuts/ont/level> 0 .\n" +
-                    "?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label\n" +
-                    "}\n";
+            sparql += "?code <https://lod.stirdata.eu/nuts/ont/level> 0 . ";
+        } else {
+            sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parentNode + "> " +  ". ";
         }
-        else {
-            sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parentNode + "> " +  ".\n" +
-                    "  ?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label\n" +
-                    "}\n";
-        }
+        
+        sparql += " ?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label }";
 
         String json;
         try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsSparqlEndpoint.getSparqlEndpoint(), sparql)) {
@@ -59,6 +59,46 @@ public class NutsService {
             }
         }
         return null;
+    }
+    
+    public Set<String> getNuts3Descendents(String uri) {
+    	Set<String> res = new HashSet<>();
+    	
+    	int pos = uri.lastIndexOf("/");
+    	if (pos < 0) {
+    		return res;
+    	}
+    	
+    	String code = uri.substring(pos + 1);
+    	int level = code.length() - 2;
+    	
+    	String sparql = "PREFIX skos: <http://www.w3.org/2004/02/skos/core#>  "; 
+    	if (level == 0) {
+			sparql += "SELECT ?nuts3 WHERE { " +
+	                   "?nuts3 skos:broader/skos:broader/skos:broader <" + uri + "> . " +
+	                   "?nuts3 <https://lod.stirdata.eu/nuts/ont/level> 3 } ";
+    	} else if (level == 1) {
+			sparql += "SELECT ?nuts3 WHERE { " +
+	                   "?nuts3 skos:broader/skos:broader <" + uri + "> . " +
+	                   "?nuts3 <https://lod.stirdata.eu/nuts/ont/level> 3 } ";
+    	} else if (level == 2) {
+			sparql += "SELECT ?nuts3 WHERE { " +
+	                   "?nuts3 skos:broader <" + uri + "> . " +
+	                   "?nuts3 <https://lod.stirdata.eu/nuts/ont/level> 3 } ";
+    	} else if (level == 3) {
+    		res.add(uri);
+    		return res;
+    	}
+    	
+    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsSparqlEndpoint.getSparqlEndpoint(), sparql)) {
+            ResultSet rs = qe.execSelect();
+            while (rs.hasNext()) {
+                QuerySolution sol = rs.next();
+                res.add(sol.get("nuts3").asResource().toString());
+            }
+        }
+    	
+    	return res;
     }
 
 
