@@ -79,6 +79,7 @@ public class QueryService {
         System.out.println(requestMap.toString());
         int offset = (page - 1) * pageSize;
         
+        ObjectMapper mapper = new ObjectMapper();
 
         for (SparqlEndpoint endpoint : requestMap.keySet()) {
             
@@ -114,7 +115,7 @@ public class QueryService {
         	}
 
 
-            String sparql = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
+            String prefix = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
                             "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "+
                             "PREFIX rov: <http://www.w3.org/ns/regorg#> " +
                             "PREFIX ebg: <http://data.businessgraph.io/ontology#> " +
@@ -122,14 +123,15 @@ public class QueryService {
                             "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> ";
 
             if (endpoint.getName().equals("czech-endpoint")) {
-                sparql += "PREFIX schema: <http://schema.org/> ";
+            	prefix += "PREFIX schema: <http://schema.org/> ";
             } else {
-                sparql += "PREFIX schema: <https://schema.org/> ";
+                prefix += "PREFIX schema: <https://schema.org/> ";
             }
 
-            sparql += 
+            String sparql = 
 //            		  "SELECT ?organization WHERE { " +
-                      "SELECT DISTINCT ?organization WHERE { " +
+//                      "SELECT DISTINCT ?organization WHERE { " +
+                      " { " +
                       "  ?organization a rov:RegisteredOrganization . " +
                       "  ?organization rov:legalName ?organizationName . ";
             
@@ -181,13 +183,33 @@ public class QueryService {
                 }
             }
             sparql += "} ";
-            sparql +=
+//            sparql +=
 //                  "ORDER BY ?organizationName } " +
-            		" LIMIT " + pageSize + " OFFSET " + offset;
+//            		" LIMIT " + pageSize + " OFFSET " + offset;
 
             System.out.println("Will query endpoint: "+endpoint.getSparqlEndpoint());
-            System.out.println(QueryFactory.create(sparql));
             List<String> companyUris = new ArrayList<String>();
+
+        	int count = 0;
+            if (page == 1) {
+            	String countQuery = prefix + " SELECT (COUNT(DISTINCT ?organization) AS ?count) WHERE " + sparql ;
+            	
+                System.out.println(QueryFactory.create(countQuery));
+
+                try (QueryExecution qe = QueryExecutionFactory.sparqlService(endpoint.getSparqlEndpoint(), countQuery)) {
+                    ResultSet rs = qe.execSelect();
+                    while (rs.hasNext()) {
+                        QuerySolution sol = rs.next();
+                        count = sol.get("count").asLiteral().getInt();
+                    }
+                }
+            } else {
+            	count = -1;
+            }
+            
+            sparql = prefix + " SELECT DISTINCT ?organization WHERE " + sparql + "  LIMIT " + pageSize + " OFFSET " + offset;
+            
+            System.out.println(QueryFactory.create(sparql));
 
             StringWriter sw = new StringWriter();
             try (QueryExecution qe = QueryExecutionFactory.sparqlService(endpoint.getSparqlEndpoint(), sparql)) {
@@ -199,26 +221,33 @@ public class QueryService {
             }
             System.out.println(companyUris);
 
-            String sparqlConstruct = "CONSTRUCT { ?company ?p ?q } WHERE {\n" +
-                                    "  ?company ?p ?q . \n" +
-                                    "  VALUES ?company {";
-            for (String uri : companyUris) {
-                sparqlConstruct += " <" + uri + "> ";
-            }
-            sparqlConstruct += "}\n" +
-                                    "}\n";
-
-//            Writer sw = new StringWriter();
-            try (QueryExecution qe = QueryExecutionFactory.sparqlService(endpoint.getSparqlEndpoint(), QueryFactory.create(sparqlConstruct, Syntax.syntaxARQ))) {
-                Model model = qe.execConstruct();
-                RDFDataMgr.write(sw, model, RDFFormat.JSONLD_EXPAND_PRETTY);
-            }
-            ObjectMapper mapper = new ObjectMapper();
-            try {
-                responseList.add(new EndpointResponse(endpoint.getName(), mapper.readTree(sw.toString())));
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
+            if (!companyUris.isEmpty()) {
+	            String sparqlConstruct = "CONSTRUCT { " + 
+	                                     "  ?company ?p1 ?o1 . " + 
+	            		                 "  ?o1 <http://www.w3.org/ns/org#siteAddress> ?o2 . ?o2 ?p3 ?o3 } " + 
+	            		                 "WHERE { " +
+	                                     "  ?company ?p1 ?o1 . " +
+	                                     "  OPTIONAL {?o1 <http://www.w3.org/ns/org#siteAddress> ?o2 . ?o2 ?p3 ?o3}  . " +
+	                                     "  VALUES ?company { ";
+	            for (String uri : companyUris) {
+	                sparqlConstruct += " <" + uri + "> ";
+	            }
+	            sparqlConstruct += "} } ";
+	
+	System.out.println(QueryFactory.create(sparqlConstruct, Syntax.syntaxARQ));
+	            //            Writer sw = new StringWriter();
+	            try (QueryExecution qe = QueryExecutionFactory.sparqlService(endpoint.getSparqlEndpoint(), QueryFactory.create(sparqlConstruct, Syntax.syntaxARQ))) {
+	                Model model = qe.execConstruct();
+	                RDFDataMgr.write(sw, model, RDFFormat.JSONLD_EXPAND_PRETTY);
+	            }
+	            try {
+	                responseList.add(new EndpointResponse(endpoint.getName(), mapper.readTree(sw.toString()), count));
+	            } catch (Exception e) {
+	                e.printStackTrace();
+	                return null;
+	            }
+            } else {
+            	responseList.add(new EndpointResponse(endpoint.getName(), mapper.createArrayNode(), count));
             }
         }
         return responseList;

@@ -64,9 +64,10 @@ public class EndpointManager {
     public HashMap<SparqlEndpoint, List<String>> getEndpointsByNuts() {
         HashMap<SparqlEndpoint, List<String>> response = new HashMap<SparqlEndpoint, List<String>>();
         for (SparqlEndpoint se : endpointList) {
+        	if (!se.getName().equals("czech-endpoint")) {
         	if (se.getTopLevelNuts() != null) {
        			response.put(se, null);
-        	}
+        	}}
         }
         return response;
     }
