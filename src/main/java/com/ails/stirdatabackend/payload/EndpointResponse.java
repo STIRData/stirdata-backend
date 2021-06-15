@@ -11,9 +11,11 @@ import lombok.Setter;
 public class EndpointResponse {
     private String endpointName;
     private JsonNode response;
+    private int count;
 
-    public EndpointResponse(String endpointName, JsonNode response) {
+    public EndpointResponse(String endpointName, JsonNode response, int count) {
         this.endpointName = endpointName;
         this.response = response;
+        this.count = count;
     }
 }
