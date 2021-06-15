@@ -24,10 +24,14 @@ public class NutsService {
     public String getNextNutsLevel(String parentNode) {
         String sparql = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
                         "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
+                        "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>"+
                         "SELECT ?code ?label WHERE { ";
         
         if (parentNode == null) {
-            sparql += "?code <https://lod.stirdata.eu/nuts/ont/level> 0 . ";
+            sparql += "?code <https://lod.stirdata.eu/nuts/ont/level> 0 . "+
+                      "?code <http://www.w3.org/2004/02/skos/core#notation> ?notation ."+
+                      "VALUES ?notation { " +
+                        "\"NO\" \"BE\" \"CZ\" }";
         } else {
             sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parentNode + "> " +  ". ";
         }
