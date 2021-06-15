@@ -57,14 +57,6 @@ public class QueryService {
     @Value("${page.size}")
     private int pageSize;
 
-    public enum SUPPORTED_COUNTRIES {
-        BELGIUM,
-        CZECH,
-        NORWAY
-    }
-
-    // We suppose that NUTS3 is provided.
-    // Only NUTS is handled right now.
     public List<EndpointResponse> paginatedQuery(Optional<List<String>> nutsList, Optional<List<String>> naceList, Optional<String> startDateOpt, Optional<String> endDateOpt, int page) {
         
     	List<EndpointResponse> responseList = new ArrayList<EndpointResponse>();
@@ -224,9 +216,11 @@ public class QueryService {
             if (!companyUris.isEmpty()) {
 	            String sparqlConstruct = "CONSTRUCT { " + 
 	                                     "  ?company ?p1 ?o1 . " + 
+	                                     "  ?o1 <https://schema.org/foundingDate> ?date . " +	            		
 	            		                 "  ?o1 <http://www.w3.org/ns/org#siteAddress> ?o2 . ?o2 ?p3 ?o3 } " + 
 	            		                 "WHERE { " +
 	                                     "  ?company ?p1 ?o1 . " +
+	            		                 "  OPTIONAL {?o1 <http://schema.org/foundingDate> ?date }  . " +
 	                                     "  OPTIONAL {?o1 <http://www.w3.org/ns/org#siteAddress> ?o2 . ?o2 ?p3 ?o3}  . " +
 	                                     "  VALUES ?company { ";
 	            for (String uri : companyUris) {
