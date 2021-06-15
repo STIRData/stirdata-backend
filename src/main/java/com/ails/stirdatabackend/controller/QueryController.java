@@ -44,4 +44,16 @@ public class QueryController {
         List<EndpointResponse> res = queryService.paginatedQuery(NUTS,NACE, startDate, endDate, page );
         return ResponseEntity.ok(res);
     }
+    
+    @GetMapping("/grouped")
+    public ResponseEntity<?> groupByQuery(@RequestParam(required = false) Optional<List<String>> NUTS,
+                                          @RequestParam(required = false) Optional<List<String>> NACE,
+                                          @RequestParam(required = false) Optional<String> startDate,
+                                          @RequestParam(required = false) Optional<String> endDate,
+                                          @RequestParam(required = true) boolean gnace,
+                                          @RequestParam(required = true) boolean gnuts3) {
+//        String res = queryService.query(nutsList, naceList);
+        List<EndpointResponse> res = queryService.groupedQuery(NUTS,NACE, startDate, endDate, gnace, gnuts3 );
+        return ResponseEntity.ok(res);
+    }
 }
