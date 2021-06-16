@@ -140,7 +140,7 @@ public class QueryService {
 	                      "  ?registeredSite org:siteAddress ?address . ";
 	
 				if (endpoint.getName().equals("czech-endpoint")) {
-	                sparql += " ?address ebg:adminUnitL4 ?NUTS3 . ";
+	                sparql += " ?address ebg:adminUnitL4 ?nuts3 . ";
 	            } else {
 	                sparql += " ?address <https://lod.stirdata.eu/model/nuts3> ?nuts3 . ";
 	            }
