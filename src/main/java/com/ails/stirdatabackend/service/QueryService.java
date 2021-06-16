@@ -57,14 +57,6 @@ public class QueryService {
     @Value("${page.size}")
     private int pageSize;
 
-    public enum SUPPORTED_COUNTRIES {
-        BELGIUM,
-        CZECH,
-        NORWAY
-    }
-
-    // We suppose that NUTS3 is provided.
-    // Only NUTS is handled right now.
     public List<EndpointResponse> paginatedQuery(Optional<List<String>> nutsList, Optional<List<String>> naceList, Optional<String> startDateOpt, Optional<String> endDateOpt, int page) {
         
     	List<EndpointResponse> responseList = new ArrayList<EndpointResponse>();
