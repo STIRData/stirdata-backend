@@ -12,28 +12,35 @@ import org.springframework.context.annotation.Configuration;
 public class SparqlEndpointConfiguration {
     private final static Logger logger = LoggerFactory.getLogger(SparqlEndpointConfiguration.class);
 
-    @Value("${czech.sparql.endpoint}")
-    private String czechEndpoint;
-    @Value("${czech.nuts.0}")
-    private String czechNuts0;
+    @Value("${czechia.sparql.endpoint}")
+    private String czechiaEndpoint;
+    @Value("${czechia.nuts.0}")
+    private String czechiaNuts0;
+    
     @Value("${belgium.sparql.endpoint}")
     private String belgiumEndpoint;
     @Value("${belgium.nuts.0}")
     private String belgiumNuts0;
+    
     @Value("${norway.sparql.endpoint}")
     private String norwayEndpoint;
     @Value("${norway.nuts.0}")
     private String norwayNuts0;
+
+    @Value("${greece.sparql.endpoint}")
+    private String greeceEndpoint;
+    @Value("${greece.nuts.0}")
+    private String greeceNuts0;
+
     @Value("${sparql.endpoint.nuts}")
     private String nutsEndpoint;
     @Value("${sparql.endpoint.nace}")
     private String naceEndpoint;
 
-    @Bean(name = "czech-sparql-endpoint")
-    public SparqlEndpoint getCzechSparqlEndpoint() {
-
-        logger.info("Creating czech endpoint...");
-        return new SparqlEndpoint("czech-endpoint", czechEndpoint, czechNuts0);
+    @Bean(name = "czechia-sparql-endpoint")
+    public SparqlEndpoint getCzechiaSparqlEndpoint() {
+        logger.info("Creating czechia endpoint...");
+        return new SparqlEndpoint("czechia-endpoint", czechiaEndpoint, czechiaNuts0);
     }
 
     @Bean(name = "belgium-sparql-endpoint")
@@ -48,6 +55,12 @@ public class SparqlEndpointConfiguration {
         return new SparqlEndpoint("norway-endpoint", norwayEndpoint, norwayNuts0);
     }
 
+    @Bean(name = "greece-sparql-endpoint")
+    public SparqlEndpoint getGreeceSparqlEndpoint() {
+        logger.info("Creating greece endpoint...");
+        return new SparqlEndpoint("greece-endpoint", greeceEndpoint, greeceNuts0);
+    }
+    
     @Bean(name = "nuts-sparql-endpoint")
     public SparqlEndpoint getNutsSparqlEndpoint() {
         logger.info("Creating NUTS endpoint...");

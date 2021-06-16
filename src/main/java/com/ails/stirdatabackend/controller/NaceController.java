@@ -35,6 +35,8 @@ public class NaceController {
     		res = naceService.getLeafNoNaceLeaves(uri);
     	} else if (country.equalsIgnoreCase("be")) {
     		res = naceService.getLeafBeNaceLeaves(uri);
+    	} else if (country.equalsIgnoreCase("el")) {
+    		res = naceService.getLeafElNaceLeaves(uri);
     	}
         
         

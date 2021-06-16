@@ -16,10 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
-import java.io.Writer;
-import java.net.IDN;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -29,14 +26,6 @@ import java.util.Set;
 
 @Service
 public class QueryService {
-
-    @Autowired
-    @Qualifier("czech-sparql-endpoint")
-    private SparqlEndpoint czechSparqlEndpoint;
-
-    @Autowired
-    @Qualifier("belgium-sparql-endpoint")
-    private SparqlEndpoint belgiumSparqlEndpoint;
 
     @Autowired
     @Qualifier("nuts-sparql-endpoint")
@@ -57,6 +46,115 @@ public class QueryService {
     @Value("${page.size}")
     private int pageSize;
 
+    
+    private String buildCoreQuery(SparqlEndpoint endpoint, List<String> nuts3UrisList, Set<String> naceLeafUris, Optional<String> startDateOpt, Optional<String> endDateOpt) {
+    
+
+        String sparql = 
+//        		  "SELECT ?organization WHERE { " +
+//                  "SELECT DISTINCT ?organization WHERE { " +
+                  " { " +
+                  "  ?organization a rov:RegisteredOrganization . " +
+                  "  ?organization rov:legalName ?organizationName . ";
+        
+        if (nuts3UrisList != null) {                            
+            sparql += "  ?organization org:hasRegisteredSite ?registeredSite . " +
+                      "  ?registeredSite org:siteAddress ?address . ";
+
+			if (endpoint.getName().equals("czechia-endpoint")) {
+                sparql += " ?address ebg:adminUnitL4 ?nuts3 . ";
+            } else {
+                sparql += " ?address <https://lod.stirdata.eu/model/nuts3> ?nuts3 . ";
+            }
+
+            sparql += " VALUES ?nuts3 { ";
+            for (String uri : nuts3UrisList) {
+                sparql += "<" + uri + "> ";
+            }
+            sparql += "} ";
+        }
+        
+        if (naceLeafUris != null) {
+        	sparql += " ?organization rov:orgActivity ?nace . ";
+        	
+            sparql += " VALUES ?nace { ";
+            for (String uri : naceLeafUris) {
+                sparql += "<" + uri + "> ";
+            }
+            sparql += "} ";            	
+        }
+        
+
+        // Date filter (if requested)
+        if (startDateOpt.isPresent() || endDateOpt.isPresent()) {
+            sparql += "?organization schema:foundingDate ?foundingDate ";
+
+            if (startDateOpt.isPresent() && !endDateOpt.isPresent()) {
+                String startDate = startDateOpt.get();
+                sparql += "FILTER( ?foundingDate > \"" + startDate + "\"^^xsd:date) ";
+            }
+            else if (!startDateOpt.isPresent() && endDateOpt.isPresent()) {
+                String endDate = endDateOpt.get();
+                sparql += "FILTER( ?foundingDate < \"" + endDate + "\"^^xsd:date) ";
+            }
+            else {
+                String startDate = startDateOpt.get();
+                String endDate = endDateOpt.get();
+                sparql += "FILTER( ?foundingDate > \"" + startDate + "\"^^xsd:date && ?foundingDate < \"" + endDate + "\"^^xsd:date) ";
+
+            }
+        }
+        sparql += "} ";
+        
+        return sparql;
+    }
+    
+    private Set<String> getNaceLeafUris(SparqlEndpoint endpoint, Optional<List<String>> naceList) {
+    	Set<String> naceLeafUris = null;
+    	if (naceList.isPresent()) {
+    		naceLeafUris = new HashSet<>();
+    	
+        	if (endpoint.getName().equals("czechia-endpoint")) {
+        	    naceLeafUris.add("http://lod.stirdata.eu/nace/dummy");
+        	} else if (endpoint.getName().equals("belgium-endpoint")) {
+        		for (String s : naceList.get()) {
+        			naceLeafUris.addAll(naceService.getLeafBeNaceLeaves(s));
+                }    		
+        	} else if (endpoint.getName().equals("norway-endpoint")) {
+        		for (String s : naceList.get()) {
+        			naceLeafUris.addAll(naceService.getLeafNoNaceLeaves(s));
+                }    		
+        	} else if (endpoint.getName().equals("greece-endpoint")) {
+        		for (String s : naceList.get()) {
+        			naceLeafUris.addAll(naceService.getLeafElNaceLeaves(s));
+                }    		
+            }
+    	}
+    	
+    	return naceLeafUris;
+    }
+    
+    private List<String> getNuts3Uris(SparqlEndpoint endpoint, HashMap<SparqlEndpoint, List<String>> requestMap) {
+    	
+    	List<String> nuts3UrisList = null;
+    	if (requestMap.get(endpoint) != null) {
+            Set<String> nuts3Uris = new HashSet<>();
+            for (String s : requestMap.get(endpoint)) {
+            	nuts3Uris.addAll(nutsService.getNuts3Descendents(s));
+            }
+
+            nuts3UrisList = new ArrayList<>(nuts3Uris);
+
+            nuts3UrisList = endpoint.getName().equals("czechia-endpoint") ? 
+            		uriMapper.mapCzechNutsUri(nuts3UrisList) : uriMapper.mapEuropaNutsUri(nuts3UrisList);
+
+    	}
+    	
+    	return nuts3UrisList;
+
+    }
+    
+    
     public List<EndpointResponse> paginatedQuery(Optional<List<String>> nutsList, Optional<List<String>> naceList, Optional<String> startDateOpt, Optional<String> endDateOpt, int page) {
         
     	List<EndpointResponse> responseList = new ArrayList<EndpointResponse>();
@@ -68,121 +166,41 @@ public class QueryService {
     		requestMap = endpointManager.getEndpointsByNuts(); 
     	}
     	
-        System.out.println(requestMap.toString());
         int offset = (page - 1) * pageSize;
         
         ObjectMapper mapper = new ObjectMapper();
+        
+        String prefix = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "+
+                "PREFIX rov: <http://www.w3.org/ns/regorg#> " +
+                "PREFIX ebg: <http://data.businessgraph.io/ontology#> " +
+                "PREFIX org: <http://www.w3.org/ns/org#> " +
+                "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> ";
 
         for (SparqlEndpoint endpoint : requestMap.keySet()) {
-            
-        	Set<String> naceLeafUris = null;
-        	if (naceList.isPresent()) {
-        		naceLeafUris = new HashSet<>();
-        	
-	        	if (endpoint.getName().equals("czech-endpoint")) {
-	        	    naceLeafUris.add("http://lod.stirdata.eu/nace/dummy");
-	        	} else if (endpoint.getName().equals("belgium-endpoint")) {
-	        		for (String s : naceList.get()) {
-	        			naceLeafUris.addAll(naceService.getLeafBeNaceLeaves(s));
-	                }    		
-	        	} else if (endpoint.getName().equals("norway-endpoint")) {
-	        		for (String s : naceList.get()) {
-	        			naceLeafUris.addAll(naceService.getLeafNoNaceLeaves(s));
-	                }    		
-	            }
-        	}
-        	
-        	List<String> nuts3UrisList = null;
-        	if (requestMap.get(endpoint) != null) {
-	            Set<String> nuts3Uris = new HashSet<>();
-	            for (String s : requestMap.get(endpoint)) {
-	            	nuts3Uris.addAll(nutsService.getNuts3Descendents(s));
-	            }
-	
-	            nuts3UrisList = new ArrayList<>(nuts3Uris);
 
-	            nuts3UrisList = endpoint.getName().equals("czech-endpoint") ? 
-	            		uriMapper.mapCzechNutsUri(nuts3UrisList) : uriMapper.mapEuropaNutsUri(nuts3UrisList);
-
-        	}
-
-
-            String prefix = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
-                            "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "+
-                            "PREFIX rov: <http://www.w3.org/ns/regorg#> " +
-                            "PREFIX ebg: <http://data.businessgraph.io/ontology#> " +
-                            "PREFIX org: <http://www.w3.org/ns/org#> " +
-                            "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> ";
-
-            if (endpoint.getName().equals("czech-endpoint")) {
+            if (endpoint.getName().equals("czechia-endpoint")) {
             	prefix += "PREFIX schema: <http://schema.org/> ";
             } else {
                 prefix += "PREFIX schema: <https://schema.org/> ";
             }
 
-            String sparql = 
-//            		  "SELECT ?organization WHERE { " +
-//                      "SELECT DISTINCT ?organization WHERE { " +
-                      " { " +
-                      "  ?organization a rov:RegisteredOrganization . " +
-                      "  ?organization rov:legalName ?organizationName . ";
             
-            if (nuts3UrisList != null) {                            
-	            sparql += "  ?organization org:hasRegisteredSite ?registeredSite . " +
-	                      "  ?registeredSite org:siteAddress ?address . ";
-	
-				if (endpoint.getName().equals("czech-endpoint")) {
-	                sparql += " ?address ebg:adminUnitL4 ?nuts3 . ";
-	            } else {
-	                sparql += " ?address <https://lod.stirdata.eu/model/nuts3> ?nuts3 . ";
-	            }
-	
-	            sparql += " VALUES ?nuts3 { ";
-	            for (String uri : nuts3UrisList) {
-	                sparql += "<" + uri + "> ";
-	            }
-	            sparql += "} ";
-            }
-            
-            if (naceLeafUris != null) {
-            	sparql += " ?organization rov:orgActivity ?nace . ";
-            	
-	            sparql += " VALUES ?nace { ";
-	            for (String uri : naceLeafUris) {
-	                sparql += "<" + uri + "> ";
-	            }
-	            sparql += "} ";            	
-            }
-            
-
-            // Date filter (if requested)
-            if (startDateOpt.isPresent() || endDateOpt.isPresent()) {
-                sparql += "?organization schema:foundingDate ?foundingDate ";
-
-                if (startDateOpt.isPresent() && !endDateOpt.isPresent()) {
-                    String startDate = startDateOpt.get();
-                    sparql += "FILTER( ?foundingDate > \"" + startDate + "\"^^xsd:date) ";
-                }
-                else if (!startDateOpt.isPresent() && endDateOpt.isPresent()) {
-                    String endDate = endDateOpt.get();
-                    sparql += "FILTER( ?foundingDate < \"" + endDate + "\"^^xsd:date) ";
-                }
-                else {
-                    String startDate = startDateOpt.get();
-                    String endDate = endDateOpt.get();
-                    sparql += "FILTER( ?foundingDate > \"" + startDate + "\"^^xsd:date && ?foundingDate < \"" + endDate + "\"^^xsd:date) ";
-
-                }
-            }
-            sparql += "} ";
-//            sparql +=
-//                  "ORDER BY ?organizationName } " +
-//            		" LIMIT " + pageSize + " OFFSET " + offset;
+        	Set<String> naceLeafUris = getNaceLeafUris(endpoint, naceList);
+        	List<String> nuts3UrisList = getNuts3Uris(endpoint, requestMap);
+        	
+        	String sparql = buildCoreQuery(endpoint, nuts3UrisList, naceLeafUris, startDateOpt, endDateOpt); 
 
             System.out.println("Will query endpoint: "+endpoint.getSparqlEndpoint());
-            List<String> companyUris = new ArrayList<String>();
 
         	int count = 0;
+        	
+        	if ((nuts3UrisList != null && nuts3UrisList.size() == 0) || (naceLeafUris != null && naceLeafUris.size() == 0)) {
+        		responseList.add(new EndpointResponse(endpoint.getName(), mapper.createArrayNode(), count));
+        		return responseList;
+        	}
+
+        	
             if (page == 1) {
             	String countQuery = prefix + " SELECT (COUNT(DISTINCT ?organization) AS ?count) WHERE " + sparql ;
             	
@@ -203,6 +221,8 @@ public class QueryService {
             
             System.out.println(QueryFactory.create(sparql));
 
+            List<String> companyUris = new ArrayList<String>();
+
             StringWriter sw = new StringWriter();
             try (QueryExecution qe = QueryExecutionFactory.sparqlService(endpoint.getSparqlEndpoint(), sparql)) {
                 ResultSet rs = qe.execSelect();
@@ -211,7 +231,7 @@ public class QueryService {
                     companyUris.add(sol.get("organization").asResource().toString());
                 }
             }
-            System.out.println(companyUris);
+//            System.out.println(companyUris);
 
             if (!companyUris.isEmpty()) {
 	            String sparqlConstruct = "CONSTRUCT { " + 
@@ -228,8 +248,6 @@ public class QueryService {
 	            }
 	            sparqlConstruct += "} } ";
 	
-//	System.out.println(QueryFactory.create(sparqlConstruct, Syntax.syntaxARQ));
-	            //            Writer sw = new StringWriter();
 	            try (QueryExecution qe = QueryExecutionFactory.sparqlService(endpoint.getSparqlEndpoint(), QueryFactory.create(sparqlConstruct, Syntax.syntaxARQ))) {
 	                Model model = qe.execConstruct();
 	                RDFDataMgr.write(sw, model, RDFFormat.JSONLD_EXPAND_PRETTY);
@@ -260,125 +278,48 @@ public class QueryService {
     	
         ObjectMapper mapper = new ObjectMapper();
 
+        String prefix = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "+
+                "PREFIX rov: <http://www.w3.org/ns/regorg#> " +
+                "PREFIX ebg: <http://data.businessgraph.io/ontology#> " +
+                "PREFIX org: <http://www.w3.org/ns/org#> " +
+                "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> ";
+
         for (SparqlEndpoint endpoint : requestMap.keySet()) {
-            boolean nace = gnace;
-            boolean nuts3 = gnuts3;
-            
-        	Set<String> naceLeafUris = null;
-        	if (naceList.isPresent()) {
-        		naceLeafUris = new HashSet<>();
-        	
-	        	if (endpoint.getName().equals("czech-endpoint")) {
-	        	    naceLeafUris.add("http://lod.stirdata.eu/nace/dummy");
-	        	} else if (endpoint.getName().equals("belgium-endpoint")) {
-	        		for (String s : naceList.get()) {
-	        			naceLeafUris.addAll(naceService.getLeafBeNaceLeaves(s));
-	                }    		
-	        	} else if (endpoint.getName().equals("norway-endpoint")) {
-	        		for (String s : naceList.get()) {
-	        			naceLeafUris.addAll(naceService.getLeafNoNaceLeaves(s));
-	                }    		
-	            }
-        	} else {
-        		nace = false;
-        	}
-        	
-        	List<String> nuts3UrisList = null;
-        	if (requestMap.get(endpoint) != null) {
-	            Set<String> nuts3Uris = new HashSet<>();
-	            for (String s : requestMap.get(endpoint)) {
-	            	nuts3Uris.addAll(nutsService.getNuts3Descendents(s));
-	            }
-	
-	            nuts3UrisList = new ArrayList<>(nuts3Uris);
 
-	            nuts3UrisList = endpoint.getName().equals("czech-endpoint") ? 
-	            		uriMapper.mapCzechNutsUri(nuts3UrisList) : uriMapper.mapEuropaNutsUri(nuts3UrisList);
-
-        	} else {
-        		nuts3 = false;
-        	}
-
-
-            String prefix = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
-                            "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "+
-                            "PREFIX rov: <http://www.w3.org/ns/regorg#> " +
-                            "PREFIX ebg: <http://data.businessgraph.io/ontology#> " +
-                            "PREFIX org: <http://www.w3.org/ns/org#> " +
-                            "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> ";
-
-            if (endpoint.getName().equals("czech-endpoint")) {
+        	if (endpoint.getName().equals("czechia-endpoint")) {
             	prefix += "PREFIX schema: <http://schema.org/> ";
             } else {
                 prefix += "PREFIX schema: <https://schema.org/> ";
             }
 
-            String sparql = 
-//            		  "SELECT ?organization WHERE { " +
-//                      "SELECT DISTINCT ?organization WHERE { " +
-                      " { " +
-                      "  ?organization a rov:RegisteredOrganization . " +
-                      "  ?organization rov:legalName ?organizationName . ";
+        	boolean nace = gnace;
+            boolean nuts3 = gnuts3;
             
-            if (nuts3UrisList != null) {                            
-	            sparql += "  ?organization org:hasRegisteredSite ?registeredSite . " +
-	                      "  ?registeredSite org:siteAddress ?address . ";
-	
-				if (endpoint.getName().equals("czech-endpoint")) {
-	                sparql += " ?address ebg:adminUnitL4 ?NUTS3 . ";
-	            } else {
-	                sparql += " ?address <https://lod.stirdata.eu/model/nuts3> ?nuts3 . ";
-	            }
-	
-	            sparql += " VALUES ?nuts3 { ";
-	            for (String uri : nuts3UrisList) {
-	                sparql += "<" + uri + "> ";
-	            }
-	            sparql += "} ";
-            }
-            
-            if (naceLeafUris != null) {
-            	sparql += " ?organization rov:orgActivity ?nace . ";
-            	
-	            sparql += " VALUES ?nace { ";
-	            for (String uri : naceLeafUris) {
-	                sparql += "<" + uri + "> ";
-	            }
-	            sparql += "} ";            	
-            }
-            
+            Set<String> naceLeafUris = getNaceLeafUris(endpoint, naceList);
+        	List<String> nuts3UrisList = getNuts3Uris(endpoint, requestMap);
+        	
+        	if (naceLeafUris == null) {
+        		nace = false;
+        	}
+        	
+        	if (nuts3UrisList == null) {
+        		nuts3 = false;
+        	}
 
-            // Date filter (if requested)
-            if (startDateOpt.isPresent() || endDateOpt.isPresent()) {
-                sparql += "?organization schema:foundingDate ?foundingDate ";
-
-                if (startDateOpt.isPresent() && !endDateOpt.isPresent()) {
-                    String startDate = startDateOpt.get();
-                    sparql += "FILTER( ?foundingDate > \"" + startDate + "\"^^xsd:date) ";
-                }
-                else if (!startDateOpt.isPresent() && endDateOpt.isPresent()) {
-                    String endDate = endDateOpt.get();
-                    sparql += "FILTER( ?foundingDate < \"" + endDate + "\"^^xsd:date) ";
-                }
-                else {
-                    String startDate = startDateOpt.get();
-                    String endDate = endDateOpt.get();
-                    sparql += "FILTER( ?foundingDate > \"" + startDate + "\"^^xsd:date && ?foundingDate < \"" + endDate + "\"^^xsd:date) ";
-
-                }
-            }
-            sparql += "} ";
-//            sparql +=
-//                  "ORDER BY ?organizationName } " +
-//            		" LIMIT " + pageSize + " OFFSET " + offset;
+        	String sparql = buildCoreQuery(endpoint, nuts3UrisList, naceLeafUris, startDateOpt, endDateOpt); 
 
             System.out.println("Will query endpoint: "+endpoint.getSparqlEndpoint());
 
+        	if ((nuts3UrisList != null && nuts3UrisList.size() == 0) || (naceLeafUris != null && naceLeafUris.size() == 0)) {
+        		responseList.add(new EndpointResponse(endpoint.getName(), mapper.createArrayNode(), 0));
+        		return responseList;
+        	}
+        	
             prefix += "SELECT ";
             if (nace) {
             	prefix += " ?nace ";
             }
-            
             if (nuts3) {
             	prefix += " ?nuts3 ";
             }
@@ -390,7 +331,6 @@ public class QueryService {
             if (nace) {
             	sparql += " ?nace ";
             } 
-            
             if (nuts3) {
             	sparql += " ?nuts3 ";
             }
@@ -406,7 +346,7 @@ public class QueryService {
             }
             
             try {
-                responseList.add(new EndpointResponse(endpoint.getName(), mapper.readTree(json), -1));
+                responseList.add(new EndpointResponse(endpoint.getName(), mapper.readTree(json), 0));
             } catch (Exception e) {
                 e.printStackTrace();
                 return null;

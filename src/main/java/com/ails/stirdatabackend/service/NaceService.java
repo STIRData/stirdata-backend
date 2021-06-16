@@ -85,9 +85,9 @@ public class NaceService {
 			sparql += "?activity skos:broader/skos:exactMatch/skos:broader <" + uri + "> . "; 
 		} else if (level == 4) {
 			sparql += "?activity skos:broader/skos:exactMatch <" + uri + "> . "; 
-    	} else if (level == 5) {
-    		res.add(uri);
-    		return res;
+//    	} else if (level == 5) {
+//    		res.add(uri);
+//    		return res;
     	}
     	
 		sparql += " ?activity <https://lod.stirdata.eu/nace/ont/level> 5 . " +
@@ -124,9 +124,9 @@ public class NaceService {
 			sparql += "?activity skos:broader/skos:exactMatch/skos:broader <" + uri + "> . "; 
     	} else if (level == 4) {
 			sparql += "?activity skos:broader/skos:exactMatch <" + uri + "> . "; 
-    	} else if (level == 5) {
-    		res.add(uri);
-    		return res;
+//    	} else if (level == 5) {
+//    		res.add(uri);
+//    		return res;
     	}
 
 		sparql += " ?activity <https://lod.stirdata.eu/nace/ont/level> 5 . " +
@@ -143,4 +143,42 @@ public class NaceService {
     	return res;
 
     }
+    
+    public Set<String> getLeafElNaceLeaves(String uri) {
+    	Set<String> res = new HashSet<>();
+
+    	int level = getNaceLevel(uri);
+    	if (level < 0) {
+    		return res;
+    	}
+
+    	String sparql = "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> " +
+		                "SELECT ?activity WHERE { ";
+    	if (level == 1) {
+    		sparql += "?activity skos:broader/skos:broader/skos:broader/skos:exactMatch/skos:broader/skos:broader/skos:broader <" + uri + "> . "; 
+    	} else if (level == 2) {
+			sparql += "?activity skos:broader/skos:broader/skos:broader/skos:exactMatch/skos:broader/skos:broader <" + uri + "> . "; 
+    	} else if (level == 3) {
+			sparql += "?activity skos:broader/skos:broader/skos:broader/skos:exactMatch/skos:broader <" + uri + "> . "; 
+    	} else if (level == 4) {
+			sparql += "?activity skos:broader/skos:broader/skos:broader/skos:exactMatch <" + uri + "> . "; 
+//    	} else if (level == 5) {
+//    		res.add(uri);
+//    		return res;
+    	}
+
+		sparql += " ?activity <https://lod.stirdata.eu/nace/ont/level> 7 . " +
+		          " ?activity skos:inScheme <https://lod.stirdata.eu/nace/scheme/KAD2008> } ";
+
+    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(naceSparqlEndpoint.getSparqlEndpoint(), sparql)) {
+            ResultSet rs = qe.execSelect();
+            while (rs.hasNext()) {
+                QuerySolution sol = rs.next();
+                res.add(sol.get("activity").asResource().toString());
+            }
+        }
+    	
+    	return res;
+
+    }    
 }
