@@ -2,9 +2,6 @@ package com.ails.stirdatabackend.service;
 
 import com.ails.stirdatabackend.model.SparqlEndpoint;
 import org.apache.jena.query.*;
-import org.apache.jena.riot.RDFDataMgr;
-import org.apache.jena.riot.RDFFormat;
-import org.apache.jena.sparql.resultset.RDFOutput;
 import org.apache.jena.sparql.resultset.ResultsFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -12,12 +9,10 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
-import java.net.MalformedURLException;
-import java.net.URL;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.net.IDN;
-import static org.apache.jena.util.URIref.encode;
 
 @Service
 public class TestService {
@@ -33,14 +28,10 @@ public class TestService {
     @Autowired
     @Qualifier("greece-sparql-endpoint")
     private SparqlEndpoint greeceSparqlEndpoint;
-    
-    @Autowired
-    @Qualifier("nuts-sparql-endpoint")
-    private SparqlEndpoint nutsSparqlEndpoint;
 
     public List<String> testSparqlQueryCzech() {
         String sparql = "SELECT * WHERE {?p ?q ?r } LIMIT 10";
-        List<String> prop = new ArrayList<String>();
+        List<String> prop = new ArrayList<>();
         try (QueryExecution qe = QueryExecutionFactory.sparqlService(IDN.toASCII(czechiaSparqlEndpoint.getSparqlEndpoint()), sparql)) {
             ResultSet rs = qe.execSelect();
             while (rs.hasNext()) {
@@ -53,7 +44,7 @@ public class TestService {
 
     public String testSparqlQueryBelgium() {
         String sparql = "SELECT * WHERE {?p ?q ?r } LIMIT 10";
-        List<String> prop = new ArrayList<String>();
+        List<String> prop = new ArrayList<>();
         String json;
         StringWriter sw = new StringWriter();
         try (QueryExecution qe = QueryExecutionFactory.sparqlService(belgiumSparqlEndpoint.getSparqlEndpoint(), sparql)) {
@@ -62,14 +53,14 @@ public class TestService {
             ByteArrayOutputStream outStream = new ByteArrayOutputStream();
 //            ResultSetFormatter.outputAsJSON(outStream, rs);
             ResultSetFormatter.output(outStream, rs, ResultsFormat.FMT_RDF_JSONLD);
-            json = new String(outStream.toByteArray());
+            json = outStream.toString();
         }
         return json;
     }
     
     public String testSparqlQueryGreece() {
         String sparql = "SELECT * WHERE {?p ?q ?r } LIMIT 10";
-        List<String> prop = new ArrayList<String>();
+        List<String> prop = new ArrayList<>();
         String json;
         StringWriter sw = new StringWriter();
         try (QueryExecution qe = QueryExecutionFactory.sparqlService(greeceSparqlEndpoint.getSparqlEndpoint(), sparql)) {
@@ -78,7 +69,7 @@ public class TestService {
             ByteArrayOutputStream outStream = new ByteArrayOutputStream();
 //            ResultSetFormatter.outputAsJSON(outStream, rs);
             ResultSetFormatter.output(outStream, rs, ResultsFormat.FMT_RDF_JSONLD);
-            json = new String(outStream.toByteArray());
+            json = outStream.toString();
         }
         return json;
     }

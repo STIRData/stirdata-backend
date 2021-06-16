@@ -26,13 +26,5 @@ public class NutsController {
         }
         return ResponseEntity.ok(res);
     }
-    
-    
-    @GetMapping("/nuts3")
-    public ResponseEntity<?> getNuts3(@RequestParam(required = true) String uri) {
-        String res = nutsService.getNuts3Descendents(uri).toString();
-        
-        
-        return ResponseEntity.ok(res);
-    }
+
 }

@@ -1,14 +1,11 @@
 package com.ails.stirdatabackend.utils;
 
-import com.sun.jndi.toolkit.url.Uri;
 import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @NoArgsConstructor
 @Component
@@ -38,7 +35,7 @@ public class URIMapper {
 
 
     public List<String> mapCzechNutsUri(List<String> uris) {
-        List<String> response = new ArrayList<String>();
+        List<String> response = new ArrayList<>();
         for (String s : uris) {
             URI uri = URI.create(s);
             String path = uri.getPath();

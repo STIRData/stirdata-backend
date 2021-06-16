@@ -34,13 +34,12 @@ public class NaceService {
         sparql += "?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label " +
                   "FILTER (lang(?label) = \"" + language + "\") }";
 
-//        System.out.println(sparql);
         String json;
         try (QueryExecution qe = QueryExecutionFactory.sparqlService(naceSparqlEndpoint.getSparqlEndpoint(), sparql)) {
             ResultSet rs = qe.execSelect();
             ByteArrayOutputStream outStream = new ByteArrayOutputStream();
             ResultSetFormatter.outputAsJSON(outStream, rs);
-            json = new String(outStream.toByteArray());
+            json = outStream.toString();
         }
         return json;
     }

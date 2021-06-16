@@ -2,16 +2,15 @@ package com.ails.stirdatabackend.service;
 
 import com.ails.stirdatabackend.model.SparqlEndpoint;
 import org.apache.jena.query.*;
-import org.apache.jena.sparql.resultset.ResultsFormat;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
-import java.net.URI;
-import java.util.ArrayList;
+
 import java.util.HashSet;
-import java.util.List;
+
 import java.util.Set;
 
 @Service
@@ -43,8 +42,7 @@ public class NutsService {
             ResultSet rs = qe.execSelect();
             ByteArrayOutputStream outStream = new ByteArrayOutputStream();
             ResultSetFormatter.outputAsJSON(outStream, rs);
-//            ResultSetFormatter.output(outStream, rs, ResultsFormat.FMT_RDF_JSONLD);
-            json = new String(outStream.toByteArray());
+            json = outStream.toString();
         }
         return json;
     }
@@ -58,8 +56,7 @@ public class NutsService {
             ResultSet rs = qe.execSelect();
             while (rs.hasNext()) {
                 QuerySolution sol = rs.next();
-                String nuts0 = sol.get("nuts0").asResource().toString();
-                return nuts0;
+                return sol.get("nuts0").asResource().toString();
             }
         }
         return null;

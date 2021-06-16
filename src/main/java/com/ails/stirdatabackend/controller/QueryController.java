@@ -4,7 +4,6 @@ import com.ails.stirdatabackend.payload.EndpointResponse;
 import com.ails.stirdatabackend.service.QueryService;
 import com.ails.stirdatabackend.service.TestService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,7 +39,6 @@ public class QueryController {
                                           @RequestParam(required = false) Optional<String> startDate,
                                           @RequestParam(required = false) Optional<String> endDate,
                                           @RequestParam(required = false, defaultValue="1") int page) {
-//        String res = queryService.query(nutsList, naceList);
         List<EndpointResponse> res = queryService.paginatedQuery(NUTS,NACE, startDate, endDate, page );
         return ResponseEntity.ok(res);
     }
@@ -50,9 +48,8 @@ public class QueryController {
                                           @RequestParam(required = false) Optional<List<String>> NACE,
                                           @RequestParam(required = false) Optional<String> startDate,
                                           @RequestParam(required = false) Optional<String> endDate,
-                                          @RequestParam(required = true) boolean gnace,
-                                          @RequestParam(required = true) boolean gnuts3) {
-//        String res = queryService.query(nutsList, naceList);
+                                          @RequestParam() boolean gnace,
+                                          @RequestParam() boolean gnuts3) {
         List<EndpointResponse> res = queryService.groupedQuery(NUTS,NACE, startDate, endDate, gnace, gnuts3 );
         return ResponseEntity.ok(res);
     }

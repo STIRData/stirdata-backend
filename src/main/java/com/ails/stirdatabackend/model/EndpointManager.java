@@ -1,14 +1,8 @@
 package com.ails.stirdatabackend.model;
 
 import com.ails.stirdatabackend.service.NutsService;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,9 +18,6 @@ public class EndpointManager {
 
 
     public SparqlEndpoint getEndpointFromNutsUri(String uri) {
-//        SparqlEndpoint res = null;
-//        String topLevelNut = nutsService.getTopLevelNuts(uri);
-        
         // should make sure it is a valid nuts uri first!
         int pos = uri.lastIndexOf("/");
         String topLevelNut = uri.substring(0, pos + 3);
@@ -43,7 +34,7 @@ public class EndpointManager {
     }
 
     public HashMap<SparqlEndpoint, List<String>> getEndpointsByNuts(List<String> nutsUri) {
-        HashMap<SparqlEndpoint, List<String>> response = new HashMap<SparqlEndpoint, List<String>>();
+        HashMap<SparqlEndpoint, List<String>> response = new HashMap<>();
         for (String uri : nutsUri) {
             SparqlEndpoint tmp = getEndpointFromNutsUri(uri);
             System.out.println(">> " + tmp);
@@ -51,7 +42,7 @@ public class EndpointManager {
             if (response.containsKey(tmp)) {
                 response.get(tmp).add(uri);
             } else {
-                List<String> tmpLst = new ArrayList<String>();
+                List<String> tmpLst = new ArrayList<>();
                 tmpLst.add(uri);
                 response.put(tmp, tmpLst);
             }
@@ -62,12 +53,11 @@ public class EndpointManager {
     }
     
     public HashMap<SparqlEndpoint, List<String>> getEndpointsByNuts() {
-        HashMap<SparqlEndpoint, List<String>> response = new HashMap<SparqlEndpoint, List<String>>();
+        HashMap<SparqlEndpoint, List<String>> response = new HashMap<>();
         for (SparqlEndpoint se : endpointList) {
-        	if (!se.getName().equals("czech-endpoint")) {
         	if (se.getTopLevelNuts() != null) {
        			response.put(se, null);
-        	}}
+        	}
         }
         return response;
     }

@@ -157,7 +157,7 @@ public class QueryService {
     
     public List<EndpointResponse> paginatedQuery(Optional<List<String>> nutsList, Optional<List<String>> naceList, Optional<String> startDateOpt, Optional<String> endDateOpt, int page) {
         
-    	List<EndpointResponse> responseList = new ArrayList<EndpointResponse>();
+    	List<EndpointResponse> responseList = new ArrayList<>();
         
     	HashMap<SparqlEndpoint, List<String>> requestMap;
     	if (nutsList.isPresent()) {
@@ -221,7 +221,7 @@ public class QueryService {
             
             System.out.println(QueryFactory.create(sparql));
 
-            List<String> companyUris = new ArrayList<String>();
+            List<String> companyUris = new ArrayList<>();
 
             StringWriter sw = new StringWriter();
             try (QueryExecution qe = QueryExecutionFactory.sparqlService(endpoint.getSparqlEndpoint(), sparql)) {
@@ -267,7 +267,7 @@ public class QueryService {
     
     public List<EndpointResponse> groupedQuery(Optional<List<String>> nutsList, Optional<List<String>> naceList, Optional<String> startDateOpt, Optional<String> endDateOpt, boolean gnace, boolean gnuts3) {
         
-    	List<EndpointResponse> responseList = new ArrayList<EndpointResponse>();
+    	List<EndpointResponse> responseList = new ArrayList<>();
         
     	HashMap<SparqlEndpoint, List<String>> requestMap;
     	if (nutsList.isPresent()) {
@@ -342,7 +342,7 @@ public class QueryService {
                 ResultSet rs = qe.execSelect();
                 ByteArrayOutputStream outStream = new ByteArrayOutputStream();
                 ResultSetFormatter.outputAsJSON(outStream, rs);
-                json = new String(outStream.toByteArray());
+                json = outStream.toString();
             }
             
             try {
