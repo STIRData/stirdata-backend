@@ -31,7 +31,7 @@ public class NutsService {
             sparql += "?code <https://lod.stirdata.eu/nuts/ont/level> 0 . "+
                       "?code <http://www.w3.org/2004/02/skos/core#notation> ?notation ."+
                       "VALUES ?notation { " +
-                        "\"NO\" \"BE\" \"CZ\" }";
+                        "\"NO\" \"BE\" \"CZ\" \"EL\"}";
         } else {
             sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parentNode + "> " +  ". ";
         }
