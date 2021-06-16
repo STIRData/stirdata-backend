@@ -155,9 +155,10 @@ public class QueryService {
     }
     
     
-    public List<EndpointResponse> paginatedQuery(Optional<List<String>> nutsList, Optional<List<String>> naceList, Optional<String> startDateOpt, Optional<String> endDateOpt, int page) {
+    public List<EndpointResponse> paginatedQuery(Optional<List<String>> nutsList, Optional<List<String>> naceList, Optional<String> startDateOpt, Optional<String> endDateOpt, int page, Optional<String> country) {
         
     	List<EndpointResponse> responseList = new ArrayList<>();
+        String countryCode = country.orElse(null);
         
     	HashMap<SparqlEndpoint, List<String>> requestMap;
     	if (nutsList.isPresent()) {
@@ -196,7 +197,7 @@ public class QueryService {
         	int count = 0;
         	
         	if ((nuts3UrisList != null && nuts3UrisList.size() == 0) || (naceLeafUris != null && naceLeafUris.size() == 0)) {
-        		responseList.add(new EndpointResponse(endpoint.getName(), mapper.createArrayNode(), count));
+        		responseList.add(new EndpointResponse(endpoint.getName(), mapper.createArrayNode(), count, countryCode));
         		return responseList;
         	}
 
@@ -253,13 +254,13 @@ public class QueryService {
 	                RDFDataMgr.write(sw, model, RDFFormat.JSONLD_EXPAND_PRETTY);
 	            }
 	            try {
-	                responseList.add(new EndpointResponse(endpoint.getName(), mapper.readTree(sw.toString()), count));
+	                responseList.add(new EndpointResponse(endpoint.getName(), mapper.readTree(sw.toString()), count, countryCode));
 	            } catch (Exception e) {
 	                e.printStackTrace();
 	                return null;
 	            }
             } else {
-            	responseList.add(new EndpointResponse(endpoint.getName(), mapper.createArrayNode(), count));
+            	responseList.add(new EndpointResponse(endpoint.getName(), mapper.createArrayNode(), count, countryCode));
             }
         }
         return responseList;
@@ -312,7 +313,7 @@ public class QueryService {
             System.out.println("Will query endpoint: "+endpoint.getSparqlEndpoint());
 
         	if ((nuts3UrisList != null && nuts3UrisList.size() == 0) || (naceLeafUris != null && naceLeafUris.size() == 0)) {
-        		responseList.add(new EndpointResponse(endpoint.getName(), mapper.createArrayNode(), 0));
+        		responseList.add(new EndpointResponse(endpoint.getName(), mapper.createArrayNode(), 0, null));
         		return responseList;
         	}
         	
@@ -346,7 +347,7 @@ public class QueryService {
             }
             
             try {
-                responseList.add(new EndpointResponse(endpoint.getName(), mapper.readTree(json), 0));
+                responseList.add(new EndpointResponse(endpoint.getName(), mapper.readTree(json), 0, null));
             } catch (Exception e) {
                 e.printStackTrace();
                 return null;

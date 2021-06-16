@@ -38,8 +38,9 @@ public class QueryController {
                                           @RequestParam(required = false) Optional<List<String>> NACE,
                                           @RequestParam(required = false) Optional<String> startDate,
                                           @RequestParam(required = false) Optional<String> endDate,
+                                          @RequestParam(required = false) Optional<String> country,
                                           @RequestParam(required = false, defaultValue="1") int page) {
-        List<EndpointResponse> res = queryService.paginatedQuery(NUTS,NACE, startDate, endDate, page );
+        List<EndpointResponse> res = queryService.paginatedQuery(NUTS,NACE, startDate, endDate, page, country );
         return ResponseEntity.ok(res);
     }
     
