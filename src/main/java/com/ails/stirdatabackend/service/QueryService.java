@@ -171,15 +171,15 @@ public class QueryService {
         
         ObjectMapper mapper = new ObjectMapper();
         
-        String prefix = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
-                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "+
-                "PREFIX rov: <http://www.w3.org/ns/regorg#> " +
-                "PREFIX ebg: <http://data.businessgraph.io/ontology#> " +
-                "PREFIX org: <http://www.w3.org/ns/org#> " +
-                "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> ";
-
         for (SparqlEndpoint endpoint : requestMap.keySet()) {
 
+            String prefix = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
+                    "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "+
+                    "PREFIX rov: <http://www.w3.org/ns/regorg#> " +
+                    "PREFIX ebg: <http://data.businessgraph.io/ontology#> " +
+                    "PREFIX org: <http://www.w3.org/ns/org#> " +
+                    "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> ";
+            
             if (endpoint.getName().equals("czechia-endpoint")) {
             	prefix += "PREFIX schema: <http://schema.org/> ";
             } else {
@@ -220,7 +220,7 @@ public class QueryService {
             
             sparql = prefix + " SELECT DISTINCT ?organization WHERE " + sparql + "  LIMIT " + pageSize + " OFFSET " + offset;
             
-            System.out.println(QueryFactory.create(sparql));
+//            System.out.println(QueryFactory.create(sparql));
 
             List<String> companyUris = new ArrayList<>();
 
@@ -279,15 +279,15 @@ public class QueryService {
     	
         ObjectMapper mapper = new ObjectMapper();
 
-        String prefix = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
-                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "+
-                "PREFIX rov: <http://www.w3.org/ns/regorg#> " +
-                "PREFIX ebg: <http://data.businessgraph.io/ontology#> " +
-                "PREFIX org: <http://www.w3.org/ns/org#> " +
-                "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> ";
-
         for (SparqlEndpoint endpoint : requestMap.keySet()) {
 
+            String prefix = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
+                    "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "+
+                    "PREFIX rov: <http://www.w3.org/ns/regorg#> " +
+                    "PREFIX ebg: <http://data.businessgraph.io/ontology#> " +
+                    "PREFIX org: <http://www.w3.org/ns/org#> " +
+                    "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> ";
+            
         	if (endpoint.getName().equals("czechia-endpoint")) {
             	prefix += "PREFIX schema: <http://schema.org/> ";
             } else {
@@ -336,7 +336,8 @@ public class QueryService {
             	sparql += " ?nuts3 ";
             }
             
-            System.out.println(QueryFactory.create(sparql));
+//            System.out.println(sparql);
+//            System.out.println(QueryFactory.create(sparql));
 
             String json;
             try (QueryExecution qe = QueryExecutionFactory.sparqlService(endpoint.getSparqlEndpoint(), sparql)) {
