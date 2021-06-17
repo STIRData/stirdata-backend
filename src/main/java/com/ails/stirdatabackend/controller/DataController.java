@@ -13,16 +13,14 @@ import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.ails.stirdatabackend.model.SparqlEndpoint;
 
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.Element;
 
+@CrossOrigin
 @RestController
 @RequestMapping("/api/data")
 public class DataController {
