@@ -115,7 +115,9 @@ public class QueryService {
     		naceLeafUris = new HashSet<>();
     	
         	if (endpoint.getName().equals("czechia-endpoint")) {
-        	    naceLeafUris.add("http://lod.stirdata.eu/nace/dummy");
+        		for (String s : naceList.get()) {
+        			naceLeafUris.addAll(naceService.getLeafCzNaceLeaves(s));
+                }    		
         	} else if (endpoint.getName().equals("belgium-endpoint")) {
         		for (String s : naceList.get()) {
         			naceLeafUris.addAll(naceService.getLeafBeNaceLeaves(s));
