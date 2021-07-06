@@ -130,7 +130,11 @@ public class QueryService {
         		for (String s : naceList.get()) {
         			naceLeafUris.addAll(naceService.getLeafElNaceLeaves(s));
                 }    		
-            }
+        	} else if (endpoint.getName().equals("finland-endpoint")) {
+        		for (String s : naceList.get()) {
+        			naceLeafUris.addAll(naceService.getLeafFiNaceLeaves(s));
+                }    
+        	}
     	}
     	
     	return naceLeafUris;
