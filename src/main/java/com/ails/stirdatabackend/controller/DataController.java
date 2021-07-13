@@ -25,14 +25,6 @@ import net.sf.ehcache.Element;
 @RequestMapping("/api/data")
 public class DataController {
 
-    @Autowired
-    @Qualifier("nace-sparql-endpoint")
-    private SparqlEndpoint naceSparqlEndpoint;
-
-    @Autowired
-    @Qualifier("nuts-sparql-endpoint")
-    private SparqlEndpoint nutsSparqlEndpoint;
-
 	@Autowired
 	@Qualifier("labels-cache")
 	private Cache labelsCache;
@@ -45,13 +37,11 @@ public class DataController {
 	@GetMapping(value = "/label", produces = "application/json")
 	public String label(@RequestParam String resource)  {
 
-
 		Element e = labelsCache.get(resource);
 		if (e != null) {
 			return (String)e.getObjectValue();
 		}
 		
-//		System.out.println(">>>> " + resource);
 		Writer sw = new StringWriter();
 		
 		try {
@@ -74,7 +64,7 @@ public class DataController {
 //			System.out.println(resource);
 //			System.out.println(prefix);
 //			System.out.println(vi.getGraph() + " " + vi.getEndpoint());
-			System.out.println(QueryFactory.create(sparql, Syntax.syntaxSPARQL_11));
+//			System.out.println(QueryFactory.create(sparql, Syntax.syntaxSPARQL_11));
 			
 			try (QueryExecution qe = QueryExecutionFactory.sparqlService(prefix.getEndpoint().getSparqlEndpoint(), QueryFactory.create(sparql, Syntax.syntaxSPARQL_11))) {
 				Model model = qe.execConstruct();

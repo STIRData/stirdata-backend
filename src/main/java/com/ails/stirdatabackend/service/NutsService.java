@@ -1,6 +1,9 @@
 package com.ails.stirdatabackend.service;
 
+import com.ails.stirdatabackend.configuration.CountryConfiguration;
 import com.ails.stirdatabackend.model.SparqlEndpoint;
+import com.ails.stirdatabackend.utils.URIMapper;
+
 import org.apache.jena.query.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,29 +11,99 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
-
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
-
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class NutsService {
 
     @Autowired
-    @Qualifier("nuts-sparql-endpoint")
-    private SparqlEndpoint nutsSparqlEndpoint;
+    @Qualifier("endpoint-nuts-eu")
+    private SparqlEndpoint nutsEndpointEU;
+    
+    @Autowired
+    @Qualifier("country-configurations")
+    private Map<String, CountryConfiguration> countryConfigurations;
 
+    @Autowired
+    private URIMapper uriMapper;
+
+    private static Pattern nacePattern = Pattern.compile("^https://lod\\.stirdata\\.eu/nuts/code/([A-Z][A-Z])");
+    
+    
+    public List<String> getNuts3Uris(CountryConfiguration cc, List<String> requestMap) {
+    	
+    	List<String> nuts3UrisList = null;
+    	if (requestMap != null) {
+            Set<String> nuts3Uris = new HashSet<>();
+            for (String s : requestMap) {
+            	nuts3Uris.addAll(getNuts3Descendents(s));
+            }
+
+            nuts3UrisList = new ArrayList<>(nuts3Uris);
+
+            nuts3UrisList = cc.getCountry().equals("CZ") ? 
+            		uriMapper.mapCzechNutsUri(nuts3UrisList) : uriMapper.mapEuropaNutsUri(nuts3UrisList);
+
+    	}
+    	
+    	return nuts3UrisList;
+
+    }
+    
+    public Map<CountryConfiguration, List<String>> getEndpointsByNuts(List<String> nutsUri) {
+        Map<CountryConfiguration, List<String>> res = new HashMap<>();
+
+        for (String uri : nutsUri) {
+        	
+        	Matcher matcher = nacePattern.matcher(uri);
+        	if (matcher.find()) {
+        		String country = matcher.group(1);
+        		
+        		CountryConfiguration cc = countryConfigurations.get(country);
+        		
+        		List<String> list = res.get(cc);
+                if (list == null) {
+                    list = new ArrayList<>();
+                    res.put(cc, list);
+                }
+                
+                list.add(uri);
+        	}
+        }
+        
+        return res;
+    }
+    
+    public Map<CountryConfiguration, List<String>> getEndpointsByNuts() {
+        Map<CountryConfiguration, List<String>> res = new HashMap<>();
+        for (CountryConfiguration cc : countryConfigurations.values()) {
+       		res.put(cc, null);
+        }
+        return res;
+    }
+    
     public String getNextNutsLevel(String parentNode) {
         String sparql = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
                         "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
                         "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>"+
                         "SELECT ?code ?label WHERE { ";
         
+        String countries = "";
+        for (String c : countryConfigurations.keySet()) {
+        	countries += "\"" + c + "\" ";
+        }
+        
         if (parentNode == null) {
             sparql += "?code <https://lod.stirdata.eu/nuts/ont/level> 0 . "+
                       "?code <http://www.w3.org/2004/02/skos/core#notation> ?notation ."+
-                      "VALUES ?notation { " +
-                        "\"NO\" \"BE\" \"CZ\" \"EL\"}";
+                      "VALUES ?notation { " + countries + " }";
         } else {
             sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parentNode + "> " +  ". ";
         }
@@ -38,7 +111,7 @@ public class NutsService {
         sparql += " ?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label }";
 
         String json;
-        try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsSparqlEndpoint.getSparqlEndpoint(), sparql)) {
+        try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsEndpointEU.getSparqlEndpoint(), sparql)) {
             ResultSet rs = qe.execSelect();
             ByteArrayOutputStream outStream = new ByteArrayOutputStream();
             ResultSetFormatter.outputAsJSON(outStream, rs);
@@ -48,11 +121,11 @@ public class NutsService {
     }
 
     public String getTopLevelNuts(String uri) {
-        String sparql = "SELECT ?nuts0 WHERE {\n" +
-                "<" +  uri + ">" + "<http://www.w3.org/2004/02/skos/core#broader>* ?nuts0 .\n" +
-                "?nuts0 <https://lod.stirdata.eu/nuts/ont/level> 0 .\n" +
+        String sparql = "SELECT ?nuts0 WHERE {" +
+                "<" +  uri + ">" + "<http://www.w3.org/2004/02/skos/core#broader>* ?nuts0 . " +
+                "?nuts0 <https://lod.stirdata.eu/nuts/ont/level> 0 ." +
                 "} ";
-        try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsSparqlEndpoint.getSparqlEndpoint(), sparql)) {
+        try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsEndpointEU.getSparqlEndpoint(), sparql)) {
             ResultSet rs = qe.execSelect();
             while (rs.hasNext()) {
                 QuerySolution sol = rs.next();
@@ -91,7 +164,7 @@ public class NutsService {
     		return res;
     	}
     	
-    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsSparqlEndpoint.getSparqlEndpoint(), sparql)) {
+    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsEndpointEU.getSparqlEndpoint(), sparql)) {
             ResultSet rs = qe.execSelect();
             while (rs.hasNext()) {
                 QuerySolution sol = rs.next();

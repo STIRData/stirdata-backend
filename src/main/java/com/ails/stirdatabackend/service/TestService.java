@@ -1,5 +1,6 @@
 package com.ails.stirdatabackend.service;
 
+import com.ails.stirdatabackend.configuration.CountryConfiguration;
 import com.ails.stirdatabackend.model.SparqlEndpoint;
 import org.apache.jena.query.*;
 import org.apache.jena.sparql.resultset.ResultsFormat;
@@ -12,27 +13,33 @@ import java.io.StringWriter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.net.IDN;
 
 @Service
 public class TestService {
 
-    @Autowired
-    @Qualifier("czechia-sparql-endpoint")
-    private SparqlEndpoint czechiaSparqlEndpoint;
+//    @Autowired
+//    @Qualifier("czechia-sparql-endpoint")
+//    private SparqlEndpoint czechiaSparqlEndpoint;
+//
+//    @Autowired
+//    @Qualifier("belgium-sparql-endpoint")
+//    private SparqlEndpoint belgiumSparqlEndpoint;
+//
+//    @Autowired
+//    @Qualifier("greece-sparql-endpoint")
+//    private SparqlEndpoint greeceSparqlEndpoint;
+
 
     @Autowired
-    @Qualifier("belgium-sparql-endpoint")
-    private SparqlEndpoint belgiumSparqlEndpoint;
-
-    @Autowired
-    @Qualifier("greece-sparql-endpoint")
-    private SparqlEndpoint greeceSparqlEndpoint;
-
+    @Qualifier("country-configurations")
+    private Map<String, CountryConfiguration> countryConfigurations;
+    
     public List<String> testSparqlQueryCzech() {
         String sparql = "SELECT * WHERE {?p ?q ?r } LIMIT 10";
         List<String> prop = new ArrayList<>();
-        try (QueryExecution qe = QueryExecutionFactory.sparqlService(IDN.toASCII(czechiaSparqlEndpoint.getSparqlEndpoint()), sparql)) {
+        try (QueryExecution qe = QueryExecutionFactory.sparqlService(countryConfigurations.get("CZ").getDataEndpoint().getSparqlEndpoint(), sparql)) {
             ResultSet rs = qe.execSelect();
             while (rs.hasNext()) {
                 QuerySolution sol = rs.next();
@@ -47,7 +54,7 @@ public class TestService {
         List<String> prop = new ArrayList<>();
         String json;
         StringWriter sw = new StringWriter();
-        try (QueryExecution qe = QueryExecutionFactory.sparqlService(belgiumSparqlEndpoint.getSparqlEndpoint(), sparql)) {
+        try (QueryExecution qe = QueryExecutionFactory.sparqlService(countryConfigurations.get("BE").getDataEndpoint().getSparqlEndpoint(), sparql)) {
 
             ResultSet rs = qe.execSelect();
             ByteArrayOutputStream outStream = new ByteArrayOutputStream();
@@ -63,7 +70,7 @@ public class TestService {
         List<String> prop = new ArrayList<>();
         String json;
         StringWriter sw = new StringWriter();
-        try (QueryExecution qe = QueryExecutionFactory.sparqlService(greeceSparqlEndpoint.getSparqlEndpoint(), sparql)) {
+        try (QueryExecution qe = QueryExecutionFactory.sparqlService(countryConfigurations.get("EL").getDataEndpoint().getSparqlEndpoint(), sparql)) {
 
             ResultSet rs = qe.execSelect();
             ByteArrayOutputStream outStream = new ByteArrayOutputStream();

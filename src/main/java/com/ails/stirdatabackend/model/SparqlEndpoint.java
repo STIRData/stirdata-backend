@@ -1,5 +1,7 @@
 package com.ails.stirdatabackend.model;
 
+import com.ails.stirdatabackend.configuration.Dimension;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -9,8 +11,9 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SparqlEndpoint {
 
-    private String name;
+    private String country;
+    private Dimension dimension;
+    
     private String sparqlEndpoint;
-    private String topLevelNuts;
 
 }
