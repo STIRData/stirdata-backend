@@ -303,4 +303,40 @@ public class NaceService {
     	
     	return res;
     }
+    
+    public Set<String> getUKNaceLeaves(String uri, HttpClient httpClient) {
+    	Set<String> res = new HashSet<>();
+
+    	int level = getNaceLevel(uri);
+    	if (level < 0) {
+    		return res;
+    	}
+
+    	String sparql = "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> " +
+                "SELECT ?activity WHERE { ";
+		if (level == 1) {
+			sparql += "?activity skos:broader/skos:exactMatch/skos:broader/skos:broader/skos:broader <" + uri + "> . "; 
+		} else if (level == 2) {
+			sparql += "?activity skos:broader/skos:exactMatch/skos:broader/skos:broader <" + uri + "> . "; 
+		} else if (level == 3) {
+			sparql += "?activity skos:broader/skos:exactMatch/skos:broader <" + uri + "> . "; 
+		} else if (level == 4) {
+			sparql += "?activity skos:broader/skos:exactMatch <" + uri + "> . "; 
+    	}
+    	
+		sparql += " ?activity <https://lod.stirdata.eu/nace/ont/level> 5 . " +
+		          " ?activity skos:inScheme <https://lod.stirdata.eu/nace/scheme/SIC2007UK> } ";
+
+    	
+    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(countryConfigurations.get("UK").getNaceEndpoint().getSparqlEndpoint(), sparql, httpClient)) {
+            ResultSet rs = qe.execSelect();
+            while (rs.hasNext()) {
+                QuerySolution sol = rs.next();
+                res.add(sol.get("activity").asResource().toString());
+            }
+        }
+    	
+    	return res;
+
+    }
 }
