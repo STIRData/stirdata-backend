@@ -103,6 +103,8 @@ public class NaceService {
         sparql += "?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label " +
                   "FILTER (lang(?label) = \"" + language + "\") }";
 
+//        System.out.println(QueryFactory.create(sparql));
+        
         String json;
         try (QueryExecution qe = QueryExecutionFactory.sparqlService(naceEndpointEU.getSparqlEndpoint(), sparql)) {
             ResultSet rs = qe.execSelect();
