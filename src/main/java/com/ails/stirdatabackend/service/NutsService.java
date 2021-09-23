@@ -108,7 +108,7 @@ public class NutsService {
             sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parentNode + "> " +  ". ";
         }
         
-        sparql += " ?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label }";
+        sparql += " ?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label } ORDER BY ?code";
 
         String json;
         try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsEndpointEU.getSparqlEndpoint(), sparql)) {
