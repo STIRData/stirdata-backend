@@ -24,12 +24,13 @@ public class User {
         private String password;
         private String firstName;
         private String lastName;
+        private UserType userType;
 
         public User(CreateNewUserRequest request) {
                 this.email = request.getEmail();
                 this.firstName = request.getFirstName();
                 this.lastName = request.getLastName();
-
+                this.userType = UserType.USER;
         }
 
 }
