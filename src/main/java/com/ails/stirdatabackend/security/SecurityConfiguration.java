@@ -1,7 +1,7 @@
 package com.ails.stirdatabackend.security;
 
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+//import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 
-@EnableWebSecurity
+//@EnableWebSecurity
 public class SecurityConfiguration {
 }
