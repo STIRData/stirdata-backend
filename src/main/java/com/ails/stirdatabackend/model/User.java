@@ -1,6 +1,7 @@
 package com.ails.stirdatabackend.model;
 
 
+import com.ails.stirdatabackend.payload.CreateNewUserRequest;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,9 +19,17 @@ public class User {
 
         @Id
         private ObjectId id;
+
         private String email;
         private String password;
         private String firstName;
         private String lastName;
+
+        public User(CreateNewUserRequest request) {
+                this.email = request.getEmail();
+                this.firstName = request.getFirstName();
+                this.lastName = request.getLastName();
+
+        }
 
 }
