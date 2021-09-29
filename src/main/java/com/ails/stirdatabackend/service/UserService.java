@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import static java.lang.String.format;
 
 @Service
-public class UserService implements UserDetailsService {
+public class UserService {
 
     @Autowired
     private UserRepository userRepository;
