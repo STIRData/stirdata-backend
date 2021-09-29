@@ -16,7 +16,6 @@ import javax.xml.bind.ValidationException;
 @CrossOrigin
 @RestController
 @RequestMapping("/api/users")
-@Validated
 public class UserController {
 
     @Autowired
