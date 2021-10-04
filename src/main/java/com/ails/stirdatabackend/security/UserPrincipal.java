@@ -4,6 +4,7 @@ import com.ails.stirdatabackend.model.User;
 import com.ails.stirdatabackend.model.UserType;
 import lombok.Getter;
 import lombok.Setter;
+import org.bson.types.ObjectId;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,6 +17,7 @@ import java.util.List;
 @Setter
 public class UserPrincipal implements UserDetails {
 
+    private ObjectId id;
     private String email;
     private String password;
     private UserType userType;
@@ -56,6 +58,7 @@ public class UserPrincipal implements UserDetails {
     }
 
     public UserPrincipal(User user) {
+        this.id = user.getId();
         this.email = user.getEmail();
         this.password = user.getPassword();
         this.userType = user.getUserType();
