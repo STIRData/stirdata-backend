@@ -62,6 +62,5 @@ public class UserPrincipal implements UserDetails {
         this.email = user.getEmail();
         this.password = user.getPassword();
         this.userType = user.getUserType();
-
     }
 }
