@@ -31,9 +31,8 @@ public class NutsController {
 
     @GetMapping("/getGeoJson")
     public ResponseEntity<?> getNutsGeoJSON(@RequestParam @NotNull String nutsUri,
-                                            @RequestParam(required = false, defaultValue = "1000000") String spatialResolution) {
-        String res;
-        res = nutsService.getNutsGeoJson(nutsUri, spatialResolution);
+                                            @RequestParam(required = false, defaultValue = "1:1000000") String spatialResolution) {
+        final String res = nutsService.getNutsGeoJson(nutsUri, spatialResolution);
         return ResponseEntity.ok(res);
     }
 

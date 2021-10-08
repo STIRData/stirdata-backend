@@ -37,7 +37,7 @@ public class NutsService {
     @Autowired
     private URIMapper uriMapper;
 
-    private static Pattern nacePattern = Pattern.compile("^https://lod\\.stirdata\\.eu/nuts/code/([A-Z][A-Z])");
+    private final static Pattern nacePattern = Pattern.compile("^https://lod\\.stirdata\\.eu/nuts/code/([A-Z][A-Z])");
     
     
     public List<String> getNuts3Uris(CountryConfiguration cc, List<String> requestMap) {
@@ -179,26 +179,21 @@ public class NutsService {
     }
 
     public String getNutsGeoJson(String nutsUri, String spatialResolution) {
-        String sparql = "construct {\n" +
-                "<"+nutsUri+"> "+"<http://www.opengis.net/ont/geosparql#hasGeometry> ?o .\n" +
-                "?o <http://www.opengis.net/ont/geosparql#asGeoJSON> ?o2 .\n" +
-                "<"+nutsUri+"> " + "<http://www.opengis.net/ont/geosparql#contains> ?o1\n" +
-                "\n" +
-                "\n" +
-                "}  where {\n" +
-                "<"+nutsUri+"> "+ " <http://www.opengis.net/ont/geosparql#hasGeometry> ?o.\n" +
-                "?o <http://www.opengis.net/ont/geosparql#hasSpatialResolution> \"1:10000000\" .\n" +
-                "?o <http://www.opengis.net/ont/geosparql#asGeoJSON> ?o2 .\n" +
-                "OPTIONAL { " + "<"+nutsUri+"> "+ "<http://www.opengis.net/ont/geosparql#contains> ?o1} \n" +
-                "}";
-        System.out.println(sparql);
+        final String sparql = "construct {\n"
+                + "<" + nutsUri+ "> " + "<http://www.opengis.net/ont/geosparql#hasGeometry> ?o .\n"
+                + "?o <http://www.opengis.net/ont/geosparql#asGeoJSON> ?o2 .\n"
+                + "<" + nutsUri + "> " + "<http://www.opengis.net/ont/geosparql#contains> ?o1\n"
+                + "\n"
+                + "}  where {\n"
+                + "<" + nutsUri + "> " + " <http://www.opengis.net/ont/geosparql#hasGeometry> ?o.\n"
+                + "?o <http://www.opengis.net/ont/geosparql#hasSpatialResolution> \"" + spatialResolution + "\" .\n"
+                + "?o <http://www.opengis.net/ont/geosparql#asGeoJSON> ?o2 .\n"
+                + "OPTIONAL { " + "<" + nutsUri + "> " + "<http://www.opengis.net/ont/geosparql#contains> ?o1} \n"
+                + "}";
         String res;
         try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsEndpointEU.getSparqlEndpoint(), sparql)) {
-            Model m = qe.execConstruct();
-            if (m.isEmpty()) {
-                System.out.println("empty model");
-            }
-            ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+            final Model m = qe.execConstruct();
+            final ByteArrayOutputStream outStream = new ByteArrayOutputStream();
             RDFDataMgr.write(outStream, m, RDFFormat.JSONLD);
             res = outStream.toString();
         }
