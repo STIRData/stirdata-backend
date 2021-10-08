@@ -4,6 +4,7 @@ import com.ails.stirdatabackend.configuration.CountryConfiguration;
 import com.ails.stirdatabackend.model.SparqlEndpoint;
 import com.ails.stirdatabackend.utils.URIMapper;
 
+import edu.ntua.isci.ac.lod.vocabularies.GeoSparqlVocabulary;
 import org.apache.jena.query.*;
 
 import org.apache.jena.rdf.model.Model;
@@ -180,15 +181,15 @@ public class NutsService {
 
     public String getNutsGeoJson(String nutsUri, String spatialResolution) {
         final String sparql = "construct {\n"
-                + "<" + nutsUri+ "> " + "<http://www.opengis.net/ont/geosparql#hasGeometry> ?o .\n"
-                + "?o <http://www.opengis.net/ont/geosparql#asGeoJSON> ?o2 .\n"
-                + "<" + nutsUri + "> " + "<http://www.opengis.net/ont/geosparql#contains> ?o1\n"
+                + "<" + nutsUri+ "> <" + GeoSparqlVocabulary.hasGeometry + "> ?o .\n"
+                + "?o <" + GeoSparqlVocabulary.asGeoJSON + "> ?o2 .\n"
+                + "<" + nutsUri + "> <" + GeoSparqlVocabulary.contains + "> ?o1\n"
                 + "\n"
                 + "}  where {\n"
-                + "<" + nutsUri + "> " + " <http://www.opengis.net/ont/geosparql#hasGeometry> ?o.\n"
-                + "?o <http://www.opengis.net/ont/geosparql#hasSpatialResolution> \"" + spatialResolution + "\" .\n"
-                + "?o <http://www.opengis.net/ont/geosparql#asGeoJSON> ?o2 .\n"
-                + "OPTIONAL { " + "<" + nutsUri + "> " + "<http://www.opengis.net/ont/geosparql#contains> ?o1} \n"
+                + "<" + nutsUri + "> <" + GeoSparqlVocabulary.hasGeometry + "> ?o.\n"
+                + "?o <" + GeoSparqlVocabulary.hasSpatialResolution + "> \"" + spatialResolution + "\" .\n"
+                + "?o <" + GeoSparqlVocabulary.asGeoJSON + "> ?o2 .\n"
+                + "OPTIONAL { <" + nutsUri + "> <" + GeoSparqlVocabulary.contains + "> ?o1} \n"
                 + "}";
         String res;
         try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsEndpointEU.getSparqlEndpoint(), sparql)) {
