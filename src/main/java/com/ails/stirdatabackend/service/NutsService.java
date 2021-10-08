@@ -4,9 +4,7 @@ import com.ails.stirdatabackend.configuration.CountryConfiguration;
 import com.ails.stirdatabackend.model.SparqlEndpoint;
 import com.ails.stirdatabackend.utils.URIMapper;
 
-import edu.ntua.isci.ac.lod.vocabularies.GeoSparqlVocabulary;
 import org.apache.jena.query.*;
-
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFFormat;
@@ -15,6 +13,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -180,17 +179,28 @@ public class NutsService {
     }
 
     public String getNutsGeoJson(String nutsUri, String spatialResolution) {
-        final String sparql = "construct {\n"
-                + "<" + nutsUri+ "> <" + GeoSparqlVocabulary.hasGeometry + "> ?o .\n"
-                + "?o <" + GeoSparqlVocabulary.asGeoJSON + "> ?o2 .\n"
-                + "<" + nutsUri + "> <" + GeoSparqlVocabulary.contains + "> ?o1\n"
-                + "\n"
-                + "}  where {\n"
-                + "<" + nutsUri + "> <" + GeoSparqlVocabulary.hasGeometry + "> ?o.\n"
-                + "?o <" + GeoSparqlVocabulary.hasSpatialResolution + "> \"" + spatialResolution + "\" .\n"
-                + "?o <" + GeoSparqlVocabulary.asGeoJSON + "> ?o2 .\n"
-                + "OPTIONAL { <" + nutsUri + "> <" + GeoSparqlVocabulary.contains + "> ?o1} \n"
-                + "}";
+//        final String sparql = "construct {\n"
+//                + "<" + nutsUri+ "> <" + GeoSparqlVocabulary.hasGeometry + "> ?o .\n"
+//                + "?o <" + GeoSparqlVocabulary.asGeoJSON + "> ?o2 .\n"
+//                + "<" + nutsUri + "> <" + GeoSparqlVocabulary.contains + "> ?o1\n"
+//                + "\n"
+//                + "}  where {\n"
+//                + "<" + nutsUri + "> <" + GeoSparqlVocabulary.hasGeometry + "> ?o.\n"
+//                + "?o <" + GeoSparqlVocabulary.hasSpatialResolution + "> \"" + spatialResolution + "\" .\n"
+//                + "?o <" + GeoSparqlVocabulary.asGeoJSON + "> ?o2 .\n"
+//                + "OPTIONAL { <" + nutsUri + "> <" + GeoSparqlVocabulary.contains + "> ?o1} \n"
+//                + "}";
+        final String sparql =
+            "construct {"
+            + " <" + nutsUri + "> <http://www.opengis.net/ont/geosparql#hasGeometry> ?o . "
+            + "?o <http://www.opengis.net/ont/geosparql#asGeoJSON> ?o2 . "
+            + " <" + nutsUri + "> <http://www.opengis.net/ont/geosparql#contains> ?o1 . "
+            + "} where {"
+            + " <" + nutsUri + "> <http://www.opengis.net/ont/geosparql#hasGeometry> ?o . "
+            + "?o <http://www.opengis.net/ont/geosparql#hasSpatialResolution> \"" + spatialResolution + "\" . "
+            + "?o <http://www.opengis.net/ont/geosparql#asGeoJSON> ?o2 . "
+            + "OPTIONAL { <" + nutsUri + "> <http://www.opengis.net/ont/geosparql#contains> ?o1} . "
+            + "}";
         String res;
         try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsEndpointEU.getSparqlEndpoint(), sparql)) {
             final Model m = qe.execConstruct();
