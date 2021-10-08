@@ -6,6 +6,9 @@ import com.ails.stirdatabackend.utils.URIMapper;
 
 import org.apache.jena.query.*;
 
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.riot.RDFFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -175,5 +178,32 @@ public class NutsService {
     	return res;
     }
 
+    public String getNutsGeoJson(String nutsUri, String spatialResolution) {
+        String sparql = "construct {\n" +
+                "<"+nutsUri+"> "+"<http://www.opengis.net/ont/geosparql#hasGeometry> ?o .\n" +
+                "?o <http://www.opengis.net/ont/geosparql#asGeoJSON> ?o2 .\n" +
+                "<"+nutsUri+"> " + "<http://www.opengis.net/ont/geosparql#contains> ?o1\n" +
+                "\n" +
+                "\n" +
+                "}  where {\n" +
+                "<"+nutsUri+"> "+ " <http://www.opengis.net/ont/geosparql#hasGeometry> ?o.\n" +
+                "?o <http://www.opengis.net/ont/geosparql#hasSpatialResolution> \"1:10000000\" .\n" +
+                "?o <http://www.opengis.net/ont/geosparql#asGeoJSON> ?o2 .\n" +
+                "OPTIONAL { " + "<"+nutsUri+"> "+ "<http://www.opengis.net/ont/geosparql#contains> ?o1} \n" +
+                "}";
+        System.out.println(sparql);
+        String res;
+        try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsEndpointEU.getSparqlEndpoint(), sparql)) {
+            Model m = qe.execConstruct();
+            if (m.isEmpty()) {
+                System.out.println("empty model");
+            }
+            ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+            RDFDataMgr.write(outStream, m, RDFFormat.JSONLD);
+            res = outStream.toString();
+        }
+
+        return res;
+    }
 
 }
