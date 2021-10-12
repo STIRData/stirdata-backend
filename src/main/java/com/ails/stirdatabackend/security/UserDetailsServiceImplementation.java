@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
-public class CustomUserDetailsService implements UserDetailsService {
+public class UserDetailsServiceImplementation implements UserDetailsService {
 
     @Autowired
     private UserRepository userRepository;
