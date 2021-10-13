@@ -17,15 +17,16 @@ public class OAuthController {
     @PostMapping("/authorize/{provider}")
     public ResponseEntity<?> authorize (
             @PathVariable String provider, @RequestBody OAuthRequest oauthRequest) {
-        String jwt = "";
+
         if (provider.equals("google")) {
-            jwt = oAuthService.googleOauthVerify(oauthRequest.getToken());
+            final String jwt = oAuthService.googleOauthVerify(oauthRequest.getToken());
+            return  ResponseEntity.status(HttpStatus.OK).body(new OAuthResponse(jwt));
 
+        } else if (provider.equals("solid")) {
+            return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
+
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(null);
         }
-        else if (provider.equals("solid")) {
-
-        }
-
-        return  ResponseEntity.status(HttpStatus.OK).body(new OAuthResponse(jwt));
     }
 }
