@@ -1,6 +1,7 @@
 package com.ails.stirdatabackend.security;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -26,6 +27,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Autowired
     private JwtAuthenticationEntryPoint securityExceptionHandler;
 
+    @Value("${app.http.cors.max-age}")
+    private long corsMaxAgeSeconds;
+
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -43,14 +47,11 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                     .and();
 
         http.authorizeRequests()
-                .antMatchers("/").permitAll()
-                .antMatchers("/api/nuts").hasAnyAuthority("USER");
+                .antMatchers("/").permitAll();
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     }
-
-    private static final long MAX_AGE_SECS = 3600;
 
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
@@ -58,7 +59,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         configuration.setAllowedOrigins(Arrays.asList("*"));
         configuration.setAllowedMethods(Arrays.asList("HEAD", "OPTIONS", "GET", "POST", "PUT", "PATCH", "DELETE"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setMaxAge(MAX_AGE_SECS);
+        configuration.setMaxAge(corsMaxAgeSeconds);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

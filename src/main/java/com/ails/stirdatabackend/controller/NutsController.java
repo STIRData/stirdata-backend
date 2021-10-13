@@ -28,11 +28,5 @@ public class NutsController {
         return ResponseEntity.ok(res);
     }
 
-    @PostMapping
-    public ResponseEntity<?> getNuts(@AuthenticationPrincipal UserPrincipal userPrincipal) {
-        return ResponseEntity.ok(userPrincipal.getEmail());
-    }
-
-
 
 }
