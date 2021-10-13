@@ -1,8 +1,10 @@
 package com.ails.stirdatabackend.controller;
 
+import com.ails.stirdatabackend.security.UserPrincipal;
 import com.ails.stirdatabackend.service.NutsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
@@ -25,5 +27,12 @@ public class NutsController {
         }
         return ResponseEntity.ok(res);
     }
+
+    @PostMapping
+    public ResponseEntity<?> getNuts(@AuthenticationPrincipal UserPrincipal userPrincipal) {
+        return ResponseEntity.ok(userPrincipal.getEmail());
+    }
+
+
 
 }

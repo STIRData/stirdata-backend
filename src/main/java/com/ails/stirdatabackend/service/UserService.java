@@ -29,6 +29,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
 //     checks if user exists, creates new user, calls repository to save it.
+    @Deprecated
     @Transactional
     public void createNewUser(CreateNewUserRequest request) throws ValidationException {
         if(userRepository.findByEmail(request.getEmail()).isPresent()) {

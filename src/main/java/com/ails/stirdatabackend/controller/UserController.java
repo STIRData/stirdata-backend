@@ -20,6 +20,7 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    @Deprecated
     @PostMapping
     public ResponseEntity createNewUser(@RequestBody @Valid CreateNewUserRequest newUserRequest) {
         try {
