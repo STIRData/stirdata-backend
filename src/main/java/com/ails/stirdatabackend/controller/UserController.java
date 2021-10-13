@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import javax.xml.bind.ValidationException;
 
-@CrossOrigin
 @RestController
 @RequestMapping("/api/users")
 public class UserController {

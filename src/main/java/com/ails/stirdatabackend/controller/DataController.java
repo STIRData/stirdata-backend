@@ -20,7 +20,6 @@ import com.ails.stirdatabackend.model.SparqlEndpoint;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.Element;
 
-@CrossOrigin
 @RestController
 @RequestMapping("/api/data")
 public class DataController {
