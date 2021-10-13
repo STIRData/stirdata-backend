@@ -14,7 +14,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 
-@EnableWebSecurity
+@EnableWebSecurity()
 @EnableGlobalMethodSecurity(
         securedEnabled = true
 )
@@ -35,10 +35,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         http = http.cors().and().csrf().disable();
 
         http = http
-                .formLogin().usernameParameter("email").and()
                 .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and();
+                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                    .and()
+                .exceptionHandling()
+                    .authenticationEntryPoint(securityExceptionHandler)
+                    .and();
 
         http.authorizeRequests()
                 .antMatchers("/").permitAll();
@@ -47,7 +49,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     }
 
-    private final long MAX_AGE_SECS = 3600;
+    private static final long MAX_AGE_SECS = 3600;
 
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
