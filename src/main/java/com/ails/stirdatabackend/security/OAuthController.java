@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/oauth")
+@RequestMapping("/api/oauth")
 public class OAuthController {
 
     @Autowired
