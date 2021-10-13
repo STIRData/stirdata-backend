@@ -2,12 +2,9 @@ package com.ails.stirdatabackend.security;
 
 import com.ails.stirdatabackend.model.User;
 import com.ails.stirdatabackend.payload.GoogleAPIResponse;
-import com.ails.stirdatabackend.repository.UserRepository;
 import com.ails.stirdatabackend.service.UserService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.jena.vocabulary.OA;
-import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -19,18 +16,19 @@ public class OAuthService {
     private UserService userService;
     private RestTemplate restTemplate;
 
+    @Value("${app.oauth.google.url.userinfo}")
+    private String googleUrl;
+
     @Autowired
     private JwtTokenProvider tokenProvider;
 
-    public OAuthService (RestTemplateBuilder restTemplateBuilder) {
+    public OAuthService(RestTemplateBuilder restTemplateBuilder) {
         this.restTemplate = restTemplateBuilder.build();
     }
 
     public String googleOauthVerify(String token) {
-        String url = "https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=" + token;
-        System.out.println(url);
+        String url =  googleUrl + "?id_token=" + token;
         GoogleAPIResponse jsonResponse = restTemplate.getForObject(url, GoogleAPIResponse.class);
-        System.out.printf(jsonResponse.getEmail());
 
         User u = userService.checkAndCreateNewUser(jsonResponse);
         String jwt = tokenProvider.generateToken(u.getId().toString());
