@@ -1,7 +1,6 @@
 package com.ails.stirdatabackend.model;
 
 import com.ails.stirdatabackend.configuration.Dimension;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;

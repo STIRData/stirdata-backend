@@ -1,7 +1,7 @@
 package com.ails.stirdatabackend.security;
 
-import com.ails.stirdatabackend.payload.OAuthResponse;
 import com.ails.stirdatabackend.payload.OAuthRequest;
+import com.ails.stirdatabackend.payload.OAuthResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

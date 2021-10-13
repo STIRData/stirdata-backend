@@ -1,11 +1,6 @@
 package com.ails.stirdatabackend.model;
 
-import com.ails.stirdatabackend.service.NutsService;
 import lombok.NoArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 
 @NoArgsConstructor
 public class EndpointManager {

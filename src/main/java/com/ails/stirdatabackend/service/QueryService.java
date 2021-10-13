@@ -3,7 +3,6 @@ package com.ails.stirdatabackend.service;
 import com.ails.stirdatabackend.configuration.CountryConfiguration;
 import com.ails.stirdatabackend.payload.EndpointResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.Model;

@@ -3,20 +3,13 @@ package com.ails.stirdatabackend.service;
 import com.ails.stirdatabackend.configuration.CountryConfiguration;
 import com.ails.stirdatabackend.model.SparqlEndpoint;
 import com.ails.stirdatabackend.utils.URIMapper;
-
 import org.apache.jena.query.*;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
