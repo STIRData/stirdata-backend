@@ -2,13 +2,9 @@ package com.ails.stirdatabackend.service;
 
 import com.ails.stirdatabackend.model.User;
 import com.ails.stirdatabackend.payload.CreateNewUserRequest;
-import com.ails.stirdatabackend.payload.GoogleAPIResponse;
+import com.ails.stirdatabackend.payload.UserDTO;
 import com.ails.stirdatabackend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -42,7 +38,7 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public User checkAndCreateNewUser(GoogleAPIResponse request) {
+    public User checkAndCreateNewUser(UserDTO request) {
         Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
         if (userOpt.isPresent()) {
             return userOpt.get();

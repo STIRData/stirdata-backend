@@ -7,7 +7,7 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class GoogleAPIResponse {
+public class UserDTO {
 
     private String given_name;
     private String family_name;
