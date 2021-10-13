@@ -20,15 +20,4 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @Deprecated
-    @PostMapping
-    public ResponseEntity createNewUser(@RequestBody @Valid CreateNewUserRequest newUserRequest) {
-        try {
-            userService.createNewUser(newUserRequest);
-            return ResponseEntity.ok(null);
-        }
-        catch (ValidationException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
-    }
 }

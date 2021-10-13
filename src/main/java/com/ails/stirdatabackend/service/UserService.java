@@ -24,19 +24,6 @@ public class UserService {
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-//     checks if user exists, creates new user, calls repository to save it.
-    @Deprecated
-    @Transactional
-    public void createNewUser(CreateNewUserRequest request) throws ValidationException {
-        if(userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new ValidationException("An account for this e-mail already exists.");
-        }
-
-        final User user = new User(request);
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-
-        userRepository.save(user);
-    }
 
     public User checkAndCreateNewUser(UserDTO request) {
         Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
