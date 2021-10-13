@@ -3,7 +3,6 @@ package com.ails.stirdatabackend.service;
 import com.ails.stirdatabackend.configuration.CountryConfiguration;
 import com.ails.stirdatabackend.model.SparqlEndpoint;
 import com.ails.stirdatabackend.utils.URIMapper;
-
 import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.riot.RDFDataMgr;
@@ -13,6 +12,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.util.*;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;

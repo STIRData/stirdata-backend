@@ -1,10 +1,9 @@
 package com.ails.stirdatabackend.configuration;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
+import com.ails.stirdatabackend.controller.URIDescriptor;
+import com.ails.stirdatabackend.model.SparqlEndpoint;
+import net.sf.ehcache.Cache;
+import net.sf.ehcache.CacheManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,11 +13,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.core.env.Environment;
 
-import com.ails.stirdatabackend.controller.URIDescriptor;
-import com.ails.stirdatabackend.model.SparqlEndpoint;
-
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 @Configuration
 public class ApplicationConfiguration {

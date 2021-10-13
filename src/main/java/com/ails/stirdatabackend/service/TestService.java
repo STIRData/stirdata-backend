@@ -1,7 +1,6 @@
 package com.ails.stirdatabackend.service;
 
 import com.ails.stirdatabackend.configuration.CountryConfiguration;
-import com.ails.stirdatabackend.model.SparqlEndpoint;
 import org.apache.jena.query.*;
 import org.apache.jena.sparql.resultset.ResultsFormat;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,11 +9,9 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.net.IDN;
 
 @Service
 public class TestService {

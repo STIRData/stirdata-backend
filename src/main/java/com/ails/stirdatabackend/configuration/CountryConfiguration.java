@@ -1,10 +1,8 @@
 package com.ails.stirdatabackend.configuration;
 
 import com.ails.stirdatabackend.model.SparqlEndpoint;
-
 import lombok.Getter;
 import lombok.Setter;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

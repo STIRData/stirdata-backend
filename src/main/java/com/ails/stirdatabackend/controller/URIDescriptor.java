@@ -1,10 +1,10 @@
 package com.ails.stirdatabackend.controller;
 
+import com.ails.stirdatabackend.model.SparqlEndpoint;
+
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import com.ails.stirdatabackend.model.SparqlEndpoint;
 
 public class URIDescriptor {
 
