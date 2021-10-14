@@ -1,7 +1,7 @@
 package com.ails.stirdatabackend.service;
 
 import com.ails.stirdatabackend.model.User;
-import com.ails.stirdatabackend.payload.UserDTO;
+import com.ails.stirdatabackend.payload.GoogleAccountUserInfoDTO;
 import com.ails.stirdatabackend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -19,7 +19,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
 
-    public User checkAndCreateNewUser(UserDTO request) {
+    public User checkAndCreateNewUser(GoogleAccountUserInfoDTO request) {
         Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
         if (userOpt.isPresent()) {
             return userOpt.get();

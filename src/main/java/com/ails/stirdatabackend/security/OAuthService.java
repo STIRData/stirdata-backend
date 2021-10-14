@@ -1,7 +1,7 @@
 package com.ails.stirdatabackend.security;
 
 import com.ails.stirdatabackend.model.User;
-import com.ails.stirdatabackend.payload.UserDTO;
+import com.ails.stirdatabackend.payload.GoogleAccountUserInfoDTO;
 import com.ails.stirdatabackend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,7 +28,7 @@ public class OAuthService {
 
     public String googleOauthVerify(String token) {
         String url =  googleUrl + "?id_token=" + token;
-        UserDTO jsonResponse = restTemplate.getForObject(url, UserDTO.class);
+        GoogleAccountUserInfoDTO jsonResponse = restTemplate.getForObject(url, GoogleAccountUserInfoDTO.class);
 
         User u = userService.checkAndCreateNewUser(jsonResponse);
         String jwt = tokenProvider.generateToken(u.getId().toString());

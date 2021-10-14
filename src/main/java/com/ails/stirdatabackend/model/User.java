@@ -1,7 +1,7 @@
 package com.ails.stirdatabackend.model;
 
 
-import com.ails.stirdatabackend.payload.UserDTO;
+import com.ails.stirdatabackend.payload.GoogleAccountUserInfoDTO;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,7 +26,7 @@ public class User {
         private UserType userType;
 
 
-        public User(UserDTO request) {
+        public User(GoogleAccountUserInfoDTO request) {
                 this.email = request.getEmail();
                 this.firstName = request.getGiven_name();
                 this.lastName = request.getFamily_name();
