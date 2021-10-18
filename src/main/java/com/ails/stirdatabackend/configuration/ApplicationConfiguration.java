@@ -47,13 +47,13 @@ public class ApplicationConfiguration {
 	@Bean(name = "nuts-geojson-cache")
 	public Cache getNutsGeojsonCache() {
 		CacheManager singletonManager = CacheManager.create();
-		if (!singletonManager.cacheExists("geojson-cache")) {
-			singletonManager.addCache(new Cache("geojson-cache", cacheSize, false, false, liveTime, liveTime));
+		if (!singletonManager.cacheExists("nuts-geojson-cache")) {
+			singletonManager.addCache(new Cache("nuts-geojson-cache", cacheSize, false, false, liveTime, liveTime));
 
-			logger.info("Created geojson cache.");
+			logger.info("Created nuts-geojson cache.");
 		}
 
-		return singletonManager.getCache("geojson-cache");
+		return singletonManager.getCache("nuts-geojson-cache");
 	}
 
 	@Bean(name = "prefixes")

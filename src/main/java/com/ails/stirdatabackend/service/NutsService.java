@@ -3,6 +3,7 @@ package com.ails.stirdatabackend.service;
 import com.ails.stirdatabackend.configuration.CountryConfiguration;
 import com.ails.stirdatabackend.model.SparqlEndpoint;
 import com.ails.stirdatabackend.utils.URIMapper;
+import net.sf.ehcache.Cache;
 import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.riot.RDFDataMgr;
