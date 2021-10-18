@@ -43,7 +43,19 @@ public class ApplicationConfiguration {
 	    
 	    return singletonManager.getCache("labels");
 	}
-	
+
+	@Bean(name = "nuts-geojson-cache")
+	public Cache getNutsGeojsonCache() {
+		CacheManager singletonManager = CacheManager.create();
+		if (!singletonManager.cacheExists("geojson-cache")) {
+			singletonManager.addCache(new Cache("geojson-cache", cacheSize, false, false, liveTime, liveTime));
+
+			logger.info("Created geojson cache.");
+		}
+
+		return singletonManager.getCache("geojson-cache");
+	}
+
 	@Bean(name = "prefixes")
 	@DependsOn({ "endpoint-nace-eu", "endpoint-nuts-eu" })
 	public Set<URIDescriptor> getURIDesriptors() {
