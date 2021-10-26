@@ -17,7 +17,7 @@ public class NaceController {
     @Autowired
     private NaceService naceService;
 
-    @GetMapping
+    @GetMapping(produces = "application/json")
     public ResponseEntity<?> getNace(@RequestParam(required = false) Optional<String> parent,
                                      @RequestParam(required = false) Optional<String> language) {
         String lang = language.orElse("en");

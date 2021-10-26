@@ -25,7 +25,7 @@ public class NutsController {
     @Qualifier("nuts-geojson-cache")
     private Cache geojsonCache;
 
-    @GetMapping
+    @GetMapping(produces = "application/json")
     public ResponseEntity<?> getNuts(@RequestParam(required = false) Optional<String> parent) {
         String res;
         if (parent.isPresent()) {
@@ -37,7 +37,8 @@ public class NutsController {
         return ResponseEntity.ok(res);
     }
 
-    @GetMapping("/getGeoJson")
+    @GetMapping(value = "/getGeoJson", 
+                produces = "application/json")
     public ResponseEntity<?> getNutsGeoJSON(@RequestParam @NotNull String nutsUri,
                                             @RequestParam(required = false, defaultValue = "1:1000000") String spatialResolution) {
         // Check if cached
