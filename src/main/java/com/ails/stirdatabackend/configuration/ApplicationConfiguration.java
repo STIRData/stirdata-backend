@@ -85,8 +85,22 @@ public class ApplicationConfiguration {
 
 		Map<String, CountryConfiguration> map = new HashMap<>();
 		
-		String defaultNaceEndpoint = env.getProperty("endpoint.nace.default");
-		String defaultNutsEndpoint = env.getProperty("endpoint.nuts.default");
+		String defaultNaceEndpoint = env.getProperty("endpoint.nace.00");
+		String defaultNutsEndpoint = env.getProperty("endpoint.nuts.00");
+
+	    String defaultEntitySparql = env.getProperty("sparql.entity.00");
+	    String defaultEntityNameSparql = env.getProperty("sparql.entityName.00");
+	    String defaultNuts3Sparql = env.getProperty("sparql.nuts3.00");
+	    String defaultNaceSparql = env.getProperty("sparql.nace.00");
+	    String defaultFoundingDateSparql = env.getProperty("sparql.foundingDate.00"); 
+
+		String defaultNacePath1 = env.getProperty("nace.path-1.00");
+		String defaultNacePath2 = env.getProperty("nace.path-2.00");
+		String defaultNacePath3 = env.getProperty("nace.path-3.00");
+		String defaultNacePath4 = env.getProperty("nace.path-4.00");
+		String defaultNaceFixedLevel = env.getProperty("nace.fixed-level.00");
+		
+		String defaultNutsPrefix = env.getProperty("nuts.prefix.00");
 
 		String[] cntr = countries.split(",");
 		
@@ -97,22 +111,49 @@ public class ApplicationConfiguration {
 			
 			String dataEndpoint = env.getProperty("endpoint.data." + c);
 			
-			String naceEndpoint = env.getProperty("endpoint.nace." + c);
-			String nutsEndpoint = env.getProperty("endpoint.nuts." + c);
-			
 			cc.setDataEndpoint(new SparqlEndpoint(c, Dimension.DATA, dataEndpoint));
-			
-			if (naceEndpoint != null) {
-				cc.setNaceEndpoint(new SparqlEndpoint(c, Dimension.NACE, naceEndpoint)); 
-			} else {
-				cc.setNaceEndpoint(new SparqlEndpoint(c, Dimension.NACE, defaultNaceEndpoint));
-			}
 
-			if (nutsEndpoint != null) {
-				cc.setNutsEndpoint(new SparqlEndpoint(c, Dimension.NUTS, nutsEndpoint)); 
-			} else {
-				cc.setNutsEndpoint(new SparqlEndpoint(c, Dimension.NUTS, defaultNutsEndpoint));
-			}
+			String naceEndpoint = env.getProperty("endpoint.nace." + c);
+			cc.setNaceEndpoint(new SparqlEndpoint(c, Dimension.NACE, naceEndpoint != null ? naceEndpoint : defaultNaceEndpoint)); 
+
+			String nutsEndpoint = env.getProperty("endpoint.nuts." + c);
+			cc.setNutsEndpoint(new SparqlEndpoint(c, Dimension.NUTS, nutsEndpoint != null ? nutsEndpoint : defaultNutsEndpoint)); 
+
+		    String entitySparql = env.getProperty("sparql.entity." + c);
+		    cc.setEntitySparql(entitySparql != null ? entitySparql : defaultEntitySparql);
+
+		    String naceScheme = env.getProperty("nace.scheme." + c);
+		    cc.setNaceScheme(naceScheme);
+
+		    String nacePath1 = env.getProperty("nace.path-1." + c);
+		    cc.setNacePath1(nacePath1 != null ? nacePath1 : defaultNacePath1);
+
+		    String nacePath2 = env.getProperty("nace.path-2." + c);
+		    cc.setNacePath2(nacePath2 != null ? nacePath2 : defaultNacePath2);
+		    
+		    String nacePath3 = env.getProperty("nace.path-3." + c);
+		    cc.setNacePath3(nacePath3 != null ? nacePath3 : defaultNacePath3);
+
+		    String nacePath4 = env.getProperty("nace.path-4." + c);
+		    cc.setNacePath4(nacePath4 != null ? nacePath4 : defaultNacePath4);
+
+		    String naceFixedLevel = env.getProperty("nace.fixed-level." + c);
+		    cc.setNaceFixedLevel(naceFixedLevel != null ? Integer.parseInt(naceFixedLevel) : Integer.parseInt(defaultNaceFixedLevel));
+		    
+		    String entityNameSparql = env.getProperty("sparql.entityName." + c);
+	    	cc.setEntityNameSparql(entityNameSparql != null ? entityNameSparql : defaultEntityNameSparql);	
+
+		    String nuts3Sparql = env.getProperty("sparql.nuts3." + c);
+	    	cc.setNuts3Sparql(nuts3Sparql != null ? nuts3Sparql : defaultNuts3Sparql);	
+
+		    String naceSparql = env.getProperty("sparql.nace." + c);
+	    	cc.setNaceSparql(naceSparql != null ? naceSparql : defaultNaceSparql);	
+
+		    String foundingDateSparql = env.getProperty("sparql.foundingDate." + c);
+	    	cc.setFoundingDateSparql(foundingDateSparql != null ? foundingDateSparql : defaultFoundingDateSparql);
+
+		    String nutsPrefix = env.getProperty("nuts.prefix." + c);
+		    cc.setNutsPrefix(nutsPrefix != null ? nutsPrefix : defaultNutsPrefix);	
 
 			map.put(c, cc);
 		}

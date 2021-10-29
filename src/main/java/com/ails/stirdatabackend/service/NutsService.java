@@ -2,8 +2,6 @@ package com.ails.stirdatabackend.service;
 
 import com.ails.stirdatabackend.configuration.CountryConfiguration;
 import com.ails.stirdatabackend.model.SparqlEndpoint;
-import com.ails.stirdatabackend.utils.URIMapper;
-import net.sf.ehcache.Cache;
 import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.riot.RDFDataMgr;
@@ -13,8 +11,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
-import java.util.*;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,26 +31,22 @@ public class NutsService {
     @Qualifier("country-configurations")
     private Map<String, CountryConfiguration> countryConfigurations;
 
-    @Autowired
-    private URIMapper uriMapper;
-
     private final static Pattern nacePattern = Pattern.compile("^https://lod\\.stirdata\\.eu/nuts/code/([A-Z][A-Z])");
     
-    
     public List<String> getNuts3Uris(CountryConfiguration cc, List<String> requestMap) {
+    	
+    	if (requestMap.contains(cc.getNutsPrefix() + cc.getCountry())) { // entire country, ignore nuts
+    		return null;
+    	}
     	
     	List<String> nuts3UrisList = null;
     	if (requestMap != null) {
             Set<String> nuts3Uris = new HashSet<>();
             for (String s : requestMap) {
-            	nuts3Uris.addAll(getNuts3Descendents(s));
+            	nuts3Uris.addAll(getNuts3Descendents(s, cc));
             }
 
             nuts3UrisList = new ArrayList<>(nuts3Uris);
-
-            nuts3UrisList = cc.getCountry().equals("CZ") ? 
-            		uriMapper.mapCzechNutsUri(nuts3UrisList) : uriMapper.mapEuropaNutsUri(nuts3UrisList);
-
     	}
     	
     	return nuts3UrisList;
@@ -139,7 +131,7 @@ public class NutsService {
         return null;
     }
     
-    public Set<String> getNuts3Descendents(String uri) {
+    public Set<String> getNuts3Descendents(String uri, CountryConfiguration cc) {
     	Set<String> res = new HashSet<>();
     	
     	int pos = uri.lastIndexOf("/");
@@ -164,7 +156,12 @@ public class NutsService {
 	                   "?nuts3 skos:broader <" + uri + "> . " +
 	                   "?nuts3 <https://lod.stirdata.eu/nuts/ont/level> 3 } ";
     	} else if (level == 3) {
-    		res.add(uri);
+            System.out.println(uri);
+
+    		//adjust prefix
+            String lastPart = uri.substring(uri.lastIndexOf('/') + 1);
+            res.add(cc.getNutsPrefix() + lastPart);
+            System.out.println(cc.getNutsPrefix() + lastPart);
     		return res;
     	}
     	
@@ -172,7 +169,14 @@ public class NutsService {
             ResultSet rs = qe.execSelect();
             while (rs.hasNext()) {
                 QuerySolution sol = rs.next();
-                res.add(sol.get("nuts3").asResource().toString());
+                String nuts = sol.get("nuts3").asResource().toString();
+                
+                System.out.println(nuts);
+                //adjust prefix
+                String lastPart = nuts.substring(nuts.lastIndexOf('/') + 1);
+                res.add(cc.getNutsPrefix() + lastPart);
+                
+                System.out.println(cc.getNutsPrefix() + lastPart);
             }
         }
     	

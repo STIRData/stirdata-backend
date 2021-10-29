@@ -40,23 +40,24 @@ public class QueryService {
     
     private String buildCoreQuery(CountryConfiguration cc, List<String> nuts3, List<String> nace, Optional<String> startDateOpt, Optional<String> endDateOpt) {
     
-        String sparql = 
+        String sparql = "";
 //        		  "SELECT ?organization WHERE { " +
 //                  "SELECT DISTINCT ?organization WHERE { " +
-                  " { " +
-                  "  ?organization a rov:RegisteredOrganization . " +
-                  "  ?organization rov:legalName ?organizationName . ";
+//                  " { ";
         
-        if (nuts3 != null) {                            
-            sparql += "  ?organization org:hasRegisteredSite ?registeredSite . " +
-                      "  ?registeredSite org:siteAddress ?address . ";
-
-			if (cc.getCountry().equals("CZ")) {
-                sparql += " ?address ebg:adminUnitL4 ?nuts3 . ";
-            } else {
-                sparql += " ?address <https://lod.stirdata.eu/model/nuts3> ?nuts3 . ";
-            }
-
+        sparql += cc.getEntitySparql() + " "; //          "  ?organization a rov:RegisteredOrganization . ?organization rov:legalName ?organizationName . ";
+        sparql += cc.getEntityNameSparql() + " ";
+        
+        if (nuts3 != null) {            
+//            sparql += "  ?organization org:hasRegisteredSite/org:siteAddress ?address . ";
+//
+//			if (cc.getCountry().equals("CZ")) {
+//                sparql += " ?address ebg:adminUnitL4 ?nuts3 . ";
+//            } else {
+//                sparql += " ?address <https://lod.stirdata.eu/model/nuts3> ?nuts3 . ";
+//            }
+        	sparql += cc.getNuts3Sparql() + " ";
+        	
             sparql += " VALUES ?nuts3 { ";
             for (String uri : nuts3) {
                 sparql += "<" + uri + "> ";
@@ -65,7 +66,8 @@ public class QueryService {
         }
         
         if (nace != null) {
-        	sparql += " ?organization rov:orgActivity ?nace . ";
+//        	sparql += " ?organization rov:orgActivity ?nace . ";
+        	sparql += cc.getNaceSparql() + " ";
         	
             sparql += " VALUES ?nace { ";
             for (String uri : nace) {
@@ -77,7 +79,8 @@ public class QueryService {
 
         // Date filter (if requested)
         if (startDateOpt.isPresent() || endDateOpt.isPresent()) {
-            sparql += "?organization schema:foundingDate ?foundingDate ";
+//            sparql += "?organization schema:foundingDate ?foundingDate ";
+            sparql += cc.getFoundingDateSparql() + " ";
 
             if (startDateOpt.isPresent() && !endDateOpt.isPresent()) {
                 String startDate = startDateOpt.get();
@@ -94,7 +97,7 @@ public class QueryService {
 
             }
         }
-        sparql += "} ";
+//        sparql += "} ";
         
         return sparql;
     }
@@ -122,27 +125,27 @@ public class QueryService {
 	        	List<String> countyNuts = ccEntry.getValue();
 	
 	            String prefix = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
-	                    "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "+
-	                    "PREFIX rov: <http://www.w3.org/ns/regorg#> " +
-	                    "PREFIX ebg: <http://data.businessgraph.io/ontology#> " +
-	                    "PREFIX org: <http://www.w3.org/ns/org#> " +
-	                    "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> ";
+	                            "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "+
+//	                            "PREFIX rov: <http://www.w3.org/ns/regorg#> " +
+//	                            "PREFIX ebg: <http://data.businessgraph.io/ontology#> " +
+//	                            "PREFIX org: <http://www.w3.org/ns/org#> " +
+	                            "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> ";
 	            
-	            if (cc.getCountry().equals("CZ")) {
-	            	prefix += "PREFIX schema: <http://schema.org/> ";
-	            } else {
-	                prefix += "PREFIX schema: <https://schema.org/> ";
-	            }
+//	            if (cc.getCountry().equals("CZ")) {
+//	            	prefix += "PREFIX schema: <http://schema.org/> ";
+//	            } else {
+//	                prefix += "PREFIX schema: <https://schema.org/> ";
+//	            }
 	
 	
-	//        	System.out.println("B NACE : " + naceList.orElse(null));
-	//        	System.out.println("B NUTS : " + countyNuts);
+	        	System.out.println("B NACE : " + naceList.orElse(null));
+	        	System.out.println("B NUTS : " + countyNuts);
 	
 	        	List<String> naceLeafUris = naceService.getLocalNaceLeafUris(cc.getCountry(), naceList.orElse(null), httpClient);
 	        	List<String> nuts3UrisList = nutsService.getNuts3Uris(cc, countyNuts);
 	        	
-	//        	System.out.println("A NACE : " + naceLeafUris);
-	//        	System.out.println("A NUTS : " + nuts3UrisList);
+	        	System.out.println("A NACE : " + naceLeafUris);
+	        	System.out.println("A NUTS : " + nuts3UrisList);
 	        	
 	        	String sparql = buildCoreQuery(cc, nuts3UrisList, naceLeafUris, startDateOpt, endDateOpt); 
 	
@@ -155,13 +158,13 @@ public class QueryService {
 	        		return responseList;
 	        	}
 	
-	
 	        	
 	            if (page == 1) {
-	            	String countQuery = prefix + " SELECT (COUNT(DISTINCT ?organization) AS ?count) WHERE " + sparql ;
+	            	String countQuery = prefix + " SELECT (COUNT(DISTINCT ?entity) AS ?count) WHERE { " + sparql + " } ";
 	            	
+	            	System.out.println(cc.getDataEndpoint().getSparqlEndpoint());
 	                System.out.println(QueryFactory.create(countQuery));
-	                System.out.println(cc.getDataEndpoint().getSparqlEndpoint() + "*");
+//	                System.out.println(cc.getDataEndpoint().getSparqlEndpoint() + "*");
 	             
 	                try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint().getSparqlEndpoint(), QueryFactory.create(countQuery, Syntax.syntaxARQ), httpClient)) {
 	                    ResultSet rs = qe.execSelect();
@@ -174,7 +177,7 @@ public class QueryService {
 	            	count = -1;
 	            }
 	            
-	            sparql = prefix + " SELECT DISTINCT ?organization WHERE " + sparql + "  LIMIT " + pageSize + " OFFSET " + offset;
+	            sparql = prefix + " SELECT DISTINCT ?entity WHERE { " + sparql + " } LIMIT " + pageSize + " OFFSET " + offset;
 	            
 	//            System.out.println(QueryFactory.create(sparql));
 	
@@ -185,25 +188,41 @@ public class QueryService {
 	                ResultSet rs = qe.execSelect();
 	                while (rs.hasNext()) {
 	                    QuerySolution sol = rs.next();
-	                    companyUris.add(sol.get("organization").asResource().toString());
+	                    companyUris.add(sol.get("entity").asResource().toString());
 	                }
 	            }
 	//            System.out.println(companyUris);
 	
 	            if (!companyUris.isEmpty()) {
-		            String sparqlConstruct = "CONSTRUCT { " + 
-		                                     "  ?company ?p1 ?o1 . " + 
-		                                     "  ?o1 <https://schema.org/foundingDate> ?date . " +	            		
-		            		                 "  ?o1 <http://www.w3.org/ns/org#siteAddress> ?o2 . ?o2 ?p3 ?o3 } " + 
-		            		                 "WHERE { " +
-		                                     "  ?company ?p1 ?o1 . " +
-		            		                 "  OPTIONAL {?o1 <http://schema.org/foundingDate> ?date }  . " +
-		                                     "  OPTIONAL {?o1 <http://www.w3.org/ns/org#siteAddress> ?o2 . ?o2 ?p3 ?o3}  . " +
-		                                     "  VALUES ?company { ";
-		            for (String uri : companyUris) {
-		                sparqlConstruct += " <" + uri + "> ";
-		            }
-		            sparqlConstruct += "} } ";
+//		            String sparqlConstruct = "CONSTRUCT { " + 
+//                            "  ?entity ?p1 ?o1 . " + 
+//                            "  ?o1 <https://schema.org/foundingDate> ?date . " +	            		
+//   		                 "  ?o1 <http://www.w3.org/ns/org#siteAddress> ?o2 . ?o2 ?p3 ?o3 } " + 
+//   		                 "WHERE { " +
+//                            "  ?entity ?p1 ?o1 . " +
+//   		                 "  OPTIONAL {?o1 <http://schema.org/foundingDate> ?date }  . " +
+//                            "  OPTIONAL {?o1 <http://www.w3.org/ns/org#siteAddress> ?o2 . ?o2 ?p3 ?o3}  . " +
+                            
+
+                    String sparqlConstruct = 
+                    		"CONSTRUCT { " + 
+		                    "  ?entity a <http://www.w3.org/ns/regorg#RegisteredOrganization> . " + 
+		                    "  ?entity <http://www.w3.org/ns/regorg#legalName> ?entityName . " +
+		                    "  ?entity <http://www.w3.org/ns/regorg#orgActivity> ?nace . " +
+		            		"  ?entity <http://www.w3.org/ns/org#siteAddress> ?address . ?address ?ap ?ao . " + 
+		                    "  ?entity <https://schema.org/foundingDate> ?foundingDate . }" +	            		
+		            		"WHERE { " +
+                            cc.getEntitySparql() + " " +
+                            cc.getEntityNameSparql() + " " + 
+                            "OPTIONAL { " + cc.getNuts3Sparql() + " ?address ?ap ?ao . } " + 
+            	            "OPTIONAL { " + cc.getNaceSparql() + " } " +
+		                    "OPTIONAL { " + cc.getFoundingDateSparql() + " } " +
+		                                     
+		                    "VALUES ?entity { ";
+	                for (String uri : companyUris) {
+	                   sparqlConstruct += " <" + uri + "> ";
+	                }
+	                sparqlConstruct += "} } ";
 		
 		            try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint().getSparqlEndpoint(), QueryFactory.create(sparqlConstruct, Syntax.syntaxARQ), httpClient)) {
 		                Model model = qe.execConstruct();
@@ -246,17 +265,17 @@ public class QueryService {
 	        	List<String> countyNuts = ccEntry.getValue();
 	
 	            String prefix = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
-	                    "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "+
-	                    "PREFIX rov: <http://www.w3.org/ns/regorg#> " +
-	                    "PREFIX ebg: <http://data.businessgraph.io/ontology#> " +
-	                    "PREFIX org: <http://www.w3.org/ns/org#> " +
-	                    "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> ";
+	                            "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "+
+//	                    "PREFIX rov: <http://www.w3.org/ns/regorg#> " +
+//	                    "PREFIX ebg: <http://data.businessgraph.io/ontology#> " +
+//	                    "PREFIX org: <http://www.w3.org/ns/org#> " +
+	                            "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> ";
 	            
-	        	if (cc.getCountry().equals("CZ")) {
-	            	prefix += "PREFIX schema: <http://schema.org/> ";
-	            } else {
-	                prefix += "PREFIX schema: <https://schema.org/> ";
-	            }
+//	        	if (cc.getCountry().equals("CZ")) {
+//	            	prefix += "PREFIX schema: <http://schema.org/> ";
+//	            } else {
+//	                prefix += "PREFIX schema: <https://schema.org/> ";
+//	            }
 	
 	        	boolean nace = gnace;
 	            boolean nuts3 = gnuts3;
@@ -289,7 +308,7 @@ public class QueryService {
 	            	prefix += " ?nuts3 ";
 	            }
 	            
-	            prefix += "(COUNT(?organization) AS ?count) ";
+	            prefix += "(COUNT(?entity) AS ?count) ";
 	            
 	            
 	            sparql = prefix + " WHERE " + sparql + " GROUP BY " ;
