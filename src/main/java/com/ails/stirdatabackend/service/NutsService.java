@@ -120,13 +120,23 @@ public class NutsService {
 	        	if (lauChildren) {
 	        		sparql += "?code <https://lod.stirdata.eu/nuts/ont/partOf>" + " <" + parentNode + "> . ";
 	        	} else {
-	    	        sparql += "?code <https://lod.stirdata.eu/nuts/ont/level> ?level . " ;
 	        		sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parentNode + "> . ";
 	        	}
 	        }
+
+	        if (!lauChildren) {
+	        	sparql += "?code <https://lod.stirdata.eu/nuts/ont/level> ?level . " ;
+	        }
 	        
-	        sparql += " ?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label } ORDER BY ?code";
-	
+	        sparql += "?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label } ";
+	        
+	        if (lauChildren) {
+	        	sparql += "ORDER BY ?label";
+	        } else {
+	        	sparql += "ORDER BY ?label";
+//	        	sparql += " ORDER BY ?code";
+	        }
+	        
 	        SparqlEndpoint endpoint = !lauChildren ? nutsEndpointEU : lauEndpointEU;
 	        try (QueryExecution qe = QueryExecutionFactory.sparqlService(endpoint.getSparqlEndpoint(), sparql)) {
 	            ResultSet rs = qe.execSelect();
