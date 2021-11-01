@@ -2,6 +2,12 @@ package com.ails.stirdatabackend.service;
 
 import com.ails.stirdatabackend.configuration.CountryConfiguration;
 import com.ails.stirdatabackend.model.SparqlEndpoint;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+
 import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.riot.RDFDataMgr;
@@ -86,34 +92,54 @@ public class NutsService {
     }
     
     public String getNextNutsLevel(String parentNode) {
-        String sparql = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
-                        "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
-                        "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>"+
-                        "SELECT ?code ?label WHERE { ";
-        
-        String countries = "";
-        for (String c : countryConfigurations.keySet()) {
-        	countries += "\"" + c + "\" ";
-        }
-        
-        if (parentNode == null) {
-            sparql += "?code <https://lod.stirdata.eu/nuts/ont/level> 0 . "+
-                      "?code <http://www.w3.org/2004/02/skos/core#notation> ?notation ."+
-                      "VALUES ?notation { " + countries + " }";
-        } else {
-            sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parentNode + "> " +  ". ";
-        }
-        
-        sparql += " ?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label } ORDER BY ?code";
+        String json = null;
 
-        System.out.println(QueryFactory.create(sparql));
-        String json;
-        try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsEndpointEU.getSparqlEndpoint(), sparql)) {
-            ResultSet rs = qe.execSelect();
-            ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-            ResultSetFormatter.outputAsJSON(outStream, rs);
-            json = outStream.toString();
-        }
+    	while (true) {
+	        String sparql = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
+	                        "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
+	                        "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>"+
+	                        "SELECT ?code ?label ?level WHERE { ";
+	        
+	        if (parentNode == null) {
+	        	String countries = "";
+	            for (String c : countryConfigurations.keySet()) {
+	            	countries += "\"" + c + "\" ";
+	            }
+	            
+	            sparql += "?code <https://lod.stirdata.eu/nuts/ont/level> 0 . "+
+	                      "?code <http://www.w3.org/2004/02/skos/core#notation> ?notation ."+
+	                      "VALUES ?notation { " + countries + " }";
+	        } else {
+	            sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parentNode + "> " +  ". ";
+	        }
+	        
+	        sparql += " ?code <https://lod.stirdata.eu/nuts/ont/level> ?level . " ;
+	        sparql += " ?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label } ORDER BY ?code";
+	
+//	        System.out.println(QueryFactory.create(sparql));
+	        try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsEndpointEU.getSparqlEndpoint(), sparql)) {
+	            ResultSet rs = qe.execSelect();
+	            
+	            ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+	            ResultSetFormatter.outputAsJSON(outStream, rs);
+	            json = outStream.toString();
+	            
+	            ObjectMapper mapper = new ObjectMapper();  //inefficient way . alternative do the same query twice if needed
+	            JsonNode root = mapper.readTree(json);
+	            
+	            ArrayNode array = (ArrayNode)root.get("results").get("bindings");
+	            
+	            if (array.size() == 1 && array.get(0).get("level").get("value").asInt() < 3) {
+	            	parentNode = array.get(0).get("code").get("value").asText();
+	            } else {
+	            	break;
+	            }
+	            
+	        } catch (Exception e) {
+				e.printStackTrace();
+			}
+    	}
+    	
         return json;
     }
 
