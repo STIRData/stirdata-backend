@@ -106,6 +106,7 @@ public class NutsService {
         
         sparql += " ?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label } ORDER BY ?code";
 
+        System.out.println(QueryFactory.create(sparql));
         String json;
         try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsEndpointEU.getSparqlEndpoint(), sparql)) {
             ResultSet rs = qe.execSelect();
@@ -156,12 +157,9 @@ public class NutsService {
 	                   "?nuts3 skos:broader <" + uri + "> . " +
 	                   "?nuts3 <https://lod.stirdata.eu/nuts/ont/level> 3 } ";
     	} else if (level == 3) {
-            System.out.println(uri);
-
     		//adjust prefix
             String lastPart = uri.substring(uri.lastIndexOf('/') + 1);
             res.add(cc.getNutsPrefix() + lastPart);
-            System.out.println(cc.getNutsPrefix() + lastPart);
     		return res;
     	}
     	
@@ -171,12 +169,9 @@ public class NutsService {
                 QuerySolution sol = rs.next();
                 String nuts = sol.get("nuts3").asResource().toString();
                 
-                System.out.println(nuts);
                 //adjust prefix
                 String lastPart = nuts.substring(nuts.lastIndexOf('/') + 1);
                 res.add(cc.getNutsPrefix() + lastPart);
-                
-                System.out.println(cc.getNutsPrefix() + lastPart);
             }
         }
     	
