@@ -4,5 +4,6 @@ public enum Dimension {
 
 	DATA,
 	NACE,
-	NUTS
+	NUTS,
+	LAU
 }

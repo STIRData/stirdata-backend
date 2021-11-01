@@ -80,6 +80,11 @@ public class ApplicationConfiguration {
 		return new SparqlEndpoint("eu-endpoint", Dimension.NUTS, env.getProperty("endpoint.nuts.eu"));
 	}
 	
+	@Bean(name = "endpoint-lau-eu")
+	public SparqlEndpoint getLauEndpointEU() {
+		return new SparqlEndpoint("eu-endpoint", Dimension.LAU, env.getProperty("endpoint.lau.eu"));
+	}
+	
 	@Bean(name = "country-configurations")
 	public Map<String, CountryConfiguration> getSupportedCountriesConfigurations() {
 

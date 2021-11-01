@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.Model;
@@ -32,7 +33,11 @@ public class NutsService {
     @Autowired
     @Qualifier("endpoint-nuts-eu")
     private SparqlEndpoint nutsEndpointEU;
-    
+
+    @Autowired
+    @Qualifier("endpoint-lau-eu")
+    private SparqlEndpoint lauEndpointEU;
+
     @Autowired
     @Qualifier("country-configurations")
     private Map<String, CountryConfiguration> countryConfigurations;
@@ -92,9 +97,11 @@ public class NutsService {
     }
     
     public String getNextNutsLevel(String parentNode) {
-        String json = null;
+        String json = "";
 
+		boolean lauChildren = false;
     	while (true) {
+    		
 	        String sparql = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
 	                        "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
 	                        "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>"+
@@ -110,14 +117,21 @@ public class NutsService {
 	                      "?code <http://www.w3.org/2004/02/skos/core#notation> ?notation ."+
 	                      "VALUES ?notation { " + countries + " }";
 	        } else {
-	            sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parentNode + "> " +  ". ";
+	        	if (lauChildren) {
+	        		sparql += "?code <https://lod.stirdata.eu/nuts/ont/partOf>" + " <" + parentNode + "> . ";
+	        	} else {
+	        		sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parentNode + "> . ";
+	        	}
 	        }
 	        
-	        sparql += " ?code <https://lod.stirdata.eu/nuts/ont/level> ?level . " ;
+	        sparql += " OPTIONAL { ?code <https://lod.stirdata.eu/nuts/ont/level> ?level . }" ;
 	        sparql += " ?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label } ORDER BY ?code";
 	
-//	        System.out.println(QueryFactory.create(sparql));
-	        try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsEndpointEU.getSparqlEndpoint(), sparql)) {
+	        System.out.println(QueryFactory.create(sparql));
+	        System.out.println(lauChildren + " " + parentNode);
+	        SparqlEndpoint endpoint = !lauChildren ? nutsEndpointEU : lauEndpointEU;
+	        System.out.println(endpoint.getSparqlEndpoint());
+	        try (QueryExecution qe = QueryExecutionFactory.sparqlService(endpoint.getSparqlEndpoint(), sparql)) {
 	            ResultSet rs = qe.execSelect();
 	            
 	            ByteArrayOutputStream outStream = new ByteArrayOutputStream();
@@ -129,14 +143,31 @@ public class NutsService {
 	            
 	            ArrayNode array = (ArrayNode)root.get("results").get("bindings");
 	            
-	            if (array.size() == 1 && array.get(0).get("level").get("value").asInt() < 3) {
-	            	parentNode = array.get(0).get("code").get("value").asText();
+	            if (array.size() == 1) {
+	            	ObjectNode node = (ObjectNode)array.get(0); 
+	            
+	            	if (!lauChildren && node.get("level").get("value").asInt() < 3) {
+	            		parentNode = node.get("code").get("value").asText();
+	            		lauChildren = false;
+	            	} else if (!lauChildren && node.get("level").get("value").asInt() == 3) {
+	            		parentNode = node.get("code").get("value").asText();
+	            		lauChildren = true;
+	            	} else if (lauChildren) {
+	            		break;
+	            	}
+	            } else if (array.size() == 0) {
+	            	if (!lauChildren) {
+	            		lauChildren = true;
+	            	} else {
+	            		break;
+	            	}
 	            } else {
 	            	break;
 	            }
 	            
 	        } catch (Exception e) {
 				e.printStackTrace();
+				break;
 			}
     	}
     	
