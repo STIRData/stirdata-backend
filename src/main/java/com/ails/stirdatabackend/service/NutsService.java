@@ -2,12 +2,13 @@ package com.ails.stirdatabackend.service;
 
 import com.ails.stirdatabackend.configuration.CountryConfiguration;
 import com.ails.stirdatabackend.model.SparqlEndpoint;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import lombok.Getter;
+import lombok.Setter;
 
 import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.Model;
@@ -42,11 +43,39 @@ public class NutsService {
     @Qualifier("country-configurations")
     private Map<String, CountryConfiguration> countryConfigurations;
 
-    private final static Pattern nacePattern = Pattern.compile("^https://lod\\.stirdata\\.eu/nuts/code/([A-Z][A-Z])");
+    private final static String nutsPrefix = "https://lod.stirdata.eu/nuts/code/";
+    private final static String lauPrefix = "https://lod.stirdata.eu/nuts/lau/";
+    
+    private final static Pattern nutsPattern = Pattern.compile("^https://lod\\.stirdata\\.eu/nuts/code/([A-Z][A-Z])");
+    private final static Pattern lauPattern = Pattern.compile("^https://lod\\.stirdata\\.eu/lau/code/([A-Z][A-Z])");
+    
+    @Getter
+    @Setter
+    public class RegionCodes {
+    	private List<String> nuts3; // null means no selection
+    	private List<String> lau;   // null means no selection
+    	
+    	RegionCodes() {
+    	}
+    	
+    	public void addNuts3(String nuts3) {
+    		if (this.nuts3 == null) {
+        		this.nuts3 = new ArrayList<>();
+    		}
+    		this.nuts3.add(nuts3);
+    	}
+
+    	public void addLau(String lau) {
+    		if (this.lau == null) {
+        		this.lau = new ArrayList<>();
+    		}
+    		this.lau.add(lau);
+    	}
+    }
     
     public List<String> getNuts3Uris(CountryConfiguration cc, List<String> requestMap) {
     	
-    	if (requestMap.contains(cc.getNutsPrefix() + cc.getCountry())) { // entire country, ignore nuts
+    	if (requestMap != null && requestMap.contains(cc.getNutsPrefix() + cc.getCountry())) { // entire country, ignore nuts
     		return null;
     	}
     	
@@ -54,7 +83,7 @@ public class NutsService {
     	if (requestMap != null) {
             Set<String> nuts3Uris = new HashSet<>();
             for (String s : requestMap) {
-            	nuts3Uris.addAll(getNuts3Descendents(s, cc));
+           		nuts3Uris.addAll(getLocalizedNuts3Descendents(s, cc));
             }
 
             nuts3UrisList = new ArrayList<>(nuts3Uris);
@@ -64,32 +93,70 @@ public class NutsService {
 
     }
     
-    public Map<CountryConfiguration, List<String>> getEndpointsByNuts(List<String> nutsUri) {
-        Map<CountryConfiguration, List<String>> res = new HashMap<>();
+    public List<String> getLauUris(CountryConfiguration cc, List<String> requestMap) {
+    	
+    	List<String> lauUrisList = null;
+    	if (requestMap != null) {
+            Set<String> lauUris = new HashSet<>();
+            for (String s : requestMap) {
+           		lauUris.add(getLocalizedLau(s, cc));
+            }
 
+            lauUrisList = new ArrayList<>(lauUris);
+    	}
+    	
+    	return lauUrisList;
+
+    }
+    
+    public Map<CountryConfiguration, RegionCodes> getEndpointsByNuts(List<String> nutsUri) {
+        Map<CountryConfiguration, RegionCodes> res = new HashMap<>();
+
+        Matcher matcher;
+        
         for (String uri : nutsUri) {
         	
-        	Matcher matcher = nacePattern.matcher(uri);
+        	matcher = nutsPattern.matcher(uri);
         	if (matcher.find()) {
         		String country = matcher.group(1);
         		
         		CountryConfiguration cc = countryConfigurations.get(country);
         		
-        		List<String> list = res.get(cc);
-                if (list == null) {
-                    list = new ArrayList<>();
-                    res.put(cc, list);
-                }
+        		RegionCodes rc = res.get(cc);
+        		if (rc == null) {
+        			rc = new RegionCodes();
+        			res.put(cc, rc);
+        		}
+        		
+                rc.addNuts3(uri);
                 
-                list.add(uri);
-        	}
+                continue;
+        	} 
+
+        	matcher = lauPattern.matcher(uri);
+        	if (matcher.find()) {
+        		String country = matcher.group(1);
+        		
+        		CountryConfiguration cc = countryConfigurations.get(country);
+        		
+        		RegionCodes rc = res.get(cc);
+        		if (rc == null) {
+        			rc = new RegionCodes();
+        			res.put(cc, rc);
+        		}
+        		
+                rc.addLau(uri);
+                
+                continue;
+        	} 
+
         }
         
         return res;
     }
     
-    public Map<CountryConfiguration, List<String>> getEndpointsByNuts() {
-        Map<CountryConfiguration, List<String>> res = new HashMap<>();
+    public Map<CountryConfiguration, RegionCodes> getEndpointsByNuts() {
+        Map<CountryConfiguration, RegionCodes> res = new HashMap<>();
         for (CountryConfiguration cc : countryConfigurations.values()) {
        		res.put(cc, null);
         }
@@ -196,7 +263,7 @@ public class NutsService {
         return null;
     }
     
-    public Set<String> getNuts3Descendents(String uri, CountryConfiguration cc) {
+    public Set<String> getLocalizedNuts3Descendents(String uri, CountryConfiguration cc) {
     	Set<String> res = new HashSet<>();
     	
     	int pos = uri.lastIndexOf("/");
@@ -240,6 +307,19 @@ public class NutsService {
         }
     	
     	return res;
+    }
+    
+    public String getLocalizedLau(String uri, CountryConfiguration cc) {
+    	
+    	int pos = uri.lastIndexOf("/");
+    	if (pos < 0) {
+    		return null;
+    	}
+    	
+  		//adjust prefix
+        String lastPart = uri.substring(uri.lastIndexOf('/') + 1);
+        
+   		return cc.getLauPrefix() + lastPart;
     }
 
     public String getNutsGeoJson(String nutsUri, String spatialResolution) {

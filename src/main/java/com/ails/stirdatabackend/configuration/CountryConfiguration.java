@@ -23,6 +23,7 @@ public class CountryConfiguration {
     private String entityNameSparql;
     private String nuts3Sparql;
     private String naceSparql;
+    private String lauSparql;
     private String foundingDateSparql;
     
     private String naceScheme;
@@ -33,6 +34,11 @@ public class CountryConfiguration {
     private int naceFixedLevel;
     
     private String nutsPrefix;
+    private String lauPrefix;
+    
+    private boolean lau;
+    private boolean nuts;
+    private boolean nace;
  
     public CountryConfiguration(String country) {
     	this.country = country;

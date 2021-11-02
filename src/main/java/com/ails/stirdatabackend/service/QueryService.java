@@ -2,6 +2,7 @@ package com.ails.stirdatabackend.service;
 
 import com.ails.stirdatabackend.configuration.CountryConfiguration;
 import com.ails.stirdatabackend.payload.EndpointResponse;
+import com.ails.stirdatabackend.service.NutsService.RegionCodes;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.jena.query.*;
@@ -38,7 +39,7 @@ public class QueryService {
     private int pageSize;
 
     
-    private String buildCoreQuery(CountryConfiguration cc, List<String> nuts3, List<String> nace, Optional<String> startDateOpt, Optional<String> endDateOpt) {
+    private String buildCoreQuery(CountryConfiguration cc, List<String> nuts3, List<String> lau, List<String> nace, Optional<String> startDateOpt, Optional<String> endDateOpt) {
     
         String sparql = "";
 //        		  "SELECT ?organization WHERE { " +
@@ -48,14 +49,8 @@ public class QueryService {
         sparql += cc.getEntitySparql() + " "; //          "  ?organization a rov:RegisteredOrganization . ?organization rov:legalName ?organizationName . ";
         sparql += cc.getEntityNameSparql() + " ";
         
-        if (nuts3 != null) {            
-//            sparql += "  ?organization org:hasRegisteredSite/org:siteAddress ?address . ";
-//
-//			if (cc.getCountry().equals("CZ")) {
-//                sparql += " ?address ebg:adminUnitL4 ?nuts3 . ";
-//            } else {
-//                sparql += " ?address <https://lod.stirdata.eu/model/nuts3> ?nuts3 . ";
-//            }
+        if (nuts3 != null && (lau == null || lau.size() == 0)) {            
+        	
         	sparql += cc.getNuts3Sparql() + " ";
         	
             sparql += " VALUES ?nuts3 { ";
@@ -63,7 +58,39 @@ public class QueryService {
                 sparql += "<" + uri + "> ";
             }
             sparql += "} ";
+        } else if ((nuts3 == null || nuts3.size() == 0) && lau != null) {            
+        	
+        	sparql += cc.getLauSparql() + " ";
+        	
+            sparql += " VALUES ?lau { ";
+            for (String uri : lau) {
+                sparql += "<" + uri + "> ";
+            }
+            sparql += "} ";
+        } else if (nuts3 != null && lau != null) { // should be avoided
+        	sparql += "{ ";
+            
+        	sparql += cc.getNuts3Sparql() + " ";
+        	
+            sparql += " VALUES ?nuts3 { ";
+            for (String uri : nuts3) {
+                sparql += "<" + uri + "> ";
+            }
+            sparql += "} ";
+            
+            sparql += "} UNION { ";
+            
+            sparql += cc.getLauSparql() + " ";
+        	
+            sparql += " VALUES ?lau { ";
+            for (String uri : lau) {
+                sparql += "<" + uri + "> ";
+            }
+            sparql += "} ";
+            
+            sparql += "} ";
         }
+
         
         if (nace != null) {
 //        	sparql += " ?organization rov:orgActivity ?nace . ";
@@ -108,7 +135,7 @@ public class QueryService {
     	List<EndpointResponse> responseList = new ArrayList<>();
         String countryCode = country.orElse(null);
         
-    	Map<CountryConfiguration, List<String>> requestMap;
+    	Map<CountryConfiguration, RegionCodes> requestMap;
     	if (nutsList.isPresent()) {
     		requestMap = nutsService.getEndpointsByNuts(nutsList.get());
     	} else {
@@ -120,50 +147,42 @@ public class QueryService {
         ObjectMapper mapper = new ObjectMapper();
         
         try (CloseableHttpClient httpClient = HttpClientCert.createClient()) {
-	        for (Map.Entry<CountryConfiguration, List<String>> ccEntry : requestMap.entrySet()) {
+	        for (Map.Entry<CountryConfiguration, RegionCodes> ccEntry : requestMap.entrySet()) {
 	        	CountryConfiguration cc = ccEntry.getKey();
-	        	List<String> countyNuts = ccEntry.getValue();
+	        	RegionCodes regions = ccEntry.getValue();
 	
 	            String prefix = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
 	                            "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "+
-//	                            "PREFIX rov: <http://www.w3.org/ns/regorg#> " +
-//	                            "PREFIX ebg: <http://data.businessgraph.io/ontology#> " +
-//	                            "PREFIX org: <http://www.w3.org/ns/org#> " +
 	                            "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> ";
 	            
-//	            if (cc.getCountry().equals("CZ")) {
-//	            	prefix += "PREFIX schema: <http://schema.org/> ";
-//	            } else {
-//	                prefix += "PREFIX schema: <https://schema.org/> ";
-//	            }
-	
-	
-	        	System.out.println("B NACE : " + naceList.orElse(null));
-	        	System.out.println("B NUTS : " + countyNuts);
+//	        	System.out.println("B NACE : " + naceList.orElse(null));
+//	        	System.out.println("B NUTS : " + countyNuts);
 	
 	        	List<String> naceLeafUris = naceService.getLocalNaceLeafUris(cc.getCountry(), naceList.orElse(null), httpClient);
-	        	List<String> nuts3UrisList = nutsService.getNuts3Uris(cc, countyNuts);
+	        	List<String> nuts3UrisList = cc == null ? null : nutsService.getNuts3Uris(cc, regions.getNuts3()); 
+	        	List<String> lauUrisList = cc == null ? null : nutsService.getLauUris(cc, regions.getLau());
 	        	
-	        	System.out.println("A NACE : " + naceLeafUris);
-	        	System.out.println("A NUTS : " + nuts3UrisList);
-	        	
-	        	String sparql = buildCoreQuery(cc, nuts3UrisList, naceLeafUris, startDateOpt, endDateOpt); 
-	
-//	            System.out.println("Will query endpoint: " + cc.getDataEndpoint().getSparqlEndpoint());
-	
+//	        	System.out.println("A NACE : " + naceLeafUris);
+//	        	System.out.println("A NUTS : " + nuts3UrisList);
+
 	        	int count = 0;
 	        	
-	        	if ((nuts3UrisList != null && nuts3UrisList.size() == 0) || (naceLeafUris != null && naceLeafUris.size() == 0)) {
+	        	if ((nuts3UrisList != null && nuts3UrisList.size() == 0 && lauUrisList != null && lauUrisList.size() == 0) || (naceLeafUris != null && naceLeafUris.size() == 0)) {
 	        		responseList.add(new EndpointResponse(cc.getLabel(), mapper.createArrayNode(), count, countryCode));
 	        		return responseList;
 	        	}
+	        	
+	        	
+	        	String sparql = buildCoreQuery(cc, nuts3UrisList, lauUrisList, naceLeafUris, startDateOpt, endDateOpt); 
+	
+//	            System.out.println("Will query endpoint: " + cc.getDataEndpoint().getSparqlEndpoint());
 	
 	        	
 	            if (page == 1) {
 	            	String countQuery = prefix + " SELECT (COUNT(DISTINCT ?entity) AS ?count) WHERE { " + sparql + " } ";
 	            	
-	            	System.out.println(cc.getDataEndpoint().getSparqlEndpoint());
-	                System.out.println(QueryFactory.create(countQuery));
+//	            	System.out.println(cc.getDataEndpoint().getSparqlEndpoint());
+//	                System.out.println(QueryFactory.create(countQuery));
 //	                System.out.println(cc.getDataEndpoint().getSparqlEndpoint() + "*");
 	             
 	                try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint().getSparqlEndpoint(), QueryFactory.create(countQuery, Syntax.syntaxARQ), httpClient)) {
@@ -250,7 +269,7 @@ public class QueryService {
         
     	List<EndpointResponse> responseList = new ArrayList<>();
 //        
-    	Map<CountryConfiguration, List<String>> requestMap;
+    	Map<CountryConfiguration, RegionCodes> requestMap;
     	if (nutsList.isPresent()) {
     		requestMap = nutsService.getEndpointsByNuts(nutsList.get());
     	} else {
@@ -260,28 +279,22 @@ public class QueryService {
         ObjectMapper mapper = new ObjectMapper();
 
         try (CloseableHttpClient httpClient = HttpClientCert.createClient()) {
-	        for (Map.Entry<CountryConfiguration, List<String>> ccEntry : requestMap.entrySet()) {
+	        for (Map.Entry<CountryConfiguration, RegionCodes> ccEntry : requestMap.entrySet()) {
 	        	CountryConfiguration cc = ccEntry.getKey();
-	        	List<String> countyNuts = ccEntry.getValue();
+	        	RegionCodes regions = ccEntry.getValue();
 	
 	            String prefix = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
 	                            "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "+
-//	                    "PREFIX rov: <http://www.w3.org/ns/regorg#> " +
-//	                    "PREFIX ebg: <http://data.businessgraph.io/ontology#> " +
-//	                    "PREFIX org: <http://www.w3.org/ns/org#> " +
 	                            "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> ";
 	            
-//	        	if (cc.getCountry().equals("CZ")) {
-//	            	prefix += "PREFIX schema: <http://schema.org/> ";
-//	            } else {
-//	                prefix += "PREFIX schema: <https://schema.org/> ";
-//	            }
-	
 	        	boolean nace = gnace;
 	            boolean nuts3 = gnuts3;
+//	            boolean lau = glau;
 	            
 	        	List<String> naceLeafUris = naceService.getLocalNaceLeafUris(cc.getCountry(), naceList.orElse(null), httpClient);
-	        	List<String> nuts3UrisList = nutsService.getNuts3Uris(cc, countyNuts);
+	        	List<String> nuts3UrisList = cc == null ? null : nutsService.getNuts3Uris(cc, regions.getNuts3()); 
+	        	List<String> lauUrisList = cc == null ? null : nutsService.getLauUris(cc, regions.getLau());
+
 	        	
 	        	if (naceLeafUris == null) {
 	        		nace = false;
@@ -290,10 +303,14 @@ public class QueryService {
 	        	if (nuts3UrisList == null) {
 	        		nuts3 = false;
 	        	}
+	        	
+//	        	if (lauUrisList == null) {
+//	        		lau = false;
+//	        	}
 	
-	        	String sparql = buildCoreQuery(cc, nuts3UrisList, naceLeafUris, startDateOpt, endDateOpt); 
+	        	String sparql = buildCoreQuery(cc, nuts3UrisList, lauUrisList, naceLeafUris, startDateOpt, endDateOpt); 
 	
-	            System.out.println("Will query endpoint: " + cc.getDataEndpoint().getSparqlEndpoint());
+//	            System.out.println("Will query endpoint: " + cc.getDataEndpoint().getSparqlEndpoint());
 	
 	        	if ((nuts3UrisList != null && nuts3UrisList.size() == 0) || (naceLeafUris != null && naceLeafUris.size() == 0)) {
 	        		responseList.add(new EndpointResponse(cc.getLabel(), mapper.createArrayNode(), 0, null));

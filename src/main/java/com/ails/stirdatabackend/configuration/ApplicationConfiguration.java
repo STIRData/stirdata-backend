@@ -96,6 +96,7 @@ public class ApplicationConfiguration {
 	    String defaultEntitySparql = env.getProperty("sparql.entity.00");
 	    String defaultEntityNameSparql = env.getProperty("sparql.entityName.00");
 	    String defaultNuts3Sparql = env.getProperty("sparql.nuts3.00");
+	    String defaultLauSparql = env.getProperty("sparql.lau.00");
 	    String defaultNaceSparql = env.getProperty("sparql.nace.00");
 	    String defaultFoundingDateSparql = env.getProperty("sparql.foundingDate.00"); 
 
@@ -106,6 +107,7 @@ public class ApplicationConfiguration {
 		String defaultNaceFixedLevel = env.getProperty("nace.fixed-level.00");
 		
 		String defaultNutsPrefix = env.getProperty("nuts.prefix.00");
+		String defaultLauPrefix = env.getProperty("lau.prefix.00");
 
 		String[] cntr = countries.split(",");
 		
@@ -113,6 +115,17 @@ public class ApplicationConfiguration {
 			CountryConfiguration cc = new CountryConfiguration(c);
 			
 			cc.setLabel(env.getProperty("country.label." + c));
+			
+			for (String d : env.getProperty("country.dimensions." + c).split(",")) {
+				if (d.equalsIgnoreCase("nace")) {
+					cc.setNace(true);
+				} else if (d.equalsIgnoreCase("nuts")) {
+					cc.setNuts(true);
+				} else if (d.equalsIgnoreCase("lau")) {
+					cc.setLau(true);
+				}
+			}
+			
 			
 			String dataEndpoint = env.getProperty("endpoint.data." + c);
 			
@@ -151,6 +164,9 @@ public class ApplicationConfiguration {
 		    String nuts3Sparql = env.getProperty("sparql.nuts3." + c);
 	    	cc.setNuts3Sparql(nuts3Sparql != null ? nuts3Sparql : defaultNuts3Sparql);	
 
+		    String lauSparql = env.getProperty("sparql.lau." + c);
+	    	cc.setLauSparql(lauSparql != null ? lauSparql : defaultLauSparql);	
+
 		    String naceSparql = env.getProperty("sparql.nace." + c);
 	    	cc.setNaceSparql(naceSparql != null ? naceSparql : defaultNaceSparql);	
 
@@ -159,6 +175,9 @@ public class ApplicationConfiguration {
 
 		    String nutsPrefix = env.getProperty("nuts.prefix." + c);
 		    cc.setNutsPrefix(nutsPrefix != null ? nutsPrefix : defaultNutsPrefix);	
+
+		    String lauPrefix = env.getProperty("lau.prefix." + c);
+		    cc.setLauPrefix(lauPrefix != null ? lauPrefix : defaultLauPrefix);	
 
 			map.put(c, cc);
 		}
