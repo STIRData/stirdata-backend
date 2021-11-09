@@ -10,8 +10,13 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Getter;
 import lombok.Setter;
 
-import org.apache.jena.query.*;
+import org.apache.jena.query.QueryExecution;
+import org.apache.jena.query.QueryExecutionFactory;
+import org.apache.jena.query.QuerySolution;
+import org.apache.jena.query.ResultSet;
+import org.apache.jena.query.ResultSetFormatter;
 import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFFormat;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -163,46 +168,13 @@ public class NutsService {
         return res;
     }
     
-    public String getNextNutsLevel(String parentNode) {
+    public String getNextNutsLevelJson(String parentNode, String spatialResolution) {
         String json = "";
 
 		boolean lauChildren = false;
     	while (true) {
     		
-	        String sparql = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
-	                        "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
-	                        "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>"+
-	                        "SELECT ?code ?label ?level WHERE { ";
-	        
-	        if (parentNode == null) {
-	        	String countries = "";
-	            for (String c : countryConfigurations.keySet()) {
-	            	countries += "\"" + c + "\" ";
-	            }
-	            
-	            sparql += "?code <https://lod.stirdata.eu/nuts/ont/level> 0 . "+
-	                      "?code <http://www.w3.org/2004/02/skos/core#notation> ?notation ."+
-	                      "VALUES ?notation { " + countries + " }";
-	        } else {
-	        	if (lauChildren) {
-	        		sparql += "?code <https://lod.stirdata.eu/nuts/ont/partOf>" + " <" + parentNode + "> . ";
-	        	} else {
-	        		sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parentNode + "> . ";
-	        	}
-	        }
-
-	        if (!lauChildren) {
-	        	sparql += "?code <https://lod.stirdata.eu/nuts/ont/level> ?level . " ;
-	        }
-	        
-	        sparql += "?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label } ";
-	        
-	        if (lauChildren) {
-	        	sparql += "ORDER BY ?label";
-	        } else {
-	        	sparql += "ORDER BY ?label";
-//	        	sparql += " ORDER BY ?code";
-	        }
+    		String sparql = getNextNutsLevelQuery(parentNode, lauChildren, spatialResolution);
 	        
 	        SparqlEndpoint endpoint = !lauChildren ? nutsEndpointEU : lauEndpointEU;
 	        try (QueryExecution qe = QueryExecutionFactory.sparqlService(endpoint.getSparqlEndpoint(), sparql)) {
@@ -247,7 +219,114 @@ public class NutsService {
     	
         return json;
     }
+    
+    public List<String> getNextNutsLevelList(String parentNode) {
+    	List<String> res = new ArrayList<>();
+    	
+		boolean lauChildren = false;
+    	while (true) {
+    		
+	        String sparql = getNextNutsLevelQuery(parentNode, lauChildren, null);
+	        
+	        SparqlEndpoint endpoint = !lauChildren ? nutsEndpointEU : lauEndpointEU;
+	        try (QueryExecution qe = QueryExecutionFactory.sparqlService(endpoint.getSparqlEndpoint(), sparql)) {
+	            ResultSet rs = qe.execSelect();
 
+	            System.out.println(sparql);
+	            
+	            res =  new ArrayList<>();
+	            int level = 100;
+	            while (rs.hasNext()) {
+	            	QuerySolution sol = rs.next();
+	            	res.add(sol.get("code").asResource().getURI());
+	            	
+	            	System.out.println(sol);
+	            	
+	            	RDFNode lv = sol.get("level");
+	            	if (lv != null) {
+	            		level = lv.asLiteral().getInt();
+	            	}
+	            }
+	            
+	            if (res.size() == 1) {
+	            	if (!lauChildren && level < 3) {
+	            		parentNode = res.get(0);
+	            		lauChildren = false;
+	            	} else if (!lauChildren && level == 3) {
+	            		parentNode = res.get(0);
+	            		lauChildren = true;
+	            	} else if (lauChildren) {
+	            		break;
+	            	}
+	            } else if (res.size() == 0) {
+	            	if (!lauChildren) {
+	            		lauChildren = true;
+	            	} else {
+	            		break;
+	            	}
+	            } else {
+	            	break;
+	            }
+	            
+	        } catch (Exception e) {
+				e.printStackTrace();
+				break;
+			}
+    	}
+    	
+        return res;
+    }
+
+    private String getNextNutsLevelQuery(String parentNode, boolean lauChildren, String spatialResolution) {
+        String sparql = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
+                        "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
+                        "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>"+
+                        "SELECT ?code ?label ?level " + (spatialResolution != null ? "?geoJson " : "") + " WHERE { ";
+	        
+        if (parentNode == null) {
+        	String countries = "";
+            for (String c : countryConfigurations.keySet()) {
+            	countries += "\"" + c + "\" ";
+            }
+	            
+            sparql += "?code <https://lod.stirdata.eu/nuts/ont/level> 0 . "+
+                      "?code <http://www.w3.org/2004/02/skos/core#notation> ?notation ."+
+                      "VALUES ?notation { " + countries + " }";
+        } else {
+        	if (lauChildren) {
+        		sparql += "?code <https://lod.stirdata.eu/nuts/ont/partOf>" + " <" + parentNode + "> . ";
+        	} else {
+        		sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parentNode + "> . ";
+        	}
+        }
+
+        if (!lauChildren) {
+	       	sparql += "?code <https://lod.stirdata.eu/nuts/ont/level> ?level . " ;
+        } else {
+        	sparql += "BIND (4 AS ?level) . " ;
+        }
+        
+	    sparql += "?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label . ";
+
+	    if (spatialResolution != null) {
+	        sparql += "OPTIONAL { ?code <http://www.opengis.net/ont/geosparql#hasGeometry> [ " +
+	                  "  <http://www.opengis.net/ont/geosparql#hasSpatialResolution> \"" + spatialResolution + "\" ; " +
+	                  "  <http://www.opengis.net/ont/geosparql#asGeoJSON> ?geoJson ] . } ";
+	    }
+	    
+	    sparql += "} " ;
+	    
+	    if (lauChildren) {
+	    	sparql += "ORDER BY ?label";
+	    } else {
+	    	sparql += "ORDER BY ?label";
+//        	sparql += " ORDER BY ?code";
+	    }
+	    
+	    System.out.println(sparql);
+	    return sparql;
+	}
+    
     public String getTopLevelNuts(String uri) {
         String sparql = "SELECT ?nuts0 WHERE {" +
                 "<" +  uri + ">" + "<http://www.w3.org/2004/02/skos/core#broader>* ?nuts0 . " +
@@ -293,6 +372,8 @@ public class NutsService {
             res.add(cc.getNutsPrefix() + lastPart);
     		return res;
     	}
+    	
+//    	System.out.println(uri + " " + level + " " + sparql);
     	
     	try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsEndpointEU.getSparqlEndpoint(), sparql)) {
             ResultSet rs = qe.execSelect();

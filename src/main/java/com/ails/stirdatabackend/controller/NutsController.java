@@ -26,14 +26,10 @@ public class NutsController {
     private Cache geojsonCache;
 
     @GetMapping(produces = "application/json")
-    public ResponseEntity<?> getNuts(@RequestParam(required = false) Optional<String> parent) {
-        String res;
-        if (parent.isPresent()) {
-            res = nutsService.getNextNutsLevel(parent.get());
-        }
-        else {
-            res = nutsService.getNextNutsLevel(null);
-        }
+    public ResponseEntity<?> getNuts(@RequestParam(required = false) Optional<String> parent, @RequestParam(required = false) String spatialResolution) {
+        
+    	String res = nutsService.getNextNutsLevelJson(parent.orElse(null), spatialResolution);
+
         return ResponseEntity.ok(res);
     }
 

@@ -26,21 +26,21 @@ public class NaceService {
     @Qualifier("country-configurations")
     private Map<String, CountryConfiguration> countryConfigurations;
     
-    public List<String> getLocalNaceLeafUris(String country, List<String> naceList, HttpClient httpClient) {
+    public List<String> getLocalNaceLeafUris(String country, List<String> naceList) {
     	List<String> naceLeafUris = null;
     	if (naceList != null) {
     		naceLeafUris = new ArrayList<>();
     		
     		CountryConfiguration cc = countryConfigurations.get(country);
     		for (String s : naceList) {
-       			naceLeafUris.addAll(getNaceLeaves(s, httpClient, cc));
+       			naceLeafUris.addAll(getNaceLeaves(s, cc));
             }
     	}
     	
     	return naceLeafUris;
     }    
     
-    public Set<String> getNaceLeaves(String uri, HttpClient httpClient, CountryConfiguration cc) {
+    public Set<String> getNaceLeaves(String uri, CountryConfiguration cc) {
     	Set<String> res = new HashSet<>();
 
     	int level = getNaceLevel(uri);
@@ -69,9 +69,9 @@ public class NaceService {
 		sparql += " ?activity skos:inScheme <" + cc.getNaceScheme() + "> } ";
 
     	
-		System.out.println(cc.getNaceEndpoint().getSparqlEndpoint());
-		System.out.println(QueryFactory.create(sparql));
-    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint().getSparqlEndpoint(), sparql, httpClient)) {
+//		System.out.println(cc.getNaceEndpoint().getSparqlEndpoint());
+//		System.out.println(QueryFactory.create(sparql));
+    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint().getSparqlEndpoint(), sparql)) {
             ResultSet rs = qe.execSelect();
             while (rs.hasNext()) {
                 QuerySolution sol = rs.next();
@@ -83,20 +83,8 @@ public class NaceService {
 
     }    
     
-    public String getNextNaceLevel(String parentNode, String language) {
-        String sparql = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
-                        "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
-                        "SELECT ?code ?label WHERE { ";
-        
-        if (parentNode == null) {
-            sparql += "?code <https://lod.stirdata.eu/nace/ont/level> 1 . ";
-        } else {
-            sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parentNode + "> " +  ". ";
-        }
-        sparql += "?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label " +
-                  "FILTER (lang(?label) = \"" + language + "\") }";
-
-//        System.out.println(QueryFactory.create(sparql));
+    public String getNextNaceLevelJson(String parentNode, String language) {
+        String sparql = nextNaceLevelQuery(parentNode, language);
         
         String json;
         try (QueryExecution qe = QueryExecutionFactory.sparqlService(naceEndpointEU.getSparqlEndpoint(), sparql)) {
@@ -107,6 +95,48 @@ public class NaceService {
         }
         return json;
     }
+    
+    public List<String> getNextNaceLevelList(String parentNode) {
+        String sparql = nextNaceLevelQuery(parentNode, null);
+        
+        List<String> res = new ArrayList<>();
+        try (QueryExecution qe = QueryExecutionFactory.sparqlService(naceEndpointEU.getSparqlEndpoint(), sparql)) {
+            ResultSet rs = qe.execSelect();
+            
+            while (rs.hasNext()) {
+	            QuerySolution qs = rs.next();
+	            res.add(qs.get("code").asResource().getURI());
+            }
+            
+        }
+        
+        return res;
+    }
+
+    private String nextNaceLevelQuery(String parentNode, String language) {
+    	String sparql = 
+    			"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
+                "SELECT ?code " + (language == null ? "" : "?label ") + "WHERE { ";
+
+    	sparql += "?code <http://www.w3.org/2004/02/skos/core#inScheme> <https://lod.stirdata.eu/nace/scheme/NACERev2> . ";
+    	
+		if (parentNode == null) {
+		    sparql += "?code <https://lod.stirdata.eu/nace/ont/level> 1 . ";
+		} else {
+		    sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parentNode + "> " +  ". ";
+		}
+		
+		if (language != null) {
+			sparql += "?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label . " +
+			          "FILTER (lang(?label) = \"" + language + "\") ";
+		}
+		
+		sparql += "}" ;
+		
+		return sparql;
+	}
+    
     
     public int getNaceLevel(String uri) {
     	int pos = uri.lastIndexOf("/");

@@ -20,9 +20,8 @@ public class NaceController {
     @GetMapping(produces = "application/json")
     public ResponseEntity<?> getNace(@RequestParam(required = false) Optional<String> parent,
                                      @RequestParam(required = false) Optional<String> language) {
-        String lang = language.orElse("en");
-        String pnt = parent.orElse(null);
-        String res = naceService.getNextNaceLevel(pnt, lang);
+
+        String res = naceService.getNextNaceLevelJson(parent.orElse(null), language.orElse("en"));
 
         return ResponseEntity.ok(res);
     }

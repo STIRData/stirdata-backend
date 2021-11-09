@@ -15,16 +15,11 @@ public class CountryConfiguration {
     
     private String label;
     
+    private ModelConfiguration modelConfiguration;
+    
     private SparqlEndpoint dataEndpoint;
     private SparqlEndpoint naceEndpoint;
     private SparqlEndpoint nutsEndpoint;
-    
-    private String entitySparql;
-    private String entityNameSparql;
-    private String nuts3Sparql;
-    private String naceSparql;
-    private String lauSparql;
-    private String foundingDateSparql;
     
     private String naceScheme;
     private String nacePath1;
