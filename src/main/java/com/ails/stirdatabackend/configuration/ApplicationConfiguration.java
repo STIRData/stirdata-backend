@@ -117,14 +117,16 @@ public class ApplicationConfiguration {
 			mc.setUrl(env.getProperty("data-model.url." + m));
 			
 		    String entitySparql = env.getProperty("sparql.entity." + m);
-		    String entityNameSparql = env.getProperty("sparql.entityName." + m);
+		    String legalNameSparql = env.getProperty("sparql.legalName." + m);
+		    String activeSparql = env.getProperty("sparql.active." + m);
 		    String nuts3Sparql = env.getProperty("sparql.nuts3." + m);
 		    String lauSparql = env.getProperty("sparql.lau." + m);
 		    String naceSparql = env.getProperty("sparql.nace." + m);
 		    String foundingDateSparql = env.getProperty("sparql.foundingDate." + m); 
 
 		    mc.setEntitySparql(entitySparql);
-	    	mc.setEntityNameSparql(entityNameSparql);	
+	    	mc.setLegalNameSparql(legalNameSparql);	
+	    	mc.setActiveSparql(activeSparql);
 	    	mc.setNuts3Sparql(nuts3Sparql);	
 	    	mc.setLauSparql(lauSparql);	
 	    	mc.setNaceSparql(naceSparql);	
@@ -153,13 +155,6 @@ public class ApplicationConfiguration {
 		String defaultNaceEndpoint = env.getProperty("endpoint.nace.00");
 		String defaultNutsEndpoint = env.getProperty("endpoint.nuts.00");
 
-//	    String defaultEntitySparql = env.getProperty("sparql.entity.00");
-//	    String defaultEntityNameSparql = env.getProperty("sparql.entityName.00");
-//	    String defaultNuts3Sparql = env.getProperty("sparql.nuts3.00");
-//	    String defaultLauSparql = env.getProperty("sparql.lau.00");
-//	    String defaultNaceSparql = env.getProperty("sparql.nace.00");
-//	    String defaultFoundingDateSparql = env.getProperty("sparql.foundingDate.00"); 
-
 		String defaultNacePath1 = env.getProperty("nace.path-1.00");
 		String defaultNacePath2 = env.getProperty("nace.path-2.00");
 		String defaultNacePath3 = env.getProperty("nace.path-3.00");
@@ -172,6 +167,7 @@ public class ApplicationConfiguration {
 		String[] cntr = countries.split(",");
 		
 		for (String c : cntr) {
+//			System.out.println(c);
 			CountryConfiguration cc = new CountryConfiguration(c);
 			
 			cc.setLabel(env.getProperty("country.label." + c));
@@ -224,24 +220,6 @@ public class ApplicationConfiguration {
 		    String naceFixedLevel = env.getProperty("nace.fixed-level." + c);
 		    cc.setNaceFixedLevel(naceFixedLevel != null ? Integer.parseInt(naceFixedLevel) : Integer.parseInt(defaultNaceFixedLevel));
 		    
-//		    String entitySparql = env.getProperty("sparql.entity." + c);
-//		    cc.setEntitySparql(entitySparql != null ? entitySparql : defaultEntitySparql);
-//		    
-//		    String entityNameSparql = env.getProperty("sparql.entityName." + c);
-//	    	cc.setEntityNameSparql(entityNameSparql != null ? entityNameSparql : defaultEntityNameSparql);	
-//
-//		    String nuts3Sparql = env.getProperty("sparql.nuts3." + c);
-//	    	cc.setNuts3Sparql(nuts3Sparql != null ? nuts3Sparql : defaultNuts3Sparql);	
-//
-//		    String lauSparql = env.getProperty("sparql.lau." + c);
-//	    	cc.setLauSparql(lauSparql != null ? lauSparql : defaultLauSparql);	
-//
-//		    String naceSparql = env.getProperty("sparql.nace." + c);
-//	    	cc.setNaceSparql(naceSparql != null ? naceSparql : defaultNaceSparql);	
-//
-//		    String foundingDateSparql = env.getProperty("sparql.foundingDate." + c);
-//	    	cc.setFoundingDateSparql(foundingDateSparql != null ? foundingDateSparql : defaultFoundingDateSparql);
-
 		    String nutsPrefix = env.getProperty("nuts.prefix." + c);
 		    cc.setNutsPrefix(nutsPrefix != null ? nutsPrefix : defaultNutsPrefix);	
 
@@ -256,7 +234,6 @@ public class ApplicationConfiguration {
 	
 	@Autowired
 	ResourceLoader resourceLoader;
-
 
 	private void processDcat(CountryConfiguration cc, String dcat, Set<String> supportedModelUrls, Map<String, ModelConfiguration> mcUriMap) {
 

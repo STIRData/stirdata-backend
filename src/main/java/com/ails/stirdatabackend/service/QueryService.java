@@ -6,12 +6,15 @@ import com.ails.stirdatabackend.configuration.ModelConfiguration;
 import com.ails.stirdatabackend.model.SparqlEndpoint;
 import com.ails.stirdatabackend.payload.EndpointResponse;
 import com.ails.stirdatabackend.service.NutsService.RegionCodes;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.Getter;
 import lombok.Setter;
 
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.jena.datatypes.xsd.XSDDateTime;
 import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.riot.RDFDataMgr;
@@ -24,7 +27,12 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -44,6 +52,8 @@ public class QueryService {
     @Value("${page.size}")
     private int pageSize;
 
+    private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd"); 
+    
     @Getter
     @Setter
     private class CoreQuery {
@@ -53,7 +63,7 @@ public class QueryService {
     	public boolean nace;
     }
     
-    private CoreQuery buildCoreQuery(CountryConfiguration cc, boolean name, List<String> nuts3, List<String> lau, List<String> nace, Optional<String> startDateOpt, Optional<String> endDateOpt) {
+    private CoreQuery buildCoreQuery(CountryConfiguration cc, boolean name, List<String> nuts3, List<String> lau, List<String> nace, String foundingStartDate, String foundingEndDate) {
     
     	CoreQuery cq = new CoreQuery();
     	
@@ -62,10 +72,12 @@ public class QueryService {
         ModelConfiguration mc = cc.getModelConfiguration();
         
         sparql += mc.getEntitySparql() + " "; 
+        sparql += mc.getActiveSparql() + " ";
         
         if (name) {
-        	sparql += mc.getEntityNameSparql() + " ";
+        	sparql += mc.getLegalNameSparql() + " ";
         }
+        
         
         if (nuts3 != null && (lau == null || lau.size() == 0)) {            
         	
@@ -134,22 +146,18 @@ public class QueryService {
         
 
         // Date filter (if requested)
-        if (startDateOpt.isPresent() || endDateOpt.isPresent()) {
+        if (foundingStartDate != null || foundingEndDate != null) {
 //            sparql += "?organization schema:foundingDate ?foundingDate ";
             sparql += mc.getFoundingDateSparql() + " ";
 
-            if (startDateOpt.isPresent() && !endDateOpt.isPresent()) {
-                String startDate = startDateOpt.get();
-                sparql += "FILTER( ?foundingDate > \"" + startDate + "\"^^xsd:date) ";
+            if (foundingStartDate != null && foundingEndDate == null) {
+                sparql += "FILTER( ?foundingDate >= \"" + foundingStartDate + "\"^^xsd:date) ";
             }
-            else if (!startDateOpt.isPresent() && endDateOpt.isPresent()) {
-                String endDate = endDateOpt.get();
-                sparql += "FILTER( ?foundingDate < \"" + endDate + "\"^^xsd:date) ";
+            else if (foundingStartDate == null && foundingEndDate != null) {
+                sparql += "FILTER( ?foundingDate < \"" + foundingEndDate + "\"^^xsd:date) ";
             }
             else {
-                String startDate = startDateOpt.get();
-                String endDate = endDateOpt.get();
-                sparql += "FILTER( ?foundingDate > \"" + startDate + "\"^^xsd:date && ?foundingDate < \"" + endDate + "\"^^xsd:date) ";
+                sparql += "FILTER( ?foundingDate >= \"" + foundingStartDate + "\"^^xsd:date && ?foundingDate < \"" + foundingEndDate + "\"^^xsd:date) ";
 
             }
         }
@@ -161,14 +169,13 @@ public class QueryService {
     }
     
     
-    public List<EndpointResponse> paginatedQuery(Optional<List<String>> nutsList, Optional<List<String>> naceList, Optional<String> startDateOpt, Optional<String> endDateOpt, int page, Optional<String> country) {
+    public List<EndpointResponse> paginatedQuery(List<String> nutsLauList, List<String> naceList, String foundingStartDate, String foundingEndDate, int page, String country) {
         
     	List<EndpointResponse> responseList = new ArrayList<>();
-        String countryCode = country.orElse(null);
         
     	Map<CountryConfiguration, RegionCodes> requestMap;
-    	if (nutsList.isPresent()) {
-    		requestMap = nutsService.getEndpointsByNuts(nutsList.get());
+    	if (nutsLauList != null) {
+    		requestMap = nutsService.getEndpointsByNuts(nutsLauList);
     	} else {
     		requestMap = nutsService.getEndpointsByNuts(); 
     	}
@@ -190,7 +197,7 @@ public class QueryService {
 //	        	System.out.println("B NACE : " + naceList.orElse(null));
 //	        	System.out.println("B NUTS : " + countyNuts);
 
-        	List<String> naceLeafUris = naceService.getLocalNaceLeafUris(cc.getCountry(), naceList.orElse(null));
+        	List<String> naceLeafUris = naceService.getLocalNaceLeafUris(cc.getCountry(), naceList);
         	List<String> nuts3UrisList = regions == null ? null : nutsService.getNuts3Uris(cc, regions.getNuts3()); 
         	List<String> lauUrisList = regions == null ? null : nutsService.getLauUris(cc, regions.getLau());
         	
@@ -200,12 +207,12 @@ public class QueryService {
         	int count = 0;
         	
         	if ((nuts3UrisList != null && nuts3UrisList.size() == 0 && lauUrisList != null && lauUrisList.size() == 0) || (naceLeafUris != null && naceLeafUris.size() == 0)) {
-        		responseList.add(new EndpointResponse(cc.getLabel(), mapper.createArrayNode(), count, countryCode));
+        		responseList.add(new EndpointResponse(cc.getLabel(), mapper.createArrayNode(), count, country));
         		return responseList;
         	}
         	
         	
-        	CoreQuery sparql = buildCoreQuery(cc, true, nuts3UrisList, lauUrisList, naceLeafUris, startDateOpt, endDateOpt); 
+        	CoreQuery sparql = buildCoreQuery(cc, true, nuts3UrisList, lauUrisList, naceLeafUris, foundingStartDate, foundingEndDate); 
 
 //	            System.out.println("Will query endpoint: " + cc.getDataEndpoint().getSparqlEndpoint());
 
@@ -264,7 +271,8 @@ public class QueryService {
 	                    "  ?entity <https://schema.org/foundingDate> ?foundingDate . }" +	            		
 	            		"WHERE { " +
                         mc.getEntitySparql() + " " +
-                        mc.getEntityNameSparql() + " " + 
+                        mc.getLegalNameSparql() + " " + 
+                        mc.getActiveSparql() + " " +
                         "OPTIONAL { " + mc.getNuts3Sparql() + " ?address ?ap ?ao . } " + 
         	            "OPTIONAL { " + mc.getNaceSparql() + " } " +
 	                    "OPTIONAL { " + mc.getFoundingDateSparql() + " } " +
@@ -280,26 +288,26 @@ public class QueryService {
 	                RDFDataMgr.write(sw, model, RDFFormat.JSONLD_EXPAND_PRETTY);
 	            }
 	            try {
-	                responseList.add(new EndpointResponse(cc.getLabel(), mapper.readTree(sw.toString()), count, countryCode));
+	                responseList.add(new EndpointResponse(cc.getLabel(), mapper.readTree(sw.toString()), count, country));
 	            } catch (Exception e) {
 	                e.printStackTrace();
 	                return null;
 	            }
             } else {
-            	responseList.add(new EndpointResponse(cc.getLabel(), mapper.createArrayNode(), count, countryCode));
+            	responseList.add(new EndpointResponse(cc.getLabel(), mapper.createArrayNode(), count, country));
             }
         }
         
         return responseList;
     }
     
-    public List<EndpointResponse> groupedQuery(Optional<List<String>> nutsList, Optional<List<String>> naceList, Optional<String> startDateOpt, Optional<String> endDateOpt, boolean gnace, boolean gnuts3) {
+    public List<EndpointResponse> groupedQuery(List<String> nutsLauList, List<String> naceList, String foundingStartDate, String foundingEndDate, boolean gnace, boolean gnuts3) {
         
     	List<EndpointResponse> responseList = new ArrayList<>();
 //        
     	Map<CountryConfiguration, RegionCodes> requestMap;
-    	if (nutsList.isPresent()) {
-    		requestMap = nutsService.getEndpointsByNuts(nutsList.get());
+    	if (nutsLauList != null) {
+    		requestMap = nutsService.getEndpointsByNuts(nutsLauList);
     	} else {
     		requestMap = nutsService.getEndpointsByNuts(); 
     	}
@@ -318,7 +326,7 @@ public class QueryService {
             boolean nuts3 = gnuts3;
 //	            boolean lau = glau;
             
-        	List<String> naceLeafUris = naceService.getLocalNaceLeafUris(cc.getCountry(), naceList.orElse(null));
+        	List<String> naceLeafUris = naceService.getLocalNaceLeafUris(cc.getCountry(), naceList);
         	List<String> nuts3UrisList = regions == null ? null : nutsService.getNuts3Uris(cc, regions.getNuts3()); 
         	List<String> lauUrisList = regions == null ? null : nutsService.getLauUris(cc, regions.getLau());
 
@@ -335,7 +343,7 @@ public class QueryService {
 //	        		lau = false;
 //	        	}
 
-        	CoreQuery sparql = buildCoreQuery(cc, false, nuts3UrisList, lauUrisList, naceLeafUris, startDateOpt, endDateOpt); 
+        	CoreQuery sparql = buildCoreQuery(cc, false, nuts3UrisList, lauUrisList, naceLeafUris, foundingStartDate, foundingEndDate); 
 
 //	            System.out.println("Will query endpoint: " + cc.getDataEndpoint().getSparqlEndpoint());
 
@@ -364,7 +372,7 @@ public class QueryService {
             }
             
 //	            System.out.println(sparql);
-            System.out.println(QueryFactory.create(query));
+//            System.out.println(QueryFactory.create(query));
 
             String json;
             try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint().getSparqlEndpoint(), query)) {
@@ -385,15 +393,49 @@ public class QueryService {
         return responseList;
     }
     
-    public List<EndpointResponse> statistics(CountryConfiguration cc, Dimension dimension, String dimensionRoot) {
-    	return statistics(cc, dimension, dimensionRoot, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+
+    @Getter
+    @Setter
+    public class StatisticResult {
+    	@JsonInclude(JsonInclude.Include.NON_NULL)
+    	private String uri;
+    	
+    	@JsonInclude(JsonInclude.Include.NON_NULL)
+    	private String fromDate;
+    	
+    	@JsonInclude(JsonInclude.Include.NON_NULL)
+    	private String toDate;
+
+    	@JsonIgnore
+    	private String interval;
+
+    	private int count;
+    	
+    	StatisticResult(String uri, int count) {
+    		this.uri = uri;
+    		this.count = count;
+    	}
+    	
+    	StatisticResult(String fromDate, String toDate, String interval, int count) {
+    		this.fromDate = fromDate;
+    		this.toDate = toDate;
+    		this.interval = interval;
+    		this.count = count;
+    	}
     }
     
-    public List<EndpointResponse> statistics(CountryConfiguration cc, Dimension dimension, String dimensionRootUri, Optional<List<String>> nutsList, Optional<List<String>> naceList, Optional<String> startDateOpt, Optional<String> endDateOpt) {
+    public void statistics(CountryConfiguration cc, Dimension dimension, String rootUri, List<String> nutsLauList, List<String> naceList, String foundingStartDateOpt, String foundingEndDate, List<StatisticResult> res) {
+
+        if (dimension == Dimension.NUTS && rootUri != null && rootUri.startsWith("https://lod.stirdata.eu/lau/code/")) {
+    		return;
+    	} else if (dimension == Dimension.NACE && rootUri != null && rootUri.matches("https://lod.stirdata.eu/nace/nace-rev2/code/\\d\\d\\.\\d\\d")) {
+    		return;
+    	}
+        	
 
     	Map<CountryConfiguration, RegionCodes> requestMap;
-    	if (nutsList.isPresent()) {
-    		requestMap = nutsService.getEndpointsByNuts(nutsList.get());
+    	if (nutsLauList != null) {
+    		requestMap = nutsService.getEndpointsByNuts(nutsLauList);
     	} else {
     		requestMap = nutsService.getEndpointsByNuts(); 
     	}
@@ -406,28 +448,26 @@ public class QueryService {
     	
     	List<String> iterUris = null;
     	
-    	System.out.println(cc.getCountry());
-    	System.out.println(dimensionRootUri);
+//    	System.out.println(cc.getCountry());
+//    	System.out.println(rootUri);
+//    	System.out.println(nutsLauList);
     	
         if (dimension == Dimension.NUTS) {
-         	naceLeafUris = naceService.getLocalNaceLeafUris(cc.getCountry(), naceList.orElse(null));
+         	naceLeafUris = naceService.getLocalNaceLeafUris(cc.getCountry(), naceList);
          	
-         	iterUris = nutsService.getNextNutsLevelList(dimensionRootUri == null ? cc.getNutsPrefix() + "" + cc.getCountry() : dimensionRootUri);
+         	iterUris = nutsService.getNextNutsLevelList(rootUri == null ? NutsService.nutsPrefix + "" + cc.getCountry() : rootUri);
         } else if (dimension == Dimension.LAU) {
-         	naceLeafUris = naceService.getLocalNaceLeafUris(cc.getCountry(), naceList.orElse(null));
+         	naceLeafUris = naceService.getLocalNaceLeafUris(cc.getCountry(), naceList);
          	
-         	iterUris = nutsService.getNextNutsLevelList(dimensionRootUri);
+         	iterUris = nutsService.getNextNutsLevelList(rootUri);
         } else if (dimension == Dimension.NACE) {
 	        nuts3UrisList = regions == null ? null : nutsService.getNuts3Uris(cc, regions.getNuts3()); 
 	        lauUrisList = regions == null ? null : nutsService.getLauUris(cc, regions.getLau());
 	        
-	        iterUris = naceService.getNextNaceLevelList(dimensionRootUri);
-        }
+	        iterUris = naceService.getNextNaceLevelList(rootUri);
+        } 
 
-//        System.out.println(naceLeafUris);
-//        System.out.println(nuts3UrisList);
-//        System.out.println(lauUrisList);
-    	System.out.println(iterUris);
+//    	System.out.println(iterUris);
 
         String prefix = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
                         "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "+
@@ -436,38 +476,153 @@ public class QueryService {
         for (String uri : iterUris) {
         	CoreQuery sparql = null; 
         			
-        	
 	        if (dimension == Dimension.NUTS) {
 	        	if (uri.startsWith("https://lod.stirdata.eu/nuts/code/")) {
-	        		sparql = buildCoreQuery(cc, false, new ArrayList<>(nutsService.getLocalizedNuts3Descendents(uri, cc)), null, naceLeafUris, startDateOpt, endDateOpt);
+	        		sparql = buildCoreQuery(cc, false, new ArrayList<>(nutsService.getLocalizedNuts3Descendents(uri, cc)), null, naceLeafUris, foundingStartDateOpt, foundingEndDate);
 	        	} else if (uri.startsWith("https://lod.stirdata.eu/lau/code/")) {
 	            	List<String> uriAsList = new ArrayList<>();
 	            	uriAsList.add(nutsService.getLocalizedLau(uri, cc));
 	            	
-	        		sparql = buildCoreQuery(cc, false, null, uriAsList, naceLeafUris, startDateOpt, endDateOpt);
+	        		sparql = buildCoreQuery(cc, false, null, uriAsList, naceLeafUris, foundingStartDateOpt, foundingEndDate);
 	        	}
 	        } else if (dimension == Dimension.NACE) {
             	List<String> uriAsList = new ArrayList<>();
             	uriAsList.add(uri);
             	
-		        sparql = buildCoreQuery(cc, false, nuts3UrisList, lauUrisList, naceService.getLocalNaceLeafUris(cc.getCountry(),  uriAsList), startDateOpt, endDateOpt); 
+		        sparql = buildCoreQuery(cc, false, nuts3UrisList, lauUrisList, naceService.getLocalNaceLeafUris(cc.getCountry(),  uriAsList), foundingStartDateOpt, foundingEndDate); 
 	        }
 	  
 	        String query = prefix + "SELECT (COUNT(DISTINCT ?entity) AS ?count) WHERE { " + sparql.getWhere() + " } " ;
 	
-	        System.out.println(uri);
-//	        System.out.println(QueryFactory.create(query));
+//	        System.out.println(uri);
+//	        System.out.println(query);
 	
             try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint().getSparqlEndpoint(), query)) {
             	ResultSet rs = qe.execSelect();
             	
             	while (rs.hasNext()) {
-            		System.out.println(rs.next());
+            		QuerySolution sol = rs.next();
+
+//            		System.out.println(sol);
+            		int count = sol.get("count").asLiteral().getInt();
+            		if (count > 0) {
+            			res.add(new StatisticResult(uri, count));
+            		}
             	}
 	        }
         }        	        
-//        return responseList;
-           return null;
+
+    }    
+
+    //foundingStartDate, String foundingEndDate should be null
+    public void dateStatistics(CountryConfiguration cc, Dimension dimension, String fromDate, String toDate, String interval, List<String> nutsLauList, List<String> naceList, String foundingStartDate, String foundingEndDate, List<StatisticResult> res) throws ParseException {
+
+    	if (interval != null && interval.equals("1M")) {
+    		return;
+    	}
+    	
+    	Map<CountryConfiguration, RegionCodes> requestMap;
+    	if (nutsLauList != null) {
+    		requestMap = nutsService.getEndpointsByNuts(nutsLauList);
+    	} else {
+    		requestMap = nutsService.getEndpointsByNuts(); 
+    	}
+    	
+    	RegionCodes regions = requestMap.get(cc);
+
+    	List<String> naceLeafUris = naceService.getLocalNaceLeafUris(cc.getCountry(), naceList);
+    	List<String> nuts3UrisList = regions == null ? null : nutsService.getNuts3Uris(cc, regions.getNuts3());
+    	List<String> lauUrisList = regions == null ? null : nutsService.getLauUris(cc, regions.getLau());
+    	
+    	String prefix = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "+
+                "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> ";
+
+   		CoreQuery sparql = null; 
+			
+   		if (dimension == Dimension.FOUNDING) {
+   			sparql = buildCoreQuery(cc, false, nuts3UrisList, lauUrisList, naceLeafUris, foundingStartDate, foundingEndDate);
+   		}
+    		
+   		String query = prefix + "SELECT (MIN(?foundingDate) AS ?date) WHERE { " + sparql.getWhere() + " " + cc.getModelConfiguration().getFoundingDateSparql() + " } " ;
+
+   		Calendar minDate = null;
+   		if (fromDate == null) {
+	   		try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint().getSparqlEndpoint(), query)) {
+		    	ResultSet rs = qe.execSelect();
+		    	
+		    	while (rs.hasNext()) {
+		    		QuerySolution sol = rs.next();
+		
+		    		minDate = ((XSDDateTime)sol.get("date").asLiteral().getValue()).asCalendar();
+		    	}
+		    }
+   		} else {
+   			minDate = Calendar.getInstance();
+   			minDate.setTime(dateFormat.parse(fromDate));
+   		}
+   		
+   		Calendar maxDate = Calendar.getInstance();
+   		if (toDate != null) {
+   			maxDate.setTime(dateFormat.parse(toDate));
+   		}
+   		
+//   		System.out.println(dateFormat.format(minDate.getTime()) + " >>> " + dateFormat.format(maxDate.getTime()) );
+   		Calendar endDate = maxDate;
+   		while (endDate.after(minDate)) {
+   			String resInterval = null;
+   			Calendar startDate = (Calendar)endDate.clone();
+   			if (interval == null) {
+   				startDate.add(Calendar.YEAR, -10);
+   				resInterval = "10Y";
+   			} else if (interval.equals("10Y")) {
+   				startDate.add(Calendar.YEAR, -1);
+   				resInterval = "1Y";
+   			} else if (interval.equals("1Y")) {
+   				startDate.add(Calendar.MONTH, -1);
+   				resInterval = "1M";
+   			}
+   			
+   			if (startDate.before(minDate)) {
+   				startDate = minDate;
+   				
+   				Calendar startDate2 = (Calendar)startDate.clone();
+   				startDate2.add(Calendar.YEAR, 1);
+   				if (startDate2.after((endDate)) || startDate2.equals(endDate)) {
+   					resInterval = "1Y";
+   				} else {
+   					startDate2.add(Calendar.YEAR, -1);
+   					startDate2.add(Calendar.MONTH, 1);
+   	   				if (startDate2.after((endDate)) || startDate2.equals(endDate)) {
+   	   					resInterval = "1M";
+   	   				}
+   				}
+   			}
+   			
+	        sparql = buildCoreQuery(cc, false, nuts3UrisList, lauUrisList, naceLeafUris, dateFormat.format(startDate.getTime()), dateFormat.format(endDate.getTime())); 
+	  
+	        query = prefix + "SELECT (COUNT(DISTINCT ?entity) AS ?count) WHERE { " + sparql.getWhere() + " } " ;
+	
+//	        System.out.println(dateFormat.format(startDate.getTime()) + " - " + dateFormat.format(endDate.getTime()));
+//	        System.out.println(query);
+	
+            try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint().getSparqlEndpoint(), query)) {
+            	ResultSet rs = qe.execSelect();
+            	
+            	while (rs.hasNext()) {
+            		QuerySolution sol = rs.next();
+
+//            		System.out.println(sol);
+            		int count = sol.get("count").asLiteral().getInt();
+            		if (count > 0) {
+            			res.add(new StatisticResult(dateFormat.format(startDate.getTime()), dateFormat.format(endDate.getTime()), resInterval, count));
+            		}
+            	}
+	        }
+            
+            endDate = startDate;
+   		}
+
     }    
 
 }

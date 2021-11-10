@@ -4,6 +4,7 @@ import com.ails.stirdatabackend.configuration.CountryConfiguration;
 import com.ails.stirdatabackend.configuration.Dimension;
 import com.ails.stirdatabackend.payload.EndpointResponse;
 import com.ails.stirdatabackend.service.QueryService;
+import com.ails.stirdatabackend.service.QueryService.StatisticResult;
 import com.ails.stirdatabackend.service.TestService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -13,9 +14,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/api/query")
@@ -46,31 +51,72 @@ public class QueryController {
     @GetMapping
     public ResponseEntity<?> performQuery(@RequestParam(required = false) Optional<List<String>> NUTS,
                                           @RequestParam(required = false) Optional<List<String>> NACE,
-                                          @RequestParam(required = false) Optional<String> startDate,
-                                          @RequestParam(required = false) Optional<String> endDate,
+                                          @RequestParam(required = false) Optional<String> foundingStartDate,
+                                          @RequestParam(required = false) Optional<String> foundingEndDate,
                                           @RequestParam(required = false) Optional<String> country,
                                           @RequestParam(required = false, defaultValue="1") int page) {
-        List<EndpointResponse> res = queryService.paginatedQuery(NUTS, NACE, startDate, endDate, page, country );
+        List<EndpointResponse> res = queryService.paginatedQuery(NUTS.orElse(null), NACE.orElse(null), foundingStartDate.orElse(null), foundingEndDate.orElse(null), page, country.orElse(null) );
         return ResponseEntity.ok(res);
     }
     
     @GetMapping("/grouped")
     public ResponseEntity<?> groupByQuery(@RequestParam(required = false) Optional<List<String>> NUTS,
                                           @RequestParam(required = false) Optional<List<String>> NACE,
-                                          @RequestParam(required = false) Optional<String> startDate,
-                                          @RequestParam(required = false) Optional<String> endDate,
+                                          @RequestParam(required = false) Optional<String> foundingStartDate,
+                                          @RequestParam(required = false) Optional<String> foundingEndDate,
                                           @RequestParam() boolean gnace,
                                           @RequestParam() boolean gnuts3) {
-        List<EndpointResponse> res = queryService.groupedQuery(NUTS, NACE, startDate, endDate, gnace, gnuts3 );
+        List<EndpointResponse> res = queryService.groupedQuery(NUTS.orElse(null), NACE.orElse(null), foundingStartDate.orElse(null), foundingEndDate.orElse(null), gnace, gnuts3 );
         return ResponseEntity.ok(res);
     }
     
     @GetMapping("/statistics")
-    public ResponseEntity<?> statistics(@RequestParam String country, @RequestParam Dimension dimension, Optional<String> root) {
+    public ResponseEntity<?> statistics(@RequestParam String country, 
+    		                            @RequestParam Dimension dimension, 
+    		                            @RequestParam Optional<String> top,
+    		                            @RequestParam(defaultValue = "false") boolean allLevels,
+    		                            @RequestParam(required = false) Optional<List<String>> NUTS,
+                                        @RequestParam(required = false) Optional<List<String>> NACE,
+                                        @RequestParam(required = false) Optional<String> foundingStartDate,
+                                        @RequestParam(required = false) Optional<String> foundingEndDate) {
     	CountryConfiguration cc = countryConfigurations.get(country);
     	
     	if (cc != null) {
-    		List<EndpointResponse> res = queryService.statistics(cc, dimension, root.orElse(null));
+    		List<StatisticResult> res = new ArrayList<>();
+    		
+    		if (dimension == Dimension.NUTS || dimension == Dimension.NACE) {
+	    		queryService.statistics(cc, dimension, top.orElse(null), NUTS.orElse(null), NACE.orElse(null), foundingStartDate.orElse(null), foundingEndDate.orElse(null), res);
+	    		
+	    		if (allLevels) {
+	    			for (int i = 0; i < res.size(); i++) {
+	    				queryService.statistics(cc, dimension, res.get(i).getUri(), NUTS.orElse(null), NACE.orElse(null), foundingStartDate.orElse(null), foundingEndDate.orElse(null), res);
+	    			}
+	    		}
+    		} else if (dimension == Dimension.FOUNDING) {
+    			try {
+			    	String fromDate = null;
+			    	String toDate = null;
+
+    				if (top.isPresent()) {
+    			    	Pattern p = Pattern.compile("(\\d{4}-\\d{2}-\\d{2})?--(\\d{4}-\\d{2}-\\d{2})?");
+    			    	
+    			    	Matcher m = p.matcher(top.get());
+    			    	if (m.find()) {
+    			    		fromDate = m.group(1);
+    			    		toDate = m.group(2);
+    			    	}
+    				}
+    				
+	    			queryService.dateStatistics(cc, dimension, fromDate, toDate, null, NUTS.orElse(null), NACE.orElse(null), foundingStartDate.orElse(null), foundingEndDate.orElse(null), res);
+		    		if (allLevels) {
+		    			for (int i = 0; i < res.size(); i++) {
+		    				queryService.dateStatistics(cc, dimension, res.get(i).getFromDate(), res.get(i).getToDate(), res.get(i).getInterval(), NUTS.orElse(null), NACE.orElse(null), foundingStartDate.orElse(null), foundingEndDate.orElse(null), res);
+		    			}
+		    		}
+    			} catch (Exception e) {
+    				return (ResponseEntity<?>)ResponseEntity.badRequest();
+    			}
+    		}
     		return ResponseEntity.ok(res);
     	} else {
     		return (ResponseEntity<?>)ResponseEntity.notFound();

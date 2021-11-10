@@ -5,5 +5,7 @@ public enum Dimension {
 	DATA,
 	NACE,
 	NUTS,
-	LAU
+	LAU,
+	FOUNDING,
+	DISSOLUTION,
 }

@@ -48,8 +48,8 @@ public class NutsService {
     @Qualifier("country-configurations")
     private Map<String, CountryConfiguration> countryConfigurations;
 
-    private final static String nutsPrefix = "https://lod.stirdata.eu/nuts/code/";
-    private final static String lauPrefix = "https://lod.stirdata.eu/nuts/lau/";
+    public final static String nutsPrefix = "https://lod.stirdata.eu/nuts/code/";
+    public final static String lauPrefix = "https://lod.stirdata.eu/nuts/lau/";
     
     private final static Pattern nutsPattern = Pattern.compile("^https://lod\\.stirdata\\.eu/nuts/code/([A-Z][A-Z])");
     private final static Pattern lauPattern = Pattern.compile("^https://lod\\.stirdata\\.eu/lau/code/([A-Z][A-Z])");
@@ -80,7 +80,7 @@ public class NutsService {
     
     public List<String> getNuts3Uris(CountryConfiguration cc, List<String> requestMap) {
     	
-    	if (requestMap != null && requestMap.contains(cc.getNutsPrefix() + cc.getCountry())) { // entire country, ignore nuts
+    	if (requestMap != null && requestMap.contains(nutsPrefix + cc.getCountry())) { // entire country, ignore nuts
     		return null;
     	}
     	
@@ -227,12 +227,15 @@ public class NutsService {
     	while (true) {
     		
 	        String sparql = getNextNutsLevelQuery(parentNode, lauChildren, null);
-	        
+
 	        SparqlEndpoint endpoint = !lauChildren ? nutsEndpointEU : lauEndpointEU;
+	        
+//	        System.out.println(endpoint.getSparqlEndpoint());
+//            System.out.println(sparql);
+
 	        try (QueryExecution qe = QueryExecutionFactory.sparqlService(endpoint.getSparqlEndpoint(), sparql)) {
 	            ResultSet rs = qe.execSelect();
 
-	            System.out.println(sparql);
 	            
 	            res =  new ArrayList<>();
 	            int level = 100;
@@ -240,7 +243,7 @@ public class NutsService {
 	            	QuerySolution sol = rs.next();
 	            	res.add(sol.get("code").asResource().getURI());
 	            	
-	            	System.out.println(sol);
+//	            	System.out.println(sol);
 	            	
 	            	RDFNode lv = sol.get("level");
 	            	if (lv != null) {
@@ -323,7 +326,7 @@ public class NutsService {
 //        	sparql += " ORDER BY ?code";
 	    }
 	    
-	    System.out.println(sparql);
+//	    System.out.println(sparql);
 	    return sparql;
 	}
     

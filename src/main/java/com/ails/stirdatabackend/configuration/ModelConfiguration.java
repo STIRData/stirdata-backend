@@ -15,7 +15,8 @@ public class ModelConfiguration {
     private String url;
     
     private String entitySparql;
-    private String entityNameSparql;
+    private String legalNameSparql;
+    private String activeSparql;
     private String nuts3Sparql;
     private String naceSparql;
     private String lauSparql;
