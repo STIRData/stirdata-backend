@@ -53,9 +53,11 @@ public class QueryController {
                                           @RequestParam(required = false) Optional<List<String>> NACE,
                                           @RequestParam(required = false) Optional<String> foundingStartDate,
                                           @RequestParam(required = false) Optional<String> foundingEndDate,
+                                          @RequestParam(required = false) Optional<String> dissolutionStartDate,
+                                          @RequestParam(required = false) Optional<String> dissolutionEndDate,
                                           @RequestParam(required = false) Optional<String> country,
                                           @RequestParam(required = false, defaultValue="1") int page) {
-        List<EndpointResponse> res = queryService.paginatedQuery(NUTS.orElse(null), NACE.orElse(null), foundingStartDate.orElse(null), foundingEndDate.orElse(null), page, country.orElse(null) );
+        List<EndpointResponse> res = queryService.paginatedQuery(NUTS.orElse(null), NACE.orElse(null), foundingStartDate.orElse(null), foundingEndDate.orElse(null), dissolutionStartDate.orElse(null), dissolutionEndDate.orElse(null), page, country.orElse(null) );
         return ResponseEntity.ok(res);
     }
     
@@ -64,9 +66,11 @@ public class QueryController {
                                           @RequestParam(required = false) Optional<List<String>> NACE,
                                           @RequestParam(required = false) Optional<String> foundingStartDate,
                                           @RequestParam(required = false) Optional<String> foundingEndDate,
+                                          @RequestParam(required = false) Optional<String> dissolutionStartDate,
+                                          @RequestParam(required = false) Optional<String> dissolutionEndDate,
                                           @RequestParam() boolean gnace,
                                           @RequestParam() boolean gnuts3) {
-        List<EndpointResponse> res = queryService.groupedQuery(NUTS.orElse(null), NACE.orElse(null), foundingStartDate.orElse(null), foundingEndDate.orElse(null), gnace, gnuts3 );
+        List<EndpointResponse> res = queryService.groupedQuery(NUTS.orElse(null), NACE.orElse(null), foundingStartDate.orElse(null), foundingEndDate.orElse(null), dissolutionStartDate.orElse(null), dissolutionEndDate.orElse(null), gnace, gnuts3 );
         return ResponseEntity.ok(res);
     }
     
@@ -78,21 +82,23 @@ public class QueryController {
     		                            @RequestParam(required = false) Optional<List<String>> NUTS,
                                         @RequestParam(required = false) Optional<List<String>> NACE,
                                         @RequestParam(required = false) Optional<String> foundingStartDate,
-                                        @RequestParam(required = false) Optional<String> foundingEndDate) {
+                                        @RequestParam(required = false) Optional<String> foundingEndDate,
+                                        @RequestParam(required = false) Optional<String> dissolutionStartDate,
+                                        @RequestParam(required = false) Optional<String> dissolutionEndDate) {
     	CountryConfiguration cc = countryConfigurations.get(country);
     	
     	if (cc != null) {
     		List<StatisticResult> res = new ArrayList<>();
     		
     		if (dimension == Dimension.NUTS || dimension == Dimension.NACE) {
-	    		queryService.statistics(cc, dimension, top.orElse(null), NUTS.orElse(null), NACE.orElse(null), foundingStartDate.orElse(null), foundingEndDate.orElse(null), res);
+	    		queryService.statistics(cc, dimension, top.orElse(null), NUTS.orElse(null), NACE.orElse(null), foundingStartDate.orElse(null), foundingEndDate.orElse(null), dissolutionStartDate.orElse(null), dissolutionEndDate.orElse(null), res);
 	    		
 	    		if (allLevels) {
 	    			for (int i = 0; i < res.size(); i++) {
-	    				queryService.statistics(cc, dimension, res.get(i).getUri(), NUTS.orElse(null), NACE.orElse(null), foundingStartDate.orElse(null), foundingEndDate.orElse(null), res);
+	    				queryService.statistics(cc, dimension, res.get(i).getUri(), NUTS.orElse(null), NACE.orElse(null), foundingStartDate.orElse(null), foundingEndDate.orElse(null), dissolutionStartDate.orElse(null), dissolutionEndDate.orElse(null), res);
 	    			}
 	    		}
-    		} else if (dimension == Dimension.FOUNDING) {
+    		} else if (dimension == Dimension.FOUNDING || dimension == Dimension.DISSOLUTION) {
     			try {
 			    	String fromDate = null;
 			    	String toDate = null;
@@ -107,19 +113,20 @@ public class QueryController {
     			    	}
     				}
     				
-	    			queryService.dateStatistics(cc, dimension, fromDate, toDate, null, NUTS.orElse(null), NACE.orElse(null), foundingStartDate.orElse(null), foundingEndDate.orElse(null), res);
+	    			queryService.dateStatistics(cc, dimension, fromDate, toDate, null, NUTS.orElse(null), NACE.orElse(null), foundingStartDate.orElse(null), foundingEndDate.orElse(null), dissolutionStartDate.orElse(null), dissolutionEndDate.orElse(null), res);
 		    		if (allLevels) {
 		    			for (int i = 0; i < res.size(); i++) {
-		    				queryService.dateStatistics(cc, dimension, res.get(i).getFromDate(), res.get(i).getToDate(), res.get(i).getInterval(), NUTS.orElse(null), NACE.orElse(null), foundingStartDate.orElse(null), foundingEndDate.orElse(null), res);
+		    				queryService.dateStatistics(cc, dimension, res.get(i).getFromDate(), res.get(i).getToDate(), res.get(i).getInterval(), NUTS.orElse(null), NACE.orElse(null), foundingStartDate.orElse(null), foundingEndDate.orElse(null), dissolutionStartDate.orElse(null), dissolutionEndDate.orElse(null), res);
 		    			}
 		    		}
     			} catch (Exception e) {
-    				return (ResponseEntity<?>)ResponseEntity.badRequest();
+    				e.printStackTrace();
+    				return ResponseEntity.badRequest().build();
     			}
     		}
     		return ResponseEntity.ok(res);
     	} else {
-    		return (ResponseEntity<?>)ResponseEntity.notFound();
+    		return ResponseEntity.notFound().build();
     	}
     }
 }

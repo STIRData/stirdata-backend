@@ -14,7 +14,6 @@ import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.slf4j.Logger;
@@ -123,6 +122,7 @@ public class ApplicationConfiguration {
 		    String lauSparql = env.getProperty("sparql.lau." + m);
 		    String naceSparql = env.getProperty("sparql.nace." + m);
 		    String foundingDateSparql = env.getProperty("sparql.foundingDate." + m); 
+		    String dissolutionDateSparql = env.getProperty("sparql.dissolutionDate." + m);
 
 		    mc.setEntitySparql(entitySparql);
 	    	mc.setLegalNameSparql(legalNameSparql);	
@@ -131,6 +131,7 @@ public class ApplicationConfiguration {
 	    	mc.setLauSparql(lauSparql);	
 	    	mc.setNaceSparql(naceSparql);	
 	    	mc.setFoundingDateSparql(foundingDateSparql);
+	    	mc.setDissolutionDateSparql(dissolutionDateSparql);
 
 			map.put(m, mc);
 		}

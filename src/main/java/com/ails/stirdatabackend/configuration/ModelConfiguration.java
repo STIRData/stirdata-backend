@@ -21,6 +21,7 @@ public class ModelConfiguration {
     private String naceSparql;
     private String lauSparql;
     private String foundingDateSparql;
+    private String dissolutionDateSparql;
     
     public ModelConfiguration(String model) {
     	this.model = model;

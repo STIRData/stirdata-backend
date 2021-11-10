@@ -63,7 +63,7 @@ public class QueryService {
     	public boolean nace;
     }
     
-    private CoreQuery buildCoreQuery(CountryConfiguration cc, boolean name, List<String> nuts3, List<String> lau, List<String> nace, String foundingStartDate, String foundingEndDate) {
+    private CoreQuery buildCoreQuery(CountryConfiguration cc, boolean name, List<String> nuts3, List<String> lau, List<String> nace, String foundingStartDate, String foundingEndDate, String dissolutionStartDate, String dissolutionEndDate) {
     
     	CoreQuery cq = new CoreQuery();
     	
@@ -72,7 +72,10 @@ public class QueryService {
         ModelConfiguration mc = cc.getModelConfiguration();
         
         sparql += mc.getEntitySparql() + " "; 
-        sparql += mc.getActiveSparql() + " ";
+        
+        if (dissolutionStartDate == null && dissolutionEndDate == null) {
+        	sparql += mc.getActiveSparql() + " ";
+        }
         
         if (name) {
         	sparql += mc.getLegalNameSparql() + " ";
@@ -132,7 +135,6 @@ public class QueryService {
 
         
         if (nace != null) {
-//        	sparql += " ?organization rov:orgActivity ?nace . ";
         	sparql += mc.getNaceSparql() + " ";
         	
             sparql += " VALUES ?nace { ";
@@ -147,7 +149,6 @@ public class QueryService {
 
         // Date filter (if requested)
         if (foundingStartDate != null || foundingEndDate != null) {
-//            sparql += "?organization schema:foundingDate ?foundingDate ";
             sparql += mc.getFoundingDateSparql() + " ";
 
             if (foundingStartDate != null && foundingEndDate == null) {
@@ -161,7 +162,22 @@ public class QueryService {
 
             }
         }
-//        sparql += "} ";
+        
+        if (dissolutionStartDate != null || dissolutionEndDate != null) {
+            sparql += mc.getDissolutionDateSparql() + " ";
+
+            if (dissolutionStartDate != null && dissolutionEndDate == null) {
+                sparql += "FILTER( ?dissolutionDate >= \"" + dissolutionStartDate + "\"^^xsd:date) ";
+            }
+            else if (dissolutionStartDate == null && dissolutionEndDate != null) {
+                sparql += "FILTER( ?dissolutionDate < \"" + dissolutionEndDate + "\"^^xsd:date) ";
+            }
+            else {
+                sparql += "FILTER( ?dissolutionDate >= \"" + dissolutionStartDate + "\"^^xsd:date && ?dissolutionDate < \"" + dissolutionEndDate + "\"^^xsd:date) ";
+
+            }
+        }
+
         
         cq.setWhere(sparql);
         
@@ -169,7 +185,7 @@ public class QueryService {
     }
     
     
-    public List<EndpointResponse> paginatedQuery(List<String> nutsLauList, List<String> naceList, String foundingStartDate, String foundingEndDate, int page, String country) {
+    public List<EndpointResponse> paginatedQuery(List<String> nutsLauList, List<String> naceList, String foundingStartDate, String foundingEndDate, String dissolutionStartDate, String dissolutionEndDate, int page, String country) {
         
     	List<EndpointResponse> responseList = new ArrayList<>();
         
@@ -212,7 +228,7 @@ public class QueryService {
         	}
         	
         	
-        	CoreQuery sparql = buildCoreQuery(cc, true, nuts3UrisList, lauUrisList, naceLeafUris, foundingStartDate, foundingEndDate); 
+        	CoreQuery sparql = buildCoreQuery(cc, true, nuts3UrisList, lauUrisList, naceLeafUris, foundingStartDate, foundingEndDate, dissolutionStartDate, dissolutionEndDate); 
 
 //	            System.out.println("Will query endpoint: " + cc.getDataEndpoint().getSparqlEndpoint());
 
@@ -301,7 +317,7 @@ public class QueryService {
         return responseList;
     }
     
-    public List<EndpointResponse> groupedQuery(List<String> nutsLauList, List<String> naceList, String foundingStartDate, String foundingEndDate, boolean gnace, boolean gnuts3) {
+    public List<EndpointResponse> groupedQuery(List<String> nutsLauList, List<String> naceList, String foundingStartDate, String foundingEndDate, String dissolutionStartDate, String dissolutionEndDate, boolean gnace, boolean gnuts3) {
         
     	List<EndpointResponse> responseList = new ArrayList<>();
 //        
@@ -343,7 +359,7 @@ public class QueryService {
 //	        		lau = false;
 //	        	}
 
-        	CoreQuery sparql = buildCoreQuery(cc, false, nuts3UrisList, lauUrisList, naceLeafUris, foundingStartDate, foundingEndDate); 
+        	CoreQuery sparql = buildCoreQuery(cc, false, nuts3UrisList, lauUrisList, naceLeafUris, foundingStartDate, foundingEndDate, dissolutionStartDate, dissolutionEndDate); 
 
 //	            System.out.println("Will query endpoint: " + cc.getDataEndpoint().getSparqlEndpoint());
 
@@ -424,7 +440,7 @@ public class QueryService {
     	}
     }
     
-    public void statistics(CountryConfiguration cc, Dimension dimension, String rootUri, List<String> nutsLauList, List<String> naceList, String foundingStartDateOpt, String foundingEndDate, List<StatisticResult> res) {
+    public void statistics(CountryConfiguration cc, Dimension dimension, String rootUri, List<String> nutsLauList, List<String> naceList, String foundingStartDateOpt, String foundingEndDate, String dissolutionStartDateOpt, String dissolutionEndDate, List<StatisticResult> res) {
 
         if (dimension == Dimension.NUTS && rootUri != null && rootUri.startsWith("https://lod.stirdata.eu/lau/code/")) {
     		return;
@@ -478,18 +494,18 @@ public class QueryService {
         			
 	        if (dimension == Dimension.NUTS) {
 	        	if (uri.startsWith("https://lod.stirdata.eu/nuts/code/")) {
-	        		sparql = buildCoreQuery(cc, false, new ArrayList<>(nutsService.getLocalizedNuts3Descendents(uri, cc)), null, naceLeafUris, foundingStartDateOpt, foundingEndDate);
+	        		sparql = buildCoreQuery(cc, false, new ArrayList<>(nutsService.getLocalizedNuts3Descendents(uri, cc)), null, naceLeafUris, foundingStartDateOpt, foundingEndDate, dissolutionStartDateOpt, dissolutionEndDate);
 	        	} else if (uri.startsWith("https://lod.stirdata.eu/lau/code/")) {
 	            	List<String> uriAsList = new ArrayList<>();
 	            	uriAsList.add(nutsService.getLocalizedLau(uri, cc));
 	            	
-	        		sparql = buildCoreQuery(cc, false, null, uriAsList, naceLeafUris, foundingStartDateOpt, foundingEndDate);
+	        		sparql = buildCoreQuery(cc, false, null, uriAsList, naceLeafUris, foundingStartDateOpt, foundingEndDate, dissolutionStartDateOpt, dissolutionEndDate);
 	        	}
 	        } else if (dimension == Dimension.NACE) {
             	List<String> uriAsList = new ArrayList<>();
             	uriAsList.add(uri);
             	
-		        sparql = buildCoreQuery(cc, false, nuts3UrisList, lauUrisList, naceService.getLocalNaceLeafUris(cc.getCountry(),  uriAsList), foundingStartDateOpt, foundingEndDate); 
+		        sparql = buildCoreQuery(cc, false, nuts3UrisList, lauUrisList, naceService.getLocalNaceLeafUris(cc.getCountry(),  uriAsList), foundingStartDateOpt, foundingEndDate, dissolutionStartDateOpt, dissolutionEndDate); 
 	        }
 	  
 	        String query = prefix + "SELECT (COUNT(DISTINCT ?entity) AS ?count) WHERE { " + sparql.getWhere() + " } " ;
@@ -514,8 +530,7 @@ public class QueryService {
 
     }    
 
-    //foundingStartDate, String foundingEndDate should be null
-    public void dateStatistics(CountryConfiguration cc, Dimension dimension, String fromDate, String toDate, String interval, List<String> nutsLauList, List<String> naceList, String foundingStartDate, String foundingEndDate, List<StatisticResult> res) throws ParseException {
+    public void dateStatistics(CountryConfiguration cc, Dimension dimension, String fromDate, String toDate, String interval, List<String> nutsLauList, List<String> naceList, String foundingStartDate, String foundingEndDate, String dissolutionStartDate, String dissolutionEndDate,  List<StatisticResult> res) throws ParseException {
 
     	if (interval != null && interval.equals("1M")) {
     		return;
@@ -539,12 +554,15 @@ public class QueryService {
                 "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> ";
 
    		CoreQuery sparql = null; 
-			
-   		if (dimension == Dimension.FOUNDING) {
-   			sparql = buildCoreQuery(cc, false, nuts3UrisList, lauUrisList, naceLeafUris, foundingStartDate, foundingEndDate);
-   		}
-    		
-   		String query = prefix + "SELECT (MIN(?foundingDate) AS ?date) WHERE { " + sparql.getWhere() + " " + cc.getModelConfiguration().getFoundingDateSparql() + " } " ;
+		String query = null;
+		
+		if (dimension == Dimension.FOUNDING) {
+			sparql = buildCoreQuery(cc, false, nuts3UrisList, lauUrisList, naceLeafUris, null, null, dissolutionStartDate, dissolutionEndDate);
+   			query = prefix + "SELECT (MIN(?foundingDate) AS ?date) WHERE { " + sparql.getWhere() + " " + cc.getModelConfiguration().getFoundingDateSparql() + " } " ;
+		} else if (dimension == Dimension.DISSOLUTION) {
+			sparql = buildCoreQuery(cc, false, nuts3UrisList, lauUrisList, naceLeafUris, foundingStartDate, foundingEndDate, null, null);
+			query = prefix + "SELECT (MIN(?dissolutionDate) AS ?date) WHERE { " + sparql.getWhere() + " " + cc.getModelConfiguration().getDissolutionDateSparql() + " } " ;
+		}
 
    		Calendar minDate = null;
    		if (fromDate == null) {
@@ -599,8 +617,12 @@ public class QueryService {
    				}
    			}
    			
-	        sparql = buildCoreQuery(cc, false, nuts3UrisList, lauUrisList, naceLeafUris, dateFormat.format(startDate.getTime()), dateFormat.format(endDate.getTime())); 
-	  
+   			if (dimension == Dimension.FOUNDING) {
+   				sparql = buildCoreQuery(cc, false, nuts3UrisList, lauUrisList, naceLeafUris, dateFormat.format(startDate.getTime()), dateFormat.format(endDate.getTime()), dissolutionStartDate, dissolutionEndDate); 
+   			} else if (dimension == Dimension.DISSOLUTION) {
+   				sparql = buildCoreQuery(cc, false, nuts3UrisList, lauUrisList, naceLeafUris, foundingStartDate, foundingEndDate, dateFormat.format(startDate.getTime()), dateFormat.format(endDate.getTime()));
+   			}
+   			
 	        query = prefix + "SELECT (COUNT(DISTINCT ?entity) AS ?count) WHERE { " + sparql.getWhere() + " } " ;
 	
 //	        System.out.println(dateFormat.format(startDate.getTime()) + " - " + dateFormat.format(endDate.getTime()));
