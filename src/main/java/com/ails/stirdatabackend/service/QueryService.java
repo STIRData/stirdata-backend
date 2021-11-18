@@ -71,20 +71,20 @@ public class QueryService {
         
         ModelConfiguration mc = cc.getModelConfiguration();
         
-        sparql += mc.getEntitySparql() + " "; 
+        sparql += cc.getEntitySparql() + " "; 
         
         if (dissolutionStartDate == null && dissolutionEndDate == null) {
-        	sparql += mc.getActiveSparql() + " ";
+        	sparql += cc.getActiveSparql() + " ";
         }
         
         if (name) {
-        	sparql += mc.getLegalNameSparql() + " ";
+        	sparql += cc.getLegalNameSparql() + " ";
         }
         
         
         if (nuts3 != null && (lau == null || lau.size() == 0)) {            
         	
-        	sparql += mc.getNuts3Sparql() + " ";
+        	sparql += cc.getNuts3Sparql() + " ";
         	
             sparql += " VALUES ?nuts3 { ";
             for (String uri : nuts3) {
@@ -96,7 +96,7 @@ public class QueryService {
             
         } else if ((nuts3 == null || nuts3.size() == 0) && lau != null) {            
         	
-        	sparql += mc.getLauSparql() + " ";
+        	sparql += cc.getLauSparql() + " ";
         	
             sparql += " VALUES ?lau { ";
             for (String uri : lau) {
@@ -109,7 +109,7 @@ public class QueryService {
         } else if (nuts3 != null && lau != null) { // should be avoided
         	sparql += "{ ";
             
-        	sparql += mc.getNuts3Sparql() + " ";
+        	sparql += cc.getNuts3Sparql() + " ";
         	
             sparql += " VALUES ?nuts3 { ";
             for (String uri : nuts3) {
@@ -119,7 +119,7 @@ public class QueryService {
             
             sparql += "} UNION { ";
             
-            sparql += mc.getLauSparql() + " ";
+            sparql += cc.getLauSparql() + " ";
         	
             sparql += " VALUES ?lau { ";
             for (String uri : lau) {
@@ -135,7 +135,7 @@ public class QueryService {
 
         
         if (nace != null) {
-        	sparql += mc.getNaceSparql() + " ";
+        	sparql += cc.getNaceSparql() + " ";
         	
             sparql += " VALUES ?nace { ";
             for (String uri : nace) {
@@ -149,7 +149,7 @@ public class QueryService {
 
         // Date filter (if requested)
         if (foundingStartDate != null || foundingEndDate != null) {
-            sparql += mc.getFoundingDateSparql() + " ";
+            sparql += cc.getFoundingDateSparql() + " ";
 
             if (foundingStartDate != null && foundingEndDate == null) {
                 sparql += "FILTER( ?foundingDate >= \"" + foundingStartDate + "\"^^xsd:date) ";
@@ -164,7 +164,7 @@ public class QueryService {
         }
         
         if (dissolutionStartDate != null || dissolutionEndDate != null) {
-            sparql += mc.getDissolutionDateSparql() + " ";
+            sparql += cc.getDissolutionDateSparql() + " ";
 
             if (dissolutionStartDate != null && dissolutionEndDate == null) {
                 sparql += "FILTER( ?dissolutionDate >= \"" + dissolutionStartDate + "\"^^xsd:date) ";
@@ -286,12 +286,12 @@ public class QueryService {
 	            		"  ?entity <http://www.w3.org/ns/org#siteAddress> ?address . ?address ?ap ?ao . " + 
 	                    "  ?entity <https://schema.org/foundingDate> ?foundingDate . }" +	            		
 	            		"WHERE { " +
-                        mc.getEntitySparql() + " " +
-                        mc.getLegalNameSparql() + " " + 
-                        mc.getActiveSparql() + " " +
-                        "OPTIONAL { " + mc.getNuts3Sparql() + " ?address ?ap ?ao . } " + 
-        	            "OPTIONAL { " + mc.getNaceSparql() + " } " +
-	                    "OPTIONAL { " + mc.getFoundingDateSparql() + " } " +
+                        cc.getEntitySparql() + " " +
+                        cc.getLegalNameSparql() + " " + 
+                        cc.getActiveSparql() + " " +
+                        "OPTIONAL { " + cc.getNuts3Sparql() + " ?address ?ap ?ao . } " + 
+        	            "OPTIONAL { " + cc.getNaceSparql() + " } " +
+	                    "OPTIONAL { " + cc.getFoundingDateSparql() + " } " +
 	                                     
 	                    "VALUES ?entity { ";
                 for (String uri : companyUris) {
@@ -558,10 +558,10 @@ public class QueryService {
 		
 		if (dimension == Dimension.FOUNDING) {
 			sparql = buildCoreQuery(cc, false, nuts3UrisList, lauUrisList, naceLeafUris, null, null, dissolutionStartDate, dissolutionEndDate);
-   			query = prefix + "SELECT (MIN(?foundingDate) AS ?date) WHERE { " + sparql.getWhere() + " " + cc.getModelConfiguration().getFoundingDateSparql() + " } " ;
+   			query = prefix + "SELECT (MIN(?foundingDate) AS ?date) WHERE { " + sparql.getWhere() + " " + cc.getFoundingDateSparql() + " } " ;
 		} else if (dimension == Dimension.DISSOLUTION) {
 			sparql = buildCoreQuery(cc, false, nuts3UrisList, lauUrisList, naceLeafUris, foundingStartDate, foundingEndDate, null, null);
-			query = prefix + "SELECT (MIN(?dissolutionDate) AS ?date) WHERE { " + sparql.getWhere() + " " + cc.getModelConfiguration().getDissolutionDateSparql() + " } " ;
+			query = prefix + "SELECT (MIN(?dissolutionDate) AS ?date) WHERE { " + sparql.getWhere() + " " + cc.getDissolutionDateSparql() + " } " ;
 		}
 
    		Calendar minDate = null;

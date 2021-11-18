@@ -35,9 +35,49 @@ public class CountryConfiguration {
     private boolean nuts;
     private boolean nace;
  
+    private String entitySparql;
+    private String legalNameSparql;
+    private String activeSparql;
+    private String nuts3Sparql;
+    private String naceSparql;
+    private String lauSparql;
+    private String foundingDateSparql;
+    private String dissolutionDateSparql;
+    
     public CountryConfiguration(String country) {
     	this.country = country;
     }
     
+    public String getEntirySparql() {
+    	return entitySparql != null ? entitySparql : modelConfiguration.getEntitySparql();
+    }
+    
+    public String getLegalNameSparql() {
+    	return legalNameSparql != null ? legalNameSparql : modelConfiguration.getLegalNameSparql();
+    }
+
+    public String getActiveSparql() {
+    	return activeSparql != null ? activeSparql : modelConfiguration.getActiveSparql();
+    }
+
+    public String getNuts3Sparql() {
+    	return nuts3Sparql != null ? nuts3Sparql : modelConfiguration.getNuts3Sparql();
+    }
+
+    public String getNaceSparql() {
+    	return naceSparql != null ? naceSparql : modelConfiguration.getNaceSparql();
+    }
+
+    public String getLauSparql() {
+    	return lauSparql != null ? lauSparql : modelConfiguration.getLauSparql();
+    }
+    
+    public String getFoundingDateSparqll() {
+    	return foundingDateSparql != null ? foundingDateSparql : modelConfiguration.getFoundingDateSparql();
+    }
+
+    public String getDissolutionDateSparql() {
+    	return dissolutionDateSparql != null ? dissolutionDateSparql : modelConfiguration.getDissolutionDateSparql();
+    }
     
 }

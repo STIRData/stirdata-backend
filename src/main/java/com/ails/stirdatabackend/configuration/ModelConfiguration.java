@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 @Getter
 @Setter
 public class ModelConfiguration {
-    private final static Logger logger = LoggerFactory.getLogger(ModelConfiguration.class);
+//    private final static Logger logger = LoggerFactory.getLogger(ModelConfiguration.class);
 
     private String model;
     

@@ -227,6 +227,15 @@ public class ApplicationConfiguration {
 		    String lauPrefix = env.getProperty("lau.prefix." + c);
 		    cc.setLauPrefix(lauPrefix != null ? lauPrefix : defaultLauPrefix);	
 
+		    cc.setEntitySparql(env.getProperty("sparql.entity." + c));
+	    	cc.setLegalNameSparql(env.getProperty("sparql.legalName." + c));	
+	    	cc.setActiveSparql(env.getProperty("sparql.active." + c));
+	    	cc.setNuts3Sparql(env.getProperty("sparql.nuts3." + c));	
+	    	cc.setLauSparql(env.getProperty("sparql.lau." + c));	
+	    	cc.setNaceSparql(env.getProperty("sparql.nace." + c));	
+	    	cc.setFoundingDateSparql(env.getProperty("sparql.foundingDate." + c));
+	    	cc.setDissolutionDateSparql(env.getProperty("sparql.dissolutionDate." + c));
+	    	
 			map.put(c, cc);
 		}
 		

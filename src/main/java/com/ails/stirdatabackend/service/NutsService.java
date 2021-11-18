@@ -376,7 +376,7 @@ public class NutsService {
     		return res;
     	}
     	
-//    	System.out.println(uri + " " + level + " " + sparql);
+    	System.out.println(uri + " " + level + " " + sparql);
     	
     	try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsEndpointEU.getSparqlEndpoint(), sparql)) {
             ResultSet rs = qe.execSelect();
