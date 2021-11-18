@@ -48,7 +48,7 @@ public class CountryConfiguration {
     	this.country = country;
     }
     
-    public String getEntirySparql() {
+    public String getEntitySparql() {
     	return entitySparql != null ? entitySparql : modelConfiguration.getEntitySparql();
     }
     
@@ -72,7 +72,7 @@ public class CountryConfiguration {
     	return lauSparql != null ? lauSparql : modelConfiguration.getLauSparql();
     }
     
-    public String getFoundingDateSparqll() {
+    public String getFoundingDateSparql() {
     	return foundingDateSparql != null ? foundingDateSparql : modelConfiguration.getFoundingDateSparql();
     }
 
