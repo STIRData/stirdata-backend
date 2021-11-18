@@ -53,7 +53,7 @@
   ],
   "http://purl.org/dc/terms/conformsTo": [
     {
-      "@id": "https://stirdata.github.io/data-specification-iccs-rov/"
+      "@id": "https://stirdata.github.io/data-specification-iccs-legal/"
     }
   ],
   "http://www.w3.org/ns/dcat#contactPoint": {},
