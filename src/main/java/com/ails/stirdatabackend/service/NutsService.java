@@ -2,10 +2,21 @@ package com.ails.stirdatabackend.service;
 
 import com.ails.stirdatabackend.configuration.CountryConfiguration;
 import com.ails.stirdatabackend.model.SparqlEndpoint;
-import com.ails.stirdatabackend.utils.URIMapper;
-import net.sf.ehcache.Cache;
-import org.apache.jena.query.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import lombok.Getter;
+import lombok.Setter;
+
+import org.apache.jena.query.QueryExecution;
+import org.apache.jena.query.QueryExecutionFactory;
+import org.apache.jena.query.QuerySolution;
+import org.apache.jena.query.ResultSet;
+import org.apache.jena.query.ResultSetFormatter;
 import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFFormat;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +24,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
-import java.util.*;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,100 +39,297 @@ public class NutsService {
     @Autowired
     @Qualifier("endpoint-nuts-eu")
     private SparqlEndpoint nutsEndpointEU;
-    
+
+    @Autowired
+    @Qualifier("endpoint-lau-eu")
+    private SparqlEndpoint lauEndpointEU;
+
     @Autowired
     @Qualifier("country-configurations")
     private Map<String, CountryConfiguration> countryConfigurations;
 
-    @Autowired
-    private URIMapper uriMapper;
-
-    private final static Pattern nacePattern = Pattern.compile("^https://lod\\.stirdata\\.eu/nuts/code/([A-Z][A-Z])");
+    public final static String nutsPrefix = "https://lod.stirdata.eu/nuts/code/";
+    public final static String lauPrefix = "https://lod.stirdata.eu/nuts/lau/";
     
+    private final static Pattern nutsPattern = Pattern.compile("^https://lod\\.stirdata\\.eu/nuts/code/([A-Z][A-Z])");
+    private final static Pattern lauPattern = Pattern.compile("^https://lod\\.stirdata\\.eu/lau/code/([A-Z][A-Z])");
+    
+    @Getter
+    @Setter
+    public class RegionCodes {
+    	private List<String> nuts3; // null means no selection
+    	private List<String> lau;   // null means no selection
+    	
+    	RegionCodes() {
+    	}
+    	
+    	public void addNuts3(String nuts3) {
+    		if (this.nuts3 == null) {
+        		this.nuts3 = new ArrayList<>();
+    		}
+    		this.nuts3.add(nuts3);
+    	}
+
+    	public void addLau(String lau) {
+    		if (this.lau == null) {
+        		this.lau = new ArrayList<>();
+    		}
+    		this.lau.add(lau);
+    	}
+    }
     
     public List<String> getNuts3Uris(CountryConfiguration cc, List<String> requestMap) {
+    	
+    	if (requestMap != null && requestMap.contains(nutsPrefix + cc.getCountry())) { // entire country, ignore nuts
+    		return null;
+    	}
     	
     	List<String> nuts3UrisList = null;
     	if (requestMap != null) {
             Set<String> nuts3Uris = new HashSet<>();
             for (String s : requestMap) {
-            	nuts3Uris.addAll(getNuts3Descendents(s));
+           		nuts3Uris.addAll(getLocalizedNuts3Descendents(s, cc));
             }
 
             nuts3UrisList = new ArrayList<>(nuts3Uris);
-
-            nuts3UrisList = cc.getCountry().equals("CZ") ? 
-            		uriMapper.mapCzechNutsUri(nuts3UrisList) : uriMapper.mapEuropaNutsUri(nuts3UrisList);
-
     	}
     	
     	return nuts3UrisList;
 
     }
     
-    public Map<CountryConfiguration, List<String>> getEndpointsByNuts(List<String> nutsUri) {
-        Map<CountryConfiguration, List<String>> res = new HashMap<>();
+    public List<String> getLauUris(CountryConfiguration cc, List<String> requestMap) {
+    	
+    	List<String> lauUrisList = null;
+    	if (requestMap != null) {
+            Set<String> lauUris = new HashSet<>();
+            for (String s : requestMap) {
+           		lauUris.add(getLocalizedLau(s, cc));
+            }
 
+            lauUrisList = new ArrayList<>(lauUris);
+    	}
+    	
+    	return lauUrisList;
+
+    }
+    
+    public Map<CountryConfiguration, RegionCodes> getEndpointsByNuts(List<String> nutsUri) {
+        Map<CountryConfiguration, RegionCodes> res = new HashMap<>();
+
+        Matcher matcher;
+        
         for (String uri : nutsUri) {
         	
-        	Matcher matcher = nacePattern.matcher(uri);
+        	matcher = nutsPattern.matcher(uri);
         	if (matcher.find()) {
         		String country = matcher.group(1);
         		
         		CountryConfiguration cc = countryConfigurations.get(country);
         		
-        		List<String> list = res.get(cc);
-                if (list == null) {
-                    list = new ArrayList<>();
-                    res.put(cc, list);
-                }
+        		RegionCodes rc = res.get(cc);
+        		if (rc == null) {
+        			rc = new RegionCodes();
+        			res.put(cc, rc);
+        		}
+        		
+                rc.addNuts3(uri);
                 
-                list.add(uri);
-        	}
+                continue;
+        	} 
+
+        	matcher = lauPattern.matcher(uri);
+        	if (matcher.find()) {
+        		String country = matcher.group(1);
+        		
+        		CountryConfiguration cc = countryConfigurations.get(country);
+        		
+        		RegionCodes rc = res.get(cc);
+        		if (rc == null) {
+        			rc = new RegionCodes();
+        			res.put(cc, rc);
+        		}
+        		
+                rc.addLau(uri);
+                
+                continue;
+        	} 
+
         }
         
         return res;
     }
     
-    public Map<CountryConfiguration, List<String>> getEndpointsByNuts() {
-        Map<CountryConfiguration, List<String>> res = new HashMap<>();
+    public Map<CountryConfiguration, RegionCodes> getEndpointsByNuts() {
+        Map<CountryConfiguration, RegionCodes> res = new HashMap<>();
         for (CountryConfiguration cc : countryConfigurations.values()) {
        		res.put(cc, null);
         }
         return res;
     }
     
-    public String getNextNutsLevel(String parentNode) {
+    public String getNextNutsLevelJson(String parentNode, String spatialResolution) {
+        String json = "";
+
+		boolean lauChildren = false;
+    	while (true) {
+    		
+    		String sparql = getNextNutsLevelQuery(parentNode, lauChildren, spatialResolution);
+	        
+	        SparqlEndpoint endpoint = !lauChildren ? nutsEndpointEU : lauEndpointEU;
+	        try (QueryExecution qe = QueryExecutionFactory.sparqlService(endpoint.getSparqlEndpoint(), sparql)) {
+	            ResultSet rs = qe.execSelect();
+	            
+	            ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+	            ResultSetFormatter.outputAsJSON(outStream, rs);
+	            json = outStream.toString();
+	            
+	            ObjectMapper mapper = new ObjectMapper();  //inefficient way . alternative do the same query twice if needed
+	            JsonNode root = mapper.readTree(json);
+	            
+	            ArrayNode array = (ArrayNode)root.get("results").get("bindings");
+	            
+	            if (array.size() == 1) {
+	            	ObjectNode node = (ObjectNode)array.get(0); 
+	            
+	            	if (!lauChildren && node.get("level").get("value").asInt() < 3) {
+	            		parentNode = node.get("code").get("value").asText();
+	            		lauChildren = false;
+	            	} else if (!lauChildren && node.get("level").get("value").asInt() == 3) {
+	            		parentNode = node.get("code").get("value").asText();
+	            		lauChildren = true;
+	            	} else if (lauChildren) {
+	            		break;
+	            	}
+	            } else if (array.size() == 0) {
+	            	if (!lauChildren) {
+	            		lauChildren = true;
+	            	} else {
+	            		break;
+	            	}
+	            } else {
+	            	break;
+	            }
+	            
+	        } catch (Exception e) {
+				e.printStackTrace();
+				break;
+			}
+    	}
+    	
+        return json;
+    }
+    
+    public List<String> getNextNutsLevelList(String parentNode) {
+    	List<String> res = new ArrayList<>();
+    	
+		boolean lauChildren = false;
+    	while (true) {
+    		
+	        String sparql = getNextNutsLevelQuery(parentNode, lauChildren, null);
+
+	        SparqlEndpoint endpoint = !lauChildren ? nutsEndpointEU : lauEndpointEU;
+	        
+//	        System.out.println(endpoint.getSparqlEndpoint());
+//            System.out.println(sparql);
+
+	        try (QueryExecution qe = QueryExecutionFactory.sparqlService(endpoint.getSparqlEndpoint(), sparql)) {
+	            ResultSet rs = qe.execSelect();
+
+	            
+	            res =  new ArrayList<>();
+	            int level = 100;
+	            while (rs.hasNext()) {
+	            	QuerySolution sol = rs.next();
+	            	res.add(sol.get("code").asResource().getURI());
+	            	
+//	            	System.out.println(sol);
+	            	
+	            	RDFNode lv = sol.get("level");
+	            	if (lv != null) {
+	            		level = lv.asLiteral().getInt();
+	            	}
+	            }
+	            
+	            if (res.size() == 1) {
+	            	if (!lauChildren && level < 3) {
+	            		parentNode = res.get(0);
+	            		lauChildren = false;
+	            	} else if (!lauChildren && level == 3) {
+	            		parentNode = res.get(0);
+	            		lauChildren = true;
+	            	} else if (lauChildren) {
+	            		break;
+	            	}
+	            } else if (res.size() == 0) {
+	            	if (!lauChildren) {
+	            		lauChildren = true;
+	            	} else {
+	            		break;
+	            	}
+	            } else {
+	            	break;
+	            }
+	            
+	        } catch (Exception e) {
+				e.printStackTrace();
+				break;
+			}
+    	}
+    	
+        return res;
+    }
+
+    private String getNextNutsLevelQuery(String parentNode, boolean lauChildren, String spatialResolution) {
         String sparql = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
                         "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
                         "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>"+
-                        "SELECT ?code ?label WHERE { ";
-        
-        String countries = "";
-        for (String c : countryConfigurations.keySet()) {
-        	countries += "\"" + c + "\" ";
-        }
-        
+                        "SELECT ?code ?label ?level " + (spatialResolution != null ? "?geoJson " : "") + " WHERE { ";
+	        
         if (parentNode == null) {
+        	String countries = "";
+            for (String c : countryConfigurations.keySet()) {
+            	countries += "\"" + c + "\" ";
+            }
+	            
             sparql += "?code <https://lod.stirdata.eu/nuts/ont/level> 0 . "+
                       "?code <http://www.w3.org/2004/02/skos/core#notation> ?notation ."+
                       "VALUES ?notation { " + countries + " }";
         } else {
-            sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parentNode + "> " +  ". ";
+        	if (lauChildren) {
+        		sparql += "?code <https://lod.stirdata.eu/nuts/ont/partOf>" + " <" + parentNode + "> . ";
+        	} else {
+        		sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parentNode + "> . ";
+        	}
+        }
+
+        if (!lauChildren) {
+	       	sparql += "?code <https://lod.stirdata.eu/nuts/ont/level> ?level . " ;
+        } else {
+        	sparql += "BIND (4 AS ?level) . " ;
         }
         
-        sparql += " ?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label } ORDER BY ?code";
+	    sparql += "?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label . ";
 
-        String json;
-        try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsEndpointEU.getSparqlEndpoint(), sparql)) {
-            ResultSet rs = qe.execSelect();
-            ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-            ResultSetFormatter.outputAsJSON(outStream, rs);
-            json = outStream.toString();
-        }
-        return json;
-    }
-
+	    if (spatialResolution != null) {
+	        sparql += "OPTIONAL { ?code <http://www.opengis.net/ont/geosparql#hasGeometry> [ " +
+	                  "  <http://www.opengis.net/ont/geosparql#hasSpatialResolution> \"" + spatialResolution + "\" ; " +
+	                  "  <http://www.opengis.net/ont/geosparql#asGeoJSON> ?geoJson ] . } ";
+	    }
+	    
+	    sparql += "} " ;
+	    
+	    if (lauChildren) {
+	    	sparql += "ORDER BY ?label";
+	    } else {
+	    	sparql += "ORDER BY ?label";
+//        	sparql += " ORDER BY ?code";
+	    }
+	    
+//	    System.out.println(sparql);
+	    return sparql;
+	}
+    
     public String getTopLevelNuts(String uri) {
         String sparql = "SELECT ?nuts0 WHERE {" +
                 "<" +  uri + ">" + "<http://www.w3.org/2004/02/skos/core#broader>* ?nuts0 . " +
@@ -139,7 +345,7 @@ public class NutsService {
         return null;
     }
     
-    public Set<String> getNuts3Descendents(String uri) {
+    public Set<String> getLocalizedNuts3Descendents(String uri, CountryConfiguration cc) {
     	Set<String> res = new HashSet<>();
     	
     	int pos = uri.lastIndexOf("/");
@@ -164,19 +370,40 @@ public class NutsService {
 	                   "?nuts3 skos:broader <" + uri + "> . " +
 	                   "?nuts3 <https://lod.stirdata.eu/nuts/ont/level> 3 } ";
     	} else if (level == 3) {
-    		res.add(uri);
+    		//adjust prefix
+            String lastPart = uri.substring(uri.lastIndexOf('/') + 1);
+            res.add(cc.getNutsPrefix() + lastPart);
     		return res;
     	}
+    	
+    	System.out.println(uri + " " + level + " " + sparql);
     	
     	try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsEndpointEU.getSparqlEndpoint(), sparql)) {
             ResultSet rs = qe.execSelect();
             while (rs.hasNext()) {
                 QuerySolution sol = rs.next();
-                res.add(sol.get("nuts3").asResource().toString());
+                String nuts = sol.get("nuts3").asResource().toString();
+                
+                //adjust prefix
+                String lastPart = nuts.substring(nuts.lastIndexOf('/') + 1);
+                res.add(cc.getNutsPrefix() + lastPart);
             }
         }
     	
     	return res;
+    }
+    
+    public String getLocalizedLau(String uri, CountryConfiguration cc) {
+    	
+    	int pos = uri.lastIndexOf("/");
+    	if (pos < 0) {
+    		return null;
+    	}
+    	
+  		//adjust prefix
+        String lastPart = uri.substring(uri.lastIndexOf('/') + 1);
+        
+   		return cc.getLauPrefix() + lastPart;
     }
 
     public String getNutsGeoJson(String nutsUri, String spatialResolution) {
