@@ -60,7 +60,7 @@ public class StatisticsContoller {
                                            @RequestParam(required = false) Code activity,
                                            @RequestParam(required = false) Code founding,
                                            @RequestParam(required = false) Code dissolution,
-                                           @RequestParam(defaultValue = "current") String dimension,
+                                           @RequestParam(defaultValue = "selection") String dimension,
                                            @RequestParam(defaultValue = "en") String language,
                                            @RequestParam(required = false) String geometry) {
 		
