@@ -80,6 +80,8 @@ public class Code implements Serializable {
 					}
 				}
 			}
+		} else {
+			namespace = string;
 		}
 	}
 	
