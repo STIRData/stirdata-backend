@@ -1,25 +1,53 @@
-package com.ails.stirdatabackend.configuration;
+package com.ails.stirdatabackend.model;
 
-import com.ails.stirdatabackend.model.SparqlEndpoint;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Document(collection = "countries")
 public class CountryConfiguration {
-    private final static Logger logger = LoggerFactory.getLogger(CountryConfiguration.class);
 
-    private String country;
+	@Id
+	private String id;
+	
+    private String countryCode;
+    private String countryLabel;
     
-    private String label;
+	private int legalEntityCount;
+	
+	private String conformsTo;
+	
+	private Date lastUpdated;
+	
+//	private String source;
+
+	private String accrualPeriodicity;
     
+	@Transient
+	@JsonIgnore
     private ModelConfiguration modelConfiguration;
     
-    private SparqlEndpoint dataEndpoint;
-    private SparqlEndpoint naceEndpoint;
-    private SparqlEndpoint nutsEndpoint;
+    private String dataEndpoint;
+    private String dataNamedGraph;
+    private String naceEndpoint;
+    private String naceNamedGraph;
+    private String nutsEndpoint;
+    private String nutsNamedGraph;
     
     private String naceScheme;
     private String nacePath1;
@@ -34,6 +62,12 @@ public class CountryConfiguration {
     private boolean lau;
     private boolean nuts;
     private boolean nace;
+    private boolean foundingDate;
+    private String foundingDateFrom;
+    private String foundingDateTo;
+    private boolean dissolutionDate;
+    private String dissolutionDateFrom;
+    private String dissolutionDateTo;
  
     private String entitySparql;
     private String legalNameSparql;
@@ -43,9 +77,13 @@ public class CountryConfiguration {
     private String lauSparql;
     private String foundingDateSparql;
     private String dissolutionDateSparql;
+
+    @Transient
+    @JsonIgnore
+    private Set<Dimension> statistics;
     
     public CountryConfiguration(String country) {
-    	this.country = country;
+    	this.countryCode = country;
     }
     
     public String getEntitySparql() {
@@ -80,4 +118,5 @@ public class CountryConfiguration {
     	return dissolutionDateSparql != null ? dissolutionDateSparql : modelConfiguration.getDissolutionDateSparql();
     }
     
+
 }

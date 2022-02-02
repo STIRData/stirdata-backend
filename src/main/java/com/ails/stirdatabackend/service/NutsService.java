@@ -1,13 +1,16 @@
 package com.ails.stirdatabackend.service;
 
-import com.ails.stirdatabackend.configuration.CountryConfiguration;
-import com.ails.stirdatabackend.model.SparqlEndpoint;
+import com.ails.stirdatabackend.model.Code;
+import com.ails.stirdatabackend.model.CountryConfiguration;
+import com.ails.stirdatabackend.model.PlaceDB;
+import com.ails.stirdatabackend.repository.PlacesDBRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import org.apache.jena.query.QueryExecution;
@@ -15,10 +18,6 @@ import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.query.ResultSetFormatter;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.RDFNode;
-import org.apache.jena.riot.RDFDataMgr;
-import org.apache.jena.riot.RDFFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -30,47 +29,48 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Service
 public class NutsService {
 
     @Autowired
     @Qualifier("endpoint-nuts-eu")
-    private SparqlEndpoint nutsEndpointEU;
+    private String nutsEndpointEU;
 
     @Autowired
     @Qualifier("endpoint-lau-eu")
-    private SparqlEndpoint lauEndpointEU;
+    private String lauEndpointEU;
+    
+//    @Autowired
+//    @Qualifier("namedgraph-nuts-eu")
+//    private String nutsNamedgraphEU;
+//
+//    @Autowired
+//    @Qualifier("namedgraph-lau-eu")
+//    private String lauNamedgraphEU;
 
     @Autowired
     @Qualifier("country-configurations")
     private Map<String, CountryConfiguration> countryConfigurations;
-
-    public final static String nutsPrefix = "https://lod.stirdata.eu/nuts/code/";
-    public final static String lauPrefix = "https://lod.stirdata.eu/nuts/lau/";
     
-    private final static Pattern nutsPattern = Pattern.compile("^https://lod\\.stirdata\\.eu/nuts/code/([A-Z][A-Z])");
-    private final static Pattern lauPattern = Pattern.compile("^https://lod\\.stirdata\\.eu/lau/code/([A-Z][A-Z])");
+    @Autowired
+    private PlacesDBRepository placesRepository;
     
     @Getter
     @Setter
-    public class RegionCodes {
-    	private List<String> nuts3; // null means no selection
-    	private List<String> lau;   // null means no selection
+    @NoArgsConstructor
+    public class PlaceSelection {
+    	private List<Code> nuts3; // null means no selection
+    	private List<Code> lau;   // null means no selection
     	
-    	RegionCodes() {
-    	}
-    	
-    	public void addNuts3(String nuts3) {
+    	public void addNuts3(Code nuts3) {
     		if (this.nuts3 == null) {
         		this.nuts3 = new ArrayList<>();
     		}
     		this.nuts3.add(nuts3);
     	}
 
-    	public void addLau(String lau) {
+    	public void addLau(Code lau) {
     		if (this.lau == null) {
         		this.lau = new ArrayList<>();
     		}
@@ -78,106 +78,254 @@ public class NutsService {
     	}
     }
     
-    public List<String> getNuts3Uris(CountryConfiguration cc, List<String> requestMap) {
+    public List<String> getLocalNutsLeafUris(CountryConfiguration cc, List<Code> nutsCodes) {
     	
-    	if (requestMap != null && requestMap.contains(nutsPrefix + cc.getCountry())) { // entire country, ignore nuts
+    	if (nutsCodes != null && nutsCodes.contains(Code.createNutsCode(cc.getCountryCode()))) { // entire country, ignore nuts
     		return null;
     	}
     	
-    	List<String> nuts3UrisList = null;
-    	if (requestMap != null) {
+    	List<String> res = null;
+    	if (nutsCodes != null) {
             Set<String> nuts3Uris = new HashSet<>();
-            for (String s : requestMap) {
-           		nuts3Uris.addAll(getLocalizedNuts3Descendents(s, cc));
+            for (Code s : nutsCodes) {
+           		nuts3Uris.addAll(getLocalNutsLeafUris(cc, s));
             }
 
-            nuts3UrisList = new ArrayList<>(nuts3Uris);
+            res = new ArrayList<>(nuts3Uris);
     	}
     	
-    	return nuts3UrisList;
+    	return res;
 
     }
     
-    public List<String> getLauUris(CountryConfiguration cc, List<String> requestMap) {
+    public List<String> getLocalNutsLeafUrisDB(CountryConfiguration cc, List<Code> nutsCodes) {
     	
-    	List<String> lauUrisList = null;
-    	if (requestMap != null) {
-            Set<String> lauUris = new HashSet<>();
-            for (String s : requestMap) {
-           		lauUris.add(getLocalizedLau(s, cc));
-            }
-
-            lauUrisList = new ArrayList<>(lauUris);
+    	if (nutsCodes != null && nutsCodes.contains(Code.createNutsCode(cc.getCountryCode()))) { // entire country, ignore nuts
+    		return null;
     	}
     	
-    	return lauUrisList;
+    	List<String> res = null;
+    	if (nutsCodes != null) {
+            Set<String> nuts3Uris = new HashSet<>();
+            for (Code s : nutsCodes) {
+           		nuts3Uris.addAll(getLocalNutsLeafUrisDB(cc, s));
+            }
+
+            res = new ArrayList<>(nuts3Uris);
+    	}
+    	
+    	return res;
 
     }
     
-    public Map<CountryConfiguration, RegionCodes> getEndpointsByNuts(List<String> nutsUri) {
-        Map<CountryConfiguration, RegionCodes> res = new HashMap<>();
+    public List<String> getLocalNutsLeafUrisDB(CountryConfiguration cc, Code nutsCode) {
+    	List<String> res = new ArrayList<>();
+    	
+    	int level = nutsCode.getNutsLevel();
+    	
+    	PlaceDB p = new PlaceDB(nutsCode);
+    	
+    	List<PlaceDB> places = null;
+    	if (level == 0) {
+    		places = placesRepository.findNUTS0Leaves(p);
+    	} else if (level == 1) {
+    		places = placesRepository.findNUTS1Leaves(p);
+    	} else if (level == 2) {
+    		places = placesRepository.findNUTS2Leaves(p);    	
+    	} else if (level == 3) {
+    		places = new ArrayList<>();
+    		places.add(placesRepository.findByCode(nutsCode));
+    	}
+    	
+//    	System.out.println(">>> " + places);
 
-        Matcher matcher;
-        
-        for (String uri : nutsUri) {
-        	
-        	matcher = nutsPattern.matcher(uri);
-        	if (matcher.find()) {
-        		String country = matcher.group(1);
-        		
-        		CountryConfiguration cc = countryConfigurations.get(country);
-        		
-        		RegionCodes rc = res.get(cc);
-        		if (rc == null) {
-        			rc = new RegionCodes();
-        			res.put(cc, rc);
-        		}
-        		
-                rc.addNuts3(uri);
-                
-                continue;
-        	} 
-
-        	matcher = lauPattern.matcher(uri);
-        	if (matcher.find()) {
-        		String country = matcher.group(1);
-        		
-        		CountryConfiguration cc = countryConfigurations.get(country);
-        		
-        		RegionCodes rc = res.get(cc);
-        		if (rc == null) {
-        			rc = new RegionCodes();
-        			res.put(cc, rc);
-        		}
-        		
-                rc.addLau(uri);
-                
-                continue;
-        	} 
-
+    	for (PlaceDB pp : places) {
+            res.add(cc.getNutsPrefix() + pp.getCode().getCode());
         }
-        
-        return res;
+    	
+//    	System.out.println(">>> " + res);
+    	
+    	return res;
     }
     
-    public Map<CountryConfiguration, RegionCodes> getEndpointsByNuts() {
-        Map<CountryConfiguration, RegionCodes> res = new HashMap<>();
+    public Set<String> getLocalNutsLeafUris(CountryConfiguration cc, Code nutsCode) {
+    	Set<String> res = new HashSet<>();
+    	
+    	int level = nutsCode.getNutsLevel();
+    	
+    	String sparql = "PREFIX skos: <http://www.w3.org/2004/02/skos/core#>  "; 
+//    	sparql += nutsNamedgraphEU != null ? "FROM <" + nutsNamedgraphEU + "> " : "";
+    	if (level == 0) {
+			sparql += "SELECT ?nuts3 WHERE { " +
+	                   "?nuts3 skos:broader/skos:broader/skos:broader <" + nutsCode.toUri() + "> . " +
+	                   "?nuts3 <https://lod.stirdata.eu/nuts/ont/level> 3 } ";
+    	} else if (level == 1) {
+			sparql += "SELECT ?nuts3 WHERE { " +
+	                   "?nuts3 skos:broader/skos:broader <" + nutsCode.toUri() + "> . " +
+	                   "?nuts3 <https://lod.stirdata.eu/nuts/ont/level> 3 } ";
+    	} else if (level == 2) {
+			sparql += "SELECT ?nuts3 WHERE { " +
+	                   "?nuts3 skos:broader <" + nutsCode.toUri() + "> . " +
+	                   "?nuts3 <https://lod.stirdata.eu/nuts/ont/level> 3 } ";
+    	} else if (level == 3) {
+    		//adjust prefix
+            res.add(cc.getNutsPrefix() + nutsCode.getCode());
+    		return res;
+    	}
+    	
+//    	System.out.println(">>> " + sparql);
+    	
+    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsEndpointEU, sparql)) {
+            ResultSet rs = qe.execSelect();
+            while (rs.hasNext()) {
+                QuerySolution sol = rs.next();
+                String nuts3 = sol.get("nuts3").asResource().toString();
+                
+                //adjust prefix
+                res.add(cc.getNutsPrefix() + Code.fromNutsUri(nuts3).getCode());
+            }
+        }
+    	
+    	return res;
+    }
+    
+    public List<String> getLocalLauUris(CountryConfiguration cc, List<Code> lauCodes) {
+    	
+    	List<String> res = null;
+    	if (lauCodes != null) {
+            Set<String> lauUris = new HashSet<>();
+            for (Code s : lauCodes) {
+           		lauUris.add(getLocalLauUri(cc, s));
+            }
+
+            res = new ArrayList<>(lauUris);
+    	}
+    	
+    	return res;
+
+    }
+    
+    public String getLocalLauUri(CountryConfiguration cc, Code lauCode) {
+  		//adjust prefix
+   		return cc.getLauPrefix() + lauCode.getCode();
+    }
+    
+    public Map<CountryConfiguration, PlaceSelection> getEndpointsByNuts() {
+        Map<CountryConfiguration, PlaceSelection> res = new HashMap<>();
         for (CountryConfiguration cc : countryConfigurations.values()) {
        		res.put(cc, null);
         }
         return res;
     }
     
-    public String getNextNutsLevelJson(String parentNode, String spatialResolution) {
+    public Map<CountryConfiguration, PlaceSelection> getEndpointsByNuts(List<Code> nutsLauCodes) {
+        Map<CountryConfiguration, PlaceSelection> res = new HashMap<>();
+
+        for (Code code : nutsLauCodes) {
+        	
+        	if (code.isNuts()) {
+        		CountryConfiguration cc = countryConfigurations.get(code.getNutsCountry());
+        		
+        		PlaceSelection rc = res.get(cc);
+        		if (rc == null) {
+        			rc = new PlaceSelection();
+        			res.put(cc, rc);
+        		}
+        		
+                rc.addNuts3(code);
+                
+        	} else if (code.isLau()) {
+        		CountryConfiguration cc = countryConfigurations.get(code.getLauCountry());
+        		
+        		PlaceSelection rc = res.get(cc);
+        		if (rc == null) {
+        			rc = new PlaceSelection();
+        			res.put(cc, rc);
+        		}
+        		
+                rc.addLau(code);
+        	} 
+
+        }
+        
+        return res;
+    }
+    
+    public PlaceDB getByCode(Code code) {
+    	return placesRepository.findByCode(code);
+    }
+    
+    public List<PlaceDB> getNextNutsLauLevelListDb(Code parent) {
+    	List<PlaceDB> places = new ArrayList<>();
+    	
+    	PlaceDB parentPlace = null;
+    	if (parent != null) {
+    		parentPlace = (new PlaceDB(parent));
+    	}
+
+    	boolean lauChildren = false;
+    	
+    	while (true) {
+    		places = placesRepository.findByParent(parentPlace);
+    		int size = places.size();
+
+    		// inefficient!
+        	for (int i = 0; i < places.size(); ) {
+        		if (!places.get(i).isNuts()) { // only for nuts 
+        			break;
+        		}
+        		
+        		if (places.get(i).getCode().isNutsZ()) {
+        			places.remove(i);
+        		} else {
+        			i++;
+        		}
+        	}
+        	
+        	if (size > 0 && places.size() == 0) {
+        		break;
+        	}
+        	
+            if (places.size() == 1) {
+            	PlaceDB place = places.get(0); 
+            
+            	if (!lauChildren && place.isNuts() && place.getLevel()  < 3) {
+            		parentPlace = place;
+            		lauChildren = false;
+            	} else if (!lauChildren && place.isNuts() && place.getLevel() == 3) {
+            		parentPlace = place;
+            		lauChildren = true;
+            	} else if (lauChildren) {
+            		break;
+            	}
+            } else if (places.size() == 0) {
+            	if (!lauChildren) {
+            		lauChildren = true;
+            	} else {
+            		break;
+            	}
+            } else {
+            	break;
+            }
+    	}
+    	
+        return places;
+    }
+    
+    public List<PlaceDB> getNutsLauLevelListDb(List<Code> codes) {
+        return placesRepository.findByCodeIn(codes);
+    }
+
+    public String getNextNutsLevelJsonTs(String parent, String spatialResolution) {
         String json = "";
 
 		boolean lauChildren = false;
     	while (true) {
     		
-    		String sparql = getNextNutsLevelQuery(parentNode, lauChildren, spatialResolution);
+    		String sparql = nextNutsLevelSparqlQuery(parent, lauChildren, spatialResolution);
 	        
-	        SparqlEndpoint endpoint = !lauChildren ? nutsEndpointEU : lauEndpointEU;
-	        try (QueryExecution qe = QueryExecutionFactory.sparqlService(endpoint.getSparqlEndpoint(), sparql)) {
+    		String endpoint = !lauChildren ? nutsEndpointEU : lauEndpointEU;
+	        try (QueryExecution qe = QueryExecutionFactory.sparqlService(endpoint, sparql)) {
 	            ResultSet rs = qe.execSelect();
 	            
 	            ByteArrayOutputStream outStream = new ByteArrayOutputStream();
@@ -193,10 +341,10 @@ public class NutsService {
 	            	ObjectNode node = (ObjectNode)array.get(0); 
 	            
 	            	if (!lauChildren && node.get("level").get("value").asInt() < 3) {
-	            		parentNode = node.get("code").get("value").asText();
+	            		parent = node.get("code").get("value").asText();
 	            		lauChildren = false;
 	            	} else if (!lauChildren && node.get("level").get("value").asInt() == 3) {
-	            		parentNode = node.get("code").get("value").asText();
+	            		parent = node.get("code").get("value").asText();
 	            		lauChildren = true;
 	            	} else if (lauChildren) {
 	            		break;
@@ -220,73 +368,20 @@ public class NutsService {
         return json;
     }
     
-    public List<String> getNextNutsLevelList(String parentNode) {
-    	List<String> res = new ArrayList<>();
-    	
-		boolean lauChildren = false;
-    	while (true) {
-    		
-	        String sparql = getNextNutsLevelQuery(parentNode, lauChildren, null);
-
-	        SparqlEndpoint endpoint = !lauChildren ? nutsEndpointEU : lauEndpointEU;
-	        
-//	        System.out.println(endpoint.getSparqlEndpoint());
-//            System.out.println(sparql);
-
-	        try (QueryExecution qe = QueryExecutionFactory.sparqlService(endpoint.getSparqlEndpoint(), sparql)) {
-	            ResultSet rs = qe.execSelect();
-
-	            
-	            res =  new ArrayList<>();
-	            int level = 100;
-	            while (rs.hasNext()) {
-	            	QuerySolution sol = rs.next();
-	            	res.add(sol.get("code").asResource().getURI());
-	            	
-//	            	System.out.println(sol);
-	            	
-	            	RDFNode lv = sol.get("level");
-	            	if (lv != null) {
-	            		level = lv.asLiteral().getInt();
-	            	}
-	            }
-	            
-	            if (res.size() == 1) {
-	            	if (!lauChildren && level < 3) {
-	            		parentNode = res.get(0);
-	            		lauChildren = false;
-	            	} else if (!lauChildren && level == 3) {
-	            		parentNode = res.get(0);
-	            		lauChildren = true;
-	            	} else if (lauChildren) {
-	            		break;
-	            	}
-	            } else if (res.size() == 0) {
-	            	if (!lauChildren) {
-	            		lauChildren = true;
-	            	} else {
-	            		break;
-	            	}
-	            } else {
-	            	break;
-	            }
-	            
-	        } catch (Exception e) {
-				e.printStackTrace();
-				break;
-			}
-    	}
-    	
-        return res;
-    }
-
-    private String getNextNutsLevelQuery(String parentNode, boolean lauChildren, String spatialResolution) {
+    private String nextNutsLevelSparqlQuery(String parent, boolean lauChildren, String spatialResolution) {
         String sparql = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
                         "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
-                        "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>"+
-                        "SELECT ?code ?label ?level " + (spatialResolution != null ? "?geoJson " : "") + " WHERE { ";
+                        "SELECT ?code ?label ?level " + (spatialResolution != null ? "?geoJson " : "");
+        
+//        if (!lauChildren) {
+//        	sparql += nutsNamedgraphEU != null ? "FROM <" + nutsNamedgraphEU + "> " : "";
+//        } else {
+//        	sparql += lauNamedgraphEU != null ? "FROM <" + lauNamedgraphEU + "> " : "";
+//        }
+        
+        sparql += " WHERE { ";
 	        
-        if (parentNode == null) {
+        if (parent == null) {
         	String countries = "";
             for (String c : countryConfigurations.keySet()) {
             	countries += "\"" + c + "\" ";
@@ -297,9 +392,9 @@ public class NutsService {
                       "VALUES ?notation { " + countries + " }";
         } else {
         	if (lauChildren) {
-        		sparql += "?code <https://lod.stirdata.eu/nuts/ont/partOf>" + " <" + parentNode + "> . ";
+        		sparql += "?code <https://lod.stirdata.eu/nuts/ont/partOf>" + " <" + parent + "> . ";
         	} else {
-        		sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parentNode + "> . ";
+        		sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parent + "> . ";
         	}
         }
 
@@ -330,114 +425,40 @@ public class NutsService {
 	    return sparql;
 	}
     
-    public String getTopLevelNuts(String uri) {
-        String sparql = "SELECT ?nuts0 WHERE {" +
-                "<" +  uri + ">" + "<http://www.w3.org/2004/02/skos/core#broader>* ?nuts0 . " +
-                "?nuts0 <https://lod.stirdata.eu/nuts/ont/level> 0 ." +
-                "} ";
-        try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsEndpointEU.getSparqlEndpoint(), sparql)) {
-            ResultSet rs = qe.execSelect();
-            while (rs.hasNext()) {
-                QuerySolution sol = rs.next();
-                return sol.get("nuts0").asResource().toString();
-            }
-        }
-        return null;
-    }
-    
-    public Set<String> getLocalizedNuts3Descendents(String uri, CountryConfiguration cc) {
-    	Set<String> res = new HashSet<>();
-    	
-    	int pos = uri.lastIndexOf("/");
-    	if (pos < 0) {
-    		return res;
-    	}
-    	
-    	String code = uri.substring(pos + 1);
-    	int level = code.length() - 2;
-    	
-    	String sparql = "PREFIX skos: <http://www.w3.org/2004/02/skos/core#>  "; 
-    	if (level == 0) {
-			sparql += "SELECT ?nuts3 WHERE { " +
-	                   "?nuts3 skos:broader/skos:broader/skos:broader <" + uri + "> . " +
-	                   "?nuts3 <https://lod.stirdata.eu/nuts/ont/level> 3 } ";
-    	} else if (level == 1) {
-			sparql += "SELECT ?nuts3 WHERE { " +
-	                   "?nuts3 skos:broader/skos:broader <" + uri + "> . " +
-	                   "?nuts3 <https://lod.stirdata.eu/nuts/ont/level> 3 } ";
-    	} else if (level == 2) {
-			sparql += "SELECT ?nuts3 WHERE { " +
-	                   "?nuts3 skos:broader <" + uri + "> . " +
-	                   "?nuts3 <https://lod.stirdata.eu/nuts/ont/level> 3 } ";
-    	} else if (level == 3) {
-    		//adjust prefix
-            String lastPart = uri.substring(uri.lastIndexOf('/') + 1);
-            res.add(cc.getNutsPrefix() + lastPart);
-    		return res;
-    	}
-    	
-    	System.out.println(uri + " " + level + " " + sparql);
-    	
-    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsEndpointEU.getSparqlEndpoint(), sparql)) {
-            ResultSet rs = qe.execSelect();
-            while (rs.hasNext()) {
-                QuerySolution sol = rs.next();
-                String nuts = sol.get("nuts3").asResource().toString();
-                
-                //adjust prefix
-                String lastPart = nuts.substring(nuts.lastIndexOf('/') + 1);
-                res.add(cc.getNutsPrefix() + lastPart);
-            }
-        }
-    	
-    	return res;
-    }
-    
-    public String getLocalizedLau(String uri, CountryConfiguration cc) {
-    	
-    	int pos = uri.lastIndexOf("/");
-    	if (pos < 0) {
-    		return null;
-    	}
-    	
-  		//adjust prefix
-        String lastPart = uri.substring(uri.lastIndexOf('/') + 1);
-        
-   		return cc.getLauPrefix() + lastPart;
-    }
 
-    public String getNutsGeoJson(String nutsUri, String spatialResolution) {
-//        final String sparql = "construct {\n"
-//                + "<" + nutsUri+ "> <" + GeoSparqlVocabulary.hasGeometry + "> ?o .\n"
-//                + "?o <" + GeoSparqlVocabulary.asGeoJSON + "> ?o2 .\n"
-//                + "<" + nutsUri + "> <" + GeoSparqlVocabulary.contains + "> ?o1\n"
-//                + "\n"
-//                + "}  where {\n"
-//                + "<" + nutsUri + "> <" + GeoSparqlVocabulary.hasGeometry + "> ?o.\n"
-//                + "?o <" + GeoSparqlVocabulary.hasSpatialResolution + "> \"" + spatialResolution + "\" .\n"
-//                + "?o <" + GeoSparqlVocabulary.asGeoJSON + "> ?o2 .\n"
-//                + "OPTIONAL { <" + nutsUri + "> <" + GeoSparqlVocabulary.contains + "> ?o1} \n"
-//                + "}";
-        final String sparql =
-            "construct {"
-            + " <" + nutsUri + "> <http://www.opengis.net/ont/geosparql#hasGeometry> ?o . "
-            + "?o <http://www.opengis.net/ont/geosparql#asGeoJSON> ?o2 . "
-            + " <" + nutsUri + "> <http://www.opengis.net/ont/geosparql#contains> ?o1 . "
-            + "} where {"
-            + " <" + nutsUri + "> <http://www.opengis.net/ont/geosparql#hasGeometry> ?o . "
-            + "?o <http://www.opengis.net/ont/geosparql#hasSpatialResolution> \"" + spatialResolution + "\" . "
-            + "?o <http://www.opengis.net/ont/geosparql#asGeoJSON> ?o2 . "
-            + "OPTIONAL { <" + nutsUri + "> <http://www.opengis.net/ont/geosparql#contains> ?o1} . "
-            + "}";
-        String res;
-        try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsEndpointEU.getSparqlEndpoint(), sparql)) {
-            final Model m = qe.execConstruct();
-            final ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-            RDFDataMgr.write(outStream, m, RDFFormat.JSONLD);
-            res = outStream.toString();
-        }
 
-        return res;
-    }
+//    public String getNutsGeoJson(String nutsUri, String spatialResolution) {
+////        final String sparql = "construct {\n"
+////                + "<" + nutsUri+ "> <" + GeoSparqlVocabulary.hasGeometry + "> ?o .\n"
+////                + "?o <" + GeoSparqlVocabulary.asGeoJSON + "> ?o2 .\n"
+////                + "<" + nutsUri + "> <" + GeoSparqlVocabulary.contains + "> ?o1\n"
+////                + "\n"
+////                + "}  where {\n"
+////                + "<" + nutsUri + "> <" + GeoSparqlVocabulary.hasGeometry + "> ?o.\n"
+////                + "?o <" + GeoSparqlVocabulary.hasSpatialResolution + "> \"" + spatialResolution + "\" .\n"
+////                + "?o <" + GeoSparqlVocabulary.asGeoJSON + "> ?o2 .\n"
+////                + "OPTIONAL { <" + nutsUri + "> <" + GeoSparqlVocabulary.contains + "> ?o1} \n"
+////                + "}";
+//        final String sparql =
+//            "construct {"
+//            + " <" + nutsUri + "> <http://www.opengis.net/ont/geosparql#hasGeometry> ?o . "
+//            + "?o <http://www.opengis.net/ont/geosparql#asGeoJSON> ?o2 . "
+//            + " <" + nutsUri + "> <http://www.opengis.net/ont/geosparql#contains> ?o1 . "
+//            + "} where {"
+//            + " <" + nutsUri + "> <http://www.opengis.net/ont/geosparql#hasGeometry> ?o . "
+//            + "?o <http://www.opengis.net/ont/geosparql#hasSpatialResolution> \"" + spatialResolution + "\" . "
+//            + "?o <http://www.opengis.net/ont/geosparql#asGeoJSON> ?o2 . "
+//            + "OPTIONAL { <" + nutsUri + "> <http://www.opengis.net/ont/geosparql#contains> ?o1} . "
+//            + "}";
+//        String res;
+//        try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsEndpointEU, sparql)) {
+//            final Model m = qe.execConstruct();
+//            final ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+//            RDFDataMgr.write(outStream, m, RDFFormat.JSONLD);
+//            res = outStream.toString();
+//        }
+//
+//        return res;
+//    }
 
 }

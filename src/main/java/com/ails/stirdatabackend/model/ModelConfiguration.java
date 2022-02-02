@@ -1,14 +1,11 @@
-package com.ails.stirdatabackend.configuration;
+package com.ails.stirdatabackend.model;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Getter
 @Setter
 public class ModelConfiguration {
-//    private final static Logger logger = LoggerFactory.getLogger(ModelConfiguration.class);
 
     private String model;
     
@@ -26,6 +23,5 @@ public class ModelConfiguration {
     public ModelConfiguration(String model) {
     	this.model = model;
     }
-    
     
 }

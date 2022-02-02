@@ -1,7 +1,11 @@
 package com.ails.stirdatabackend.configuration;
 
 import com.ails.stirdatabackend.controller.URIDescriptor;
-import com.ails.stirdatabackend.model.SparqlEndpoint;
+import com.ails.stirdatabackend.model.CountryConfiguration;
+import com.ails.stirdatabackend.model.ModelConfiguration;
+import com.ails.stirdatabackend.model.StatisticDB;
+import com.ails.stirdatabackend.repository.CountriesRepository;
+import com.ails.stirdatabackend.repository.StatisticsDBRepository;
 import com.ails.stirdatabackend.vocs.DCATVocabulary;
 import com.ails.stirdatabackend.vocs.DCTVocabulary;
 
@@ -30,8 +34,10 @@ import org.springframework.core.io.ResourceLoader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.IDN;
+import java.sql.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -51,7 +57,16 @@ public class ApplicationConfiguration {
 
 	@Value("${app.data-models}")
 	private String models;
+	
+	@Value("${statistics.default.from-date}")
+	private String fromDate;
 
+	@Autowired
+	private CountriesRepository countriesRepository;
+
+	@Autowired
+	private StatisticsDBRepository statisticsRepository;
+	
 	@Bean(name = "labels-cache")
 	public Cache getLabelsCache() {
 	    CacheManager singletonManager = CacheManager.create();
@@ -91,18 +106,38 @@ public class ApplicationConfiguration {
 	private Environment env;
 	
 	@Bean(name = "endpoint-nace-eu")
-	public SparqlEndpoint getNaceEndpointEU() {
-		return new SparqlEndpoint("eu-endpoint", Dimension.NACE, env.getProperty("endpoint.nace.eu"));
+	public String getNaceEndpointEU() {
+		return env.getProperty("endpoint.nace.eu");
 	}
 
 	@Bean(name = "endpoint-nuts-eu")
-	public SparqlEndpoint getNutsEndpointEU() {
-		return new SparqlEndpoint("eu-endpoint", Dimension.NUTS, env.getProperty("endpoint.nuts.eu"));
+	public String getNutsEndpointEU() {
+		return env.getProperty("endpoint.nuts.eu");
 	}
 	
 	@Bean(name = "endpoint-lau-eu")
-	public SparqlEndpoint getLauEndpointEU() {
-		return new SparqlEndpoint("eu-endpoint", Dimension.LAU, env.getProperty("endpoint.lau.eu"));
+	public String getLauEndpointEU() {
+		return env.getProperty("endpoint.lau.eu");
+	}
+	
+	@Bean(name = "namedgraph-nace-eu")
+	public String getNaceNamedgraphEU() {
+		return env.getProperty("namedgraph.nace.eu");
+	}
+
+	@Bean(name = "namedgraph-nuts-eu")
+	public String getNutsNamedgraphEU() {
+		return env.getProperty("namedgraph.nuts.eu");
+	}
+	
+	@Bean(name = "namedgraph-lau-eu")
+	public String getLauNamedgraphEU() {
+		return env.getProperty("namedgraph.lau.eu");
+	}
+	
+	@Bean(name = "default-from-date")
+	public Date getDefaultFromDate() {
+		return Date.valueOf(fromDate);
 	}
 	
 	@Bean(name = "model-configurations")
@@ -133,7 +168,7 @@ public class ApplicationConfiguration {
 	    	mc.setFoundingDateSparql(foundingDateSparql);
 	    	mc.setDissolutionDateSparql(dissolutionDateSparql);
 
-			map.put(m, mc);
+			map.put(mc.getUrl(), mc);
 		}
 		
 		return map;
@@ -142,172 +177,125 @@ public class ApplicationConfiguration {
 	@Bean(name = "country-configurations")
 	@DependsOn("model-configurations")
 	public Map<String, CountryConfiguration> getSupportedCountriesConfigurations(@Qualifier("model-configurations") Map<String,ModelConfiguration> mcMap) {
-
-		Set<String> supportedModelUrls = new HashSet<>() ;
-		Map<String, ModelConfiguration> mcUriMap = new HashMap<>() ;
-		for (ModelConfiguration mc : mcMap.values()) {
-			supportedModelUrls.add(mc.getUrl());
-			mcUriMap.put(mc.getUrl(), mc);
-		}
-		
-//		System.out.println(supportedModelUrls);
 		Map<String, CountryConfiguration> map = new HashMap<>();
 		
-		String defaultNaceEndpoint = env.getProperty("endpoint.nace.00");
-		String defaultNutsEndpoint = env.getProperty("endpoint.nuts.00");
-
-		String defaultNacePath1 = env.getProperty("nace.path-1.00");
-		String defaultNacePath2 = env.getProperty("nace.path-2.00");
-		String defaultNacePath3 = env.getProperty("nace.path-3.00");
-		String defaultNacePath4 = env.getProperty("nace.path-4.00");
-		String defaultNaceFixedLevel = env.getProperty("nace.fixed-level.00");
-		
-		String defaultNutsPrefix = env.getProperty("nuts.prefix.00");
-		String defaultLauPrefix = env.getProperty("lau.prefix.00");
-
-		String[] cntr = countries.split(",");
-		
-		for (String c : cntr) {
-//			System.out.println(c);
-			CountryConfiguration cc = new CountryConfiguration(c);
+//		System.out.println("LOADING COUNTRIES: ");
+		String s = "";
+		for (CountryConfiguration cc  : countriesRepository.findAll()) {
+			cc.setModelConfiguration(mcMap.get(cc.getConformsTo()));
+			cc.setStatistics(new HashSet<>(statisticsRepository.findDimensionsByCountry(cc.getCountryCode())));
 			
-			cc.setLabel(env.getProperty("country.label." + c));
-			
-			String dcat = env.getProperty("country.dcat." + c);
-			
-			if (dcat != null) {
-				processDcat(cc, dcat, supportedModelUrls, mcUriMap);
-			}
-			
-			for (String d : env.getProperty("country.dimensions." + c).split(",")) {
-				if (d.equalsIgnoreCase("nace")) {
-					cc.setNace(true);
-				} else if (d.equalsIgnoreCase("nuts")) {
-					cc.setNuts(true);
-				} else if (d.equalsIgnoreCase("lau")) {
-					cc.setLau(true);
-				}
-			}
-			
-
-			if (cc.getDataEndpoint() == null) {
-				String dataEndpoint = env.getProperty("endpoint.data." + c);
-				cc.setDataEndpoint(new SparqlEndpoint(c, Dimension.DATA, dataEndpoint));
-			}
-			
-//			System.out.println(cc.getCountry() + " : " + cc.getDataEndpoint().getSparqlEndpoint());
-			
-			String naceEndpoint = env.getProperty("endpoint.nace." + c);
-			cc.setNaceEndpoint(new SparqlEndpoint(c, Dimension.NACE, naceEndpoint != null ? naceEndpoint : defaultNaceEndpoint)); 
-
-			String nutsEndpoint = env.getProperty("endpoint.nuts." + c);
-			cc.setNutsEndpoint(new SparqlEndpoint(c, Dimension.NUTS, nutsEndpoint != null ? nutsEndpoint : defaultNutsEndpoint)); 
-
-		    String naceScheme = env.getProperty("nace.scheme." + c);
-		    cc.setNaceScheme(naceScheme);
-
-		    String nacePath1 = env.getProperty("nace.path-1." + c);
-		    cc.setNacePath1(nacePath1 != null ? nacePath1 : defaultNacePath1);
-
-		    String nacePath2 = env.getProperty("nace.path-2." + c);
-		    cc.setNacePath2(nacePath2 != null ? nacePath2 : defaultNacePath2);
-		    
-		    String nacePath3 = env.getProperty("nace.path-3." + c);
-		    cc.setNacePath3(nacePath3 != null ? nacePath3 : defaultNacePath3);
-
-		    String nacePath4 = env.getProperty("nace.path-4." + c);
-		    cc.setNacePath4(nacePath4 != null ? nacePath4 : defaultNacePath4);
-
-		    String naceFixedLevel = env.getProperty("nace.fixed-level." + c);
-		    cc.setNaceFixedLevel(naceFixedLevel != null ? Integer.parseInt(naceFixedLevel) : Integer.parseInt(defaultNaceFixedLevel));
-		    
-		    String nutsPrefix = env.getProperty("nuts.prefix." + c);
-		    cc.setNutsPrefix(nutsPrefix != null ? nutsPrefix : defaultNutsPrefix);	
-
-		    String lauPrefix = env.getProperty("lau.prefix." + c);
-		    cc.setLauPrefix(lauPrefix != null ? lauPrefix : defaultLauPrefix);	
-
-		    cc.setEntitySparql(env.getProperty("sparql.entity." + c));
-	    	cc.setLegalNameSparql(env.getProperty("sparql.legalName." + c));	
-	    	cc.setActiveSparql(env.getProperty("sparql.active." + c));
-	    	cc.setNuts3Sparql(env.getProperty("sparql.nuts3." + c));	
-	    	cc.setLauSparql(env.getProperty("sparql.lau." + c));	
-	    	cc.setNaceSparql(env.getProperty("sparql.nace." + c));	
-	    	cc.setFoundingDateSparql(env.getProperty("sparql.foundingDate." + c));
-	    	cc.setDissolutionDateSparql(env.getProperty("sparql.dissolutionDate." + c));
-	    	
-			map.put(c, cc);
+			s += cc.getCountryCode() + " ";
+			map.put(cc.getCountryCode(), cc);
 		}
+		logger.info("Loaded countries: " + s);
 		
 		return map;
 	}
 	
-	@Autowired
-	ResourceLoader resourceLoader;
-
-	private void processDcat(CountryConfiguration cc, String dcat, Set<String> supportedModelUrls, Map<String, ModelConfiguration> mcUriMap) {
-
-		Model model = null;
-		if (dcat.startsWith("http")) {
-		model = RDFDataMgr.loadModel(dcat);
-		} else {
-			try (InputStream in = resourceLoader.getResource("classpath:" + dcat).getInputStream()) {
-				model = ModelFactory.createDefaultModel();
-				RDFDataMgr.read(model, in, Lang.JSONLD);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-
-		String sparql;
-
-		sparql = 
-				"SELECT ?conformsTo WHERE { " + 
-		        "  ?dcat a <" + DCATVocabulary.Dataset + "> . " +
-		        "  ?dcat <" + DCTVocabulary.conformsTo + "> ?conformsTo . " +
-		        "} ";
-
-		String conformsTo;
-        try (QueryExecution qe = QueryExecutionFactory.create(sparql, model)) {
-        	ResultSet rs = qe.execSelect();
-        	
-        	while (rs.hasNext()) {
-        		QuerySolution sol = rs.next(); 
-        		conformsTo = sol.get("conformsTo").toString();
-        		if (supportedModelUrls.contains(conformsTo)) {
-        			cc.setModelConfiguration(mcUriMap.get(conformsTo));
-        			break;
-        		}
-        	}
-        }
-
-        if (cc.getModelConfiguration() == null) {
-        	return;
-        }
-        
-		sparql = 
-				"SELECT ?endpoint WHERE { " + 
-		        "  ?dcat a <" + DCATVocabulary.Dataset + "> . " +
-		        "  ?dcat <" + DCATVocabulary.distribution + "> ?distribution . " +
-		        "  ?distribution <" + DCATVocabulary.accessService + "> ?service . " +
-		        "  ?service a <" + DCATVocabulary.DataService + "> . " +
-		        "  ?service <" + DCTVocabulary.conformsTo + "> <https://www.w3.org/TR/sparql11-protocol/> . " +
-		        "  ?service <" + DCATVocabulary.endpointURL + "> ?endpoint . " +
-		        "} ";
-		
-        try (QueryExecution qe = QueryExecutionFactory.create(sparql, model)) {
-        	ResultSet rs = qe.execSelect();
-        	
-        	while (rs.hasNext()) {
-        		QuerySolution sol = rs.next(); 
-        		String endpoint = sol.get("endpoint").toString();
-        		String[] parts = endpoint.split("://");
-        		cc.setDataEndpoint(new SparqlEndpoint(cc.getCountry(), Dimension.DATA, parts[0] + "://" + IDN.toASCII(parts[1])));
-        		break;
-        	}
-        }
-
-		
-	}
+//	public Map<String, CountryConfiguration> getSupportedCountriesConfigurations(@Qualifier("model-configurations") Map<String,ModelConfiguration> mcMap) {
+//
+//		Set<String> supportedModelUrls = new HashSet<>() ;
+//		Map<String, ModelConfiguration> mcUriMap = new HashMap<>() ;
+//		for (ModelConfiguration mc : mcMap.values()) {
+//			supportedModelUrls.add(mc.getUrl());
+//			mcUriMap.put(mc.getUrl(), mc);
+//		}
+//		
+////		System.out.println(supportedModelUrls);
+//		Map<String, CountryConfiguration> map = new HashMap<>();
+//		
+//		String defaultNaceEndpoint = env.getProperty("endpoint.nace.00");
+//		String defaultNutsEndpoint = env.getProperty("endpoint.nuts.00");
+//
+//		String defaultNacePath1 = env.getProperty("nace.path-1.00");
+//		String defaultNacePath2 = env.getProperty("nace.path-2.00");
+//		String defaultNacePath3 = env.getProperty("nace.path-3.00");
+//		String defaultNacePath4 = env.getProperty("nace.path-4.00");
+//		String defaultNaceFixedLevel = env.getProperty("nace.fixed-level.00");
+//		
+//		String defaultNutsPrefix = env.getProperty("nuts.prefix.00");
+//		String defaultLauPrefix = env.getProperty("lau.prefix.00");
+//
+//		String[] cntr = countries.split(",");
+//		
+//		for (String c : cntr) {
+////			System.out.println(c);
+//			CountryConfiguration cc = new CountryConfiguration(c);
+//			
+//			cc.setCountryLabel(env.getProperty("country.label." + c));
+//			
+////			String dcat = env.getProperty("country.dcat." + c);
+////			
+////			if (dcat != null) {
+////				processDcat(cc, dcat, supportedModelUrls, mcUriMap);
+////			}
+//			
+//			for (String d : env.getProperty("country.dimensions." + c).split(",")) {
+//				if (d.equalsIgnoreCase("nace")) {
+//					cc.setNace(true);
+//				} else if (d.equalsIgnoreCase("nuts")) {
+//					cc.setNuts(true);
+//				} else if (d.equalsIgnoreCase("lau")) {
+//					cc.setLau(true);
+//				} else if (d.equalsIgnoreCase("founding")) {
+//					cc.setFoundingDate(true);
+//				} else if (d.equalsIgnoreCase("dissolution")) {
+//					cc.setDissolutionDate(true);
+//				}
+//			}
+//			
+//
+//			if (cc.getDataEndpoint() == null) {
+//				String dataEndpoint = env.getProperty("endpoint.data." + c);
+//				cc.setDataEndpoint(dataEndpoint);
+//			}
+//			
+////			System.out.println(cc.getCountry() + " : " + cc.getDataEndpoint().getSparqlEndpoint());
+//			
+//			String naceEndpoint = env.getProperty("endpoint.nace." + c);
+//			cc.setNaceEndpoint(naceEndpoint != null ? naceEndpoint : defaultNaceEndpoint); 
+//
+//			String nutsEndpoint = env.getProperty("endpoint.nuts." + c);
+//			cc.setNutsEndpoint(nutsEndpoint != null ? nutsEndpoint : defaultNutsEndpoint); 
+//
+//		    String naceScheme = env.getProperty("nace.scheme." + c);
+//		    cc.setNaceScheme(naceScheme);
+//
+//		    String nacePath1 = env.getProperty("nace.path-1." + c);
+//		    cc.setNacePath1(nacePath1 != null ? nacePath1 : defaultNacePath1);
+//
+//		    String nacePath2 = env.getProperty("nace.path-2." + c);
+//		    cc.setNacePath2(nacePath2 != null ? nacePath2 : defaultNacePath2);
+//		    
+//		    String nacePath3 = env.getProperty("nace.path-3." + c);
+//		    cc.setNacePath3(nacePath3 != null ? nacePath3 : defaultNacePath3);
+//
+//		    String nacePath4 = env.getProperty("nace.path-4." + c);
+//		    cc.setNacePath4(nacePath4 != null ? nacePath4 : defaultNacePath4);
+//
+//		    String naceFixedLevel = env.getProperty("nace.fixed-level." + c);
+//		    cc.setNaceFixedLevel(naceFixedLevel != null ? Integer.parseInt(naceFixedLevel) : Integer.parseInt(defaultNaceFixedLevel));
+//		    
+//		    String nutsPrefix = env.getProperty("nuts.prefix." + c);
+//		    cc.setNutsPrefix(nutsPrefix != null ? nutsPrefix : defaultNutsPrefix);	
+//
+//		    String lauPrefix = env.getProperty("lau.prefix." + c);
+//		    cc.setLauPrefix(lauPrefix != null ? lauPrefix : defaultLauPrefix);	
+//
+//		    cc.setEntitySparql(env.getProperty("sparql.entity." + c));
+//	    	cc.setLegalNameSparql(env.getProperty("sparql.legalName." + c));	
+//	    	cc.setActiveSparql(env.getProperty("sparql.active." + c));
+//	    	cc.setNuts3Sparql(env.getProperty("sparql.nuts3." + c));	
+//	    	cc.setLauSparql(env.getProperty("sparql.lau." + c));	
+//	    	cc.setNaceSparql(env.getProperty("sparql.nace." + c));	
+//	    	cc.setFoundingDateSparql(env.getProperty("sparql.foundingDate." + c));
+//	    	cc.setDissolutionDateSparql(env.getProperty("sparql.dissolutionDate." + c));
+//	    	
+//			map.put(c, cc);
+//		}
+//		
+//		return map;
+//	}
+	
 }

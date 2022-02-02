@@ -1,11 +1,12 @@
 package com.ails.stirdatabackend.service;
 
-import com.ails.stirdatabackend.configuration.CountryConfiguration;
 import org.apache.jena.query.*;
 import org.apache.jena.sparql.resultset.ResultsFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+
+import com.ails.stirdatabackend.model.CountryConfiguration;
 
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
@@ -36,7 +37,7 @@ public class TestService {
     public List<String> testSparqlQueryCzech() {
         String sparql = "SELECT * WHERE {?p ?q ?r } LIMIT 10";
         List<String> prop = new ArrayList<>();
-        try (QueryExecution qe = QueryExecutionFactory.sparqlService(countryConfigurations.get("CZ").getDataEndpoint().getSparqlEndpoint(), sparql)) {
+        try (QueryExecution qe = QueryExecutionFactory.sparqlService(countryConfigurations.get("CZ").getDataEndpoint(), sparql)) {
             ResultSet rs = qe.execSelect();
             while (rs.hasNext()) {
                 QuerySolution sol = rs.next();
@@ -51,7 +52,7 @@ public class TestService {
         List<String> prop = new ArrayList<>();
         String json;
         StringWriter sw = new StringWriter();
-        try (QueryExecution qe = QueryExecutionFactory.sparqlService(countryConfigurations.get("BE").getDataEndpoint().getSparqlEndpoint(), sparql)) {
+        try (QueryExecution qe = QueryExecutionFactory.sparqlService(countryConfigurations.get("BE").getDataEndpoint(), sparql)) {
 
             ResultSet rs = qe.execSelect();
             ByteArrayOutputStream outStream = new ByteArrayOutputStream();
@@ -67,7 +68,7 @@ public class TestService {
         List<String> prop = new ArrayList<>();
         String json;
         StringWriter sw = new StringWriter();
-        try (QueryExecution qe = QueryExecutionFactory.sparqlService(countryConfigurations.get("EL").getDataEndpoint().getSparqlEndpoint(), sparql)) {
+        try (QueryExecution qe = QueryExecutionFactory.sparqlService(countryConfigurations.get("EL").getDataEndpoint(), sparql)) {
 
             ResultSet rs = qe.execSelect();
             ByteArrayOutputStream outStream = new ByteArrayOutputStream();

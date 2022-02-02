@@ -1,18 +1,21 @@
 package com.ails.stirdatabackend.controller;
 
-import com.ails.stirdatabackend.model.SparqlEndpoint;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Getter
+@Setter
 public class URIDescriptor {
 
 	private String prefix;
 	private String labelProperty;
-	private SparqlEndpoint endpoint;
+	private String endpoint;
 	
-	public URIDescriptor(String prefix, String labelProperty, SparqlEndpoint endpoint) {
+	public URIDescriptor(String prefix, String labelProperty, String endpoint) {
 		this.prefix = prefix;
 		this.labelProperty = labelProperty;
 		this.endpoint = endpoint;
@@ -44,20 +47,4 @@ public class URIDescriptor {
     	return result;
     }
 
-	public SparqlEndpoint getEndpoint() {
-		return endpoint;
-	}
-
-	public void setEndpoint(SparqlEndpoint endpoint) {
-		this.endpoint = endpoint;
-	}
-
-	public String getLabelProperty() {
-		return labelProperty;
-	}
-
-	public void setLabelProperty(String labelProperty) {
-		this.labelProperty = labelProperty;
-	}
-	
 }
