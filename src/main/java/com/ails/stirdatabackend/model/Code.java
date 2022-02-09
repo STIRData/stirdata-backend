@@ -9,9 +9,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.time.DateUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -33,7 +30,7 @@ public class Code implements Serializable {
 
     public final static String nutsNamespace = "nuts";
     public final static String lauNamespace = "lau";
-    public final static String dateNamespace = "date";
+    public final static String dateIntervalNamespace = "date-interval";
 
 	private static final long serialVersionUID = 1L;
 	
@@ -65,7 +62,7 @@ public class Code implements Serializable {
 			namespace = string.substring(0, p);
 			code = string.substring(p + 1);
 		
-			if (namespace.equals(dateNamespace)) {
+			if (namespace.equals(dateIntervalNamespace)) {
 				Matcher m = datePattern.matcher(code);
 				if (m.find()) {
 					if (m.groupCount() == 3) {
@@ -98,17 +95,16 @@ public class Code implements Serializable {
 	}
 
 	public static Code createDateCode(String from, String to, String interval) {
-		return new Code(dateNamespace + ":" + from + ":" + to + ":" + interval);
+		return new Code(dateIntervalNamespace + ":" + from + ":" + to + ":" + interval);
 	}
 
 	public static Code createDateCode(Date from, Date to) {
-		return new Code(dateNamespace + ":" + from + ":" + to + ":");
+		return new Code(dateIntervalNamespace + ":" + from + ":" + to + ":");
 	}
 
 	public static Code createDateCode(Date from, Date to, String interval) {
-		return new Code(dateNamespace + ":" + from + ":" + to + ":" + interval);
+		return new Code(dateIntervalNamespace + ":" + from + ":" + to + ":" + interval);
 	}
-
 	
 	public static Code createLauCode(String s) {
 		return new Code(lauNamespace + ":" + s);
@@ -135,7 +131,7 @@ public class Code implements Serializable {
 	}
 
 	public Code normalizeDate(Date defaultFromDate) {
-		if (namespace.equals(dateNamespace)) {
+		if (namespace.equals(dateIntervalNamespace)) {
 
 			java.util.Date fromMonth;
 			
@@ -182,7 +178,7 @@ public class Code implements Serializable {
 	}
 	
 	public boolean isDate() {
-		return namespace != null && namespace.equals(dateNamespace);
+		return namespace != null && namespace.equals(dateIntervalNamespace);
 	}
 
 	public boolean isNuts() {
