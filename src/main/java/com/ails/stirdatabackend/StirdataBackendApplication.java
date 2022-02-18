@@ -20,6 +20,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.servers.Server;
+
 import com.ails.stirdatabackend.model.Code;
 import com.ails.stirdatabackend.model.CountryConfiguration;
 import com.ails.stirdatabackend.model.Dimension;
@@ -40,6 +43,11 @@ import com.mongodb.DBObject;
 
 @SpringBootApplication
 @EnableMongoRepositories
+@OpenAPIDefinition( 
+    servers = {
+       @Server(url = "/", description = "Default Server URL")
+    }
+) 
 public class StirdataBackendApplication implements CommandLineRunner {
 
     @Autowired
