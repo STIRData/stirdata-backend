@@ -30,8 +30,13 @@ public class Code implements Serializable {
 
     public final static String nutsNamespace = "nuts";
     public final static String lauNamespace = "lau";
-    public final static String dateIntervalNamespace = "date-interval";
-
+    public final static String dateIntervalNamespace = "date-range";
+    
+    public final static String date1M = "1M";
+    public final static String date3M = "3M";
+    public final static String date1Y = "1Y";    
+    public final static String date10Y = "10Y";
+    
 	private static final long serialVersionUID = 1L;
 	
 	private final static Pattern datePattern = Pattern.compile("^(.*?):(.*?):(.*?)$");
@@ -65,7 +70,7 @@ public class Code implements Serializable {
 			if (namespace.equals(dateIntervalNamespace)) {
 				Matcher m = datePattern.matcher(code);
 				if (m.find()) {
-					if (m.groupCount() == 3) {
+					if (m.groupCount() == 2 || m.groupCount() == 3) {
 						try {
 							dateFrom = Date.valueOf(m.group(1));
 						} catch (IllegalArgumentException e) { }
@@ -73,7 +78,9 @@ public class Code implements Serializable {
 							dateTo = Date.valueOf(m.group(2));
 						} catch (IllegalArgumentException e) { }
 						
-						dateInterval = m.group(3);
+						if (m.groupCount() == 3) {
+							dateInterval = m.group(3);
+						}
 					}
 				}
 			}
@@ -99,7 +106,7 @@ public class Code implements Serializable {
 	}
 
 	public static Code createDateCode(Date from, Date to) {
-		return new Code(dateIntervalNamespace + ":" + from + ":" + to + ":");
+		return new Code(dateIntervalNamespace + ":" + from + ":" + to);
 	}
 
 	public static Code createDateCode(Date from, Date to, String interval) {

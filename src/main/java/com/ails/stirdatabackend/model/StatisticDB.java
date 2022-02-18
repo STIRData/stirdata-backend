@@ -89,4 +89,22 @@ public class StatisticDB {
 
 	@Column(name = "updated")
 	private Date updated;
+	
+	public StatisticDB(long count) {
+		this.count = (int)count;
+	}	
+
+	public StatisticDB(long count, ActivityDB activity) {
+		this.count = (int)count;
+		this.activity = activity;
+	}	
+	
+	public StatisticDB(long count,  Date fromDate, Date toDate) {
+		this.count = (int)count;
+//		this.country = country;
+		this.fromDate = fromDate;
+		this.toDate = toDate;
+	}
+	
+
 }

@@ -9,6 +9,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.jena.datatypes.xsd.XSDDateTime;
@@ -54,13 +55,13 @@ public class StatisticsService {
     @Autowired
     private StatisticsRepository statisticsRepository;
 
-    private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    
-    public void computeAndSaveAllStatistics(CountryConfiguration cc, Code date, boolean cdata, boolean cnuts, boolean cnace, boolean cfounding, boolean cdissolution, boolean cnuts_nace) {
+    public void computeAndSaveAllStatistics(CountryConfiguration cc, Code date, Set<Dimension> dimensions) {
+    	
+    	logger.info("Statistics to compute " + dimensions);
     	
     	StatisticsCache sc = new StatisticsCache(cc);
     	
-    	if (cdata) {
+    	if (dimensions.contains(Dimension.DATA)) {
 	    	logger.info("Computing DATA statistics for " + cc.getCountryCode());
 	    	
 	    	String query = SparqlQuery.buildCoreQuery(cc, false, null, null, null, null, null).countSelectQuery();
@@ -87,38 +88,42 @@ public class StatisticsService {
 	        }
     	}
     	
-    	if (cnuts && cc.isNuts()) {
+    	if (cc.isNuts() && (dimensions.contains(Dimension.NUTSLAU) || dimensions.contains(Dimension.NUTSLAU_NACE) || dimensions.contains(Dimension.NUTSLAU_FOUNDING))) {
     		logger.info("Computing NUTS statistics for " + cc.getCountryCode());
     		
     		List<StatisticResult> nuts = statistics(cc, Dimension.NUTSLAU, null, null, null, null, null, true, sc);
-    		statisticsRepository.deleteAllByCountryAndDimension(cc.getCountryCode(), Dimension.NUTSLAU);
     		
-    		for (StatisticResult sr : nuts) {
-    			Statistic stat = new Statistic();
-    			stat.setCountry(cc.getCountryCode());
-    			stat.setDimension(Dimension.NUTSLAU);
-    			stat.setPlace(sr.getCode().toString());
-    			if (sr.getParentCode() != null) {
-    				stat.setParentPlace(sr.getParentCode().toString());
-    			}
-    			stat.setUpdated(cc.getLastUpdated());
-    			stat.setCount(sr.getCount());
-    			
-//    			System.out.println(stat.getPlace() + " " + stat.getCount());
-    			statisticsRepository.save(stat);
-    			
+    		if (dimensions.contains(Dimension.NUTSLAU)) {
+	    		statisticsRepository.deleteAllByCountryAndDimension(cc.getCountryCode(), Dimension.NUTSLAU);
+	    		
+	    		for (StatisticResult sr : nuts) {
+	    			Statistic stat = new Statistic();
+	    			stat.setCountry(cc.getCountryCode());
+	    			stat.setDimension(Dimension.NUTSLAU);
+	    			stat.setPlace(sr.getCode().toString());
+	    			if (sr.getParentCode() != null) {
+	    				stat.setParentPlace(sr.getParentCode().toString());
+	    			}
+	    			stat.setUpdated(cc.getLastUpdated());
+	    			stat.setCount(sr.getCount());
+	    			
+	//    			System.out.println(stat.getPlace() + " " + stat.getCount());
+	    			statisticsRepository.save(stat);
+	    		}
     		}
     		
-    		if (cc.isNace() && cnuts_nace) {
+    		if (cc.isNace() && dimensions.contains(Dimension.NUTSLAU_NACE)) {
 
+    			logger.info("Computing NUTS - NACE statistics for " + cc.getCountryCode());
+    			
     			for (StatisticResult iter : nuts) {
     				System.out.println("With NUTS " + iter.getCode());
-//    				statisticsRepository.deleteAllByCountryAndDimensionAndPlace(cc.getCountryCode(), Dimension.NUTSLAU_NACE, iter.getUri());
     				
     				List<Code> nutsLauList = new ArrayList<>();
     				nutsLauList.add(iter.getCode());
     				
     	    		List<StatisticResult> nutsNace = statistics(cc, Dimension.NACE, null, nutsLauList, null, null, null, true, sc);
+    				statisticsRepository.deleteAllByCountryAndDimension(cc.getCountryCode(), Dimension.NUTSLAU_NACE);
     	    		
     	      		for (StatisticResult sr : nutsNace) {
     	    			Statistic stat = new Statistic();
@@ -140,9 +145,44 @@ public class StatisticsService {
     	    		}
     			}
     		}
+    		
+    		if (cc.isFoundingDate() && dimensions.contains(Dimension.NUTSLAU_FOUNDING)) {
+        		logger.info("Computing NUTS - founding date statistics for " + cc.getCountryCode());
+        		
+    			for (StatisticResult iter : nuts) {
+    				System.out.println("With NUTS " + iter.getCode());
+    				
+    				List<Code> nutsLauList = new ArrayList<>();
+    				nutsLauList.add(iter.getCode());
+        		
+	    			nuts = dateStatistics(cc, Dimension.FOUNDING, date, nutsLauList, null, null, null, true);
+	        		statisticsRepository.deleteAllByCountryAndDimension(cc.getCountryCode(), Dimension.NUTSLAU_FOUNDING);
+	        		
+	        		for (StatisticResult sr : nuts) {
+	        			Statistic stat = new Statistic();
+	        			stat.setCountry(cc.getCountryCode());
+	        			stat.setDimension(Dimension.NUTSLAU_FOUNDING);
+	        			stat.setPlace(iter.getCode().toString());
+    	    			if (iter.getParentCode() != null) {
+    	    				stat.setParentPlace(iter.getParentCode().toString());
+    	    			}	        			
+	        			stat.setFromDate(sr.getCode().getDateFrom().toString());
+	        			stat.setToDate(sr.getCode().getDateTo().toString());
+	        			stat.setDateInterval(sr.getCode().getDateInterval());
+	        			if (sr.getParentCode() != null) {
+	        				stat.setParentFromDate(sr.getParentCode().getDateFrom().toString());
+	        				stat.setParentToDate(sr.getParentCode().getFromDate().toString());
+	        			}
+	        			stat.setUpdated(cc.getLastUpdated());
+	        			stat.setCount(sr.getCount());
+	        			
+	        			statisticsRepository.save(stat);
+	        		}
+    			}
+    		}
 		}
 //		
-		if (cnace && cc.isNace()) {
+		if (cc.isNace() && dimensions.contains(Dimension.NACE)) {
     		
     		logger.info("Computing NACE statistics for " + cc.getCountryCode());
     		
@@ -166,11 +206,10 @@ public class StatisticsService {
 			
 		}
 //		
-		if (cfounding && cc.isFoundingDate()) {
+		if (cc.isFoundingDate() && dimensions.contains(Dimension.FOUNDING)) {
     		logger.info("Computing founding date statistics for " + cc.getCountryCode());
     		
-    		List<StatisticResult> nuts;
-			nuts = dateStatistics(cc, Dimension.FOUNDING, date, null, null, null, null, true);
+    		List<StatisticResult> nuts = dateStatistics(cc, Dimension.FOUNDING, date, null, null, null, null, true);
     		statisticsRepository.deleteAllByCountryAndDimension(cc.getCountryCode(), Dimension.FOUNDING);
     		
     		for (StatisticResult sr : nuts) {
@@ -191,7 +230,7 @@ public class StatisticsService {
     		}
 		}
 		
-		if (cdissolution && cc.isDissolutionDate()) {
+		if (cc.isDissolutionDate() && dimensions.contains(Dimension.DISSOLUTION)) {
     		logger.info("Computing dissolution date statistics for " + cc.getCountryCode());
     		
     		List<StatisticResult> nuts = dateStatistics(cc, Dimension.DISSOLUTION, date, null, null, null, null, true);
@@ -291,28 +330,15 @@ public class StatisticsService {
    		
    		StatisticsHelper sh = new StatisticsHelper(cc, dimension, nutsLauCodes, naceCodes);
    		
-   		boolean ok = false;
-   		int tries = 0;
-   		while (!ok && tries < 3) {
-   			try {
-				statistics(cc, dimension, root, sh, foundingDate, dissolutionDate, res, sc);
-		    		
-		   		if (allLevels) {
-		    		for (int i = 0; i < res.size(); i++) {
-		    			statistics(cc, dimension, res.get(i).getCode(), sh, foundingDate, dissolutionDate, res, sc);
-		    		}
-				}
+		statistics(cc, dimension, root, sh, foundingDate, dissolutionDate, res, sc);
+   		if (allLevels) {
+    		for (int i = 0; i < res.size(); i++) {
+    			statistics(cc, dimension, res.get(i).getCode(), sh, foundingDate, dissolutionDate, res, sc);
+    		}
+		}
 		   		
-		   		ok = true;
-		   		
-   			} catch (QueryExceptionHTTP ex) { // why does this happen?
-   				tries++;
-   			}
-   		}
-   		
    		return res;
    	}
-   	
    	
    	
    	public List<StatisticResult> dateStatistics(CountryConfiguration cc, Dimension dimension, Code date, List<Code> nutsLauCodes, List<Code> naceCodes, Code foundingDate, Code dissolutionDate, boolean allLevels) {
@@ -381,33 +407,38 @@ public class StatisticsService {
 //	        System.out.println(query);
 //	        long start = System.currentTimeMillis();
 	        
-	        try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), query)) {
-            	ResultSet rs = qe.execSelect();
-            	
-            	while (rs.hasNext()) {
-            		QuerySolution sol = rs.next();
-
-//            		System.out.println(sol);
-            		int count = sol.get("count").asLiteral().getInt();
-            		
-//            		System.out.println(code.getCode() + " " + count);
-
-            		if (count > 0) {
-            			StatisticResult sr = new StatisticResult();
-            			sr.setCountry(cc.getCountryCode());
-            			sr.setCode(code);
-            			sr.setParentCode(root);
-            			sr.setCount(count);
-            			res.add(sr);
-            		}
-            	}
-	        } catch (QueryExceptionHTTP ex) {
-	        	System.out.println(ex.getMessage());
-	        	System.out.println(ex.getResponse());
-	        	System.out.println(ex.getResponseCode());
-	        	System.out.println(ex.getResponseMessage());
-	        	
-	        	throw ex;
+	        int tries = 0;
+	        while (tries < 3) {
+		        try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), query)) {
+	            	ResultSet rs = qe.execSelect();
+	            	
+	            	while (rs.hasNext()) {
+	            		QuerySolution sol = rs.next();
+	
+	//            		System.out.println(sol);
+	            		int count = sol.get("count").asLiteral().getInt();
+	            		
+	//            		System.out.println(code.getCode() + " " + count);
+	
+	            		if (count > 0) {
+	            			StatisticResult sr = new StatisticResult();
+	            			sr.setCountry(cc.getCountryCode());
+	            			sr.setCode(code);
+	            			sr.setParentCode(root);
+	            			sr.setCount(count);
+	            			res.add(sr);
+	            		}
+	            	}
+		        } catch (QueryExceptionHTTP ex) {
+		        	System.out.println(ex.getMessage());
+		        	System.out.println(ex.getResponse());
+		        	System.out.println(ex.getResponseCode());
+		        	System.out.println(ex.getResponseMessage());
+		        	tries++;
+		        	continue;
+		        }	        
+		        
+	        	break;
 	        }
         }        	        
 
@@ -424,27 +455,33 @@ public class StatisticsService {
         String query = SparqlQuery.buildCoreQuery(cc, false, nutsUris, lauUris, naceUris, foundingDate, dissolutionDate).countSelectQuery() ;
 //	    System.out.println(query);
         
-        try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), query)) {
-        	ResultSet rs = qe.execSelect();
-        	
-        	while (rs.hasNext()) {
-        		QuerySolution sol = rs.next();
-
-        		int count = sol.get("count").asLiteral().getInt();
-        		if (count > 0) {
-        			StatisticResult sr = new StatisticResult();
-        			sr.setCountry(cc.getCountryCode());
-        			sr.setCount(count);
-        			res = sr;
-        		}
-        	}
-        } catch (QueryExceptionHTTP ex) {
-        	System.out.println(ex.getMessage());
-        	System.out.println(ex.getResponse());
-        	System.out.println(ex.getResponseCode());
-        	System.out.println(ex.getResponseMessage());
-        	
-        	throw ex;
+        int tries = 0;
+        while (tries < 3) {
+	        try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), query)) {
+	        	ResultSet rs = qe.execSelect();
+	        	
+	        	while (rs.hasNext()) {
+	        		QuerySolution sol = rs.next();
+	
+	        		int count = sol.get("count").asLiteral().getInt();
+	        		if (count > 0) {
+	        			StatisticResult sr = new StatisticResult();
+	        			sr.setCountry(cc.getCountryCode());
+	        			sr.setCount(count);
+	        			res = sr;
+	        		}
+	        	}
+	        } catch (QueryExceptionHTTP ex) {
+	        	System.out.println(ex.getMessage());
+	        	System.out.println(ex.getResponse());
+	        	System.out.println(ex.getResponseCode());
+	        	System.out.println(ex.getResponseMessage());
+	        	
+	        	tries++;
+	        	continue;
+	        }
+	        
+	        break;
         }
     
     	return res;
@@ -557,27 +594,41 @@ public class StatisticsService {
 	        query = sparql.countSelectQuery() ;
 	
 //	        System.out.println(dateFormat.format(startDate.getTime()) + " - " + dateFormat.format(endDate.getTime()) + " " + resInterval);
-//	        System.out.println(query);
+	        System.out.println(query);
 	
-            try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), query)) {
-            	ResultSet rs = qe.execSelect();
-            	
-            	while (rs.hasNext()) {
-            		QuerySolution sol = rs.next();
-
-//            		System.out.println(sol);
-            		int count = sol.get("count").asLiteral().getInt();
-            		
-//        			System.out.println(Code.createDateCode(new Date(startDate.getTime().getTime()).toString(), new Date(endDate.getTime().getTime()).toString(), resInterval) + " " + count);
-            		if (count > 0) {
-            			StatisticResult sr = new StatisticResult();
-            			sr.setCountry(cc.getCountryCode());
-            			sr.setCode(Code.createDateCode(new Date(startDate.getTime().getTime()).toString(), new Date(endDate.getTime().getTime()).toString(), resInterval));
-            			sr.setCount(count);
-            			sr.setParentCode(root);
-            			res.add(sr);
-            		}
-            	}
+	        int tries = 0;
+	        while (tries < 3) {
+		        
+	            try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), query)) {
+	            	ResultSet rs = qe.execSelect();
+	            	
+	            	while (rs.hasNext()) {
+	            		QuerySolution sol = rs.next();
+	
+	//            		System.out.println(sol);
+	            		int count = sol.get("count").asLiteral().getInt();
+	            		
+	//        			System.out.println(Code.createDateCode(new Date(startDate.getTime().getTime()).toString(), new Date(endDate.getTime().getTime()).toString(), resInterval) + " " + count);
+	            		if (count > 0) {
+	            			StatisticResult sr = new StatisticResult();
+	            			sr.setCountry(cc.getCountryCode());
+	            			sr.setCode(Code.createDateCode(new Date(startDate.getTime().getTime()).toString(), new Date(endDate.getTime().getTime()).toString(), resInterval));
+	            			sr.setCount(count);
+	            			sr.setParentCode(root);
+	            			res.add(sr);
+	            		}
+	            	}
+		        } catch (QueryExceptionHTTP ex) {
+		        	System.out.println(ex.getMessage());
+		        	System.out.println(ex.getResponse());
+		        	System.out.println(ex.getResponseCode());
+		        	System.out.println(ex.getResponseMessage());
+		        	
+		        	tries++;
+		        	continue;
+		        }
+	            
+	            break;
 	        }
             
             endDate = startDate;

@@ -40,7 +40,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 
 @Service
-@Transactional
+//@Transactional
 public class DataStoring  {
 
     @Autowired
