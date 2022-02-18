@@ -39,7 +39,7 @@ public class Code implements Serializable {
     
 	private static final long serialVersionUID = 1L;
 	
-	private final static Pattern datePattern = Pattern.compile("^(.*?):(.*?):(.*?)$");
+	private final static Pattern datePattern = Pattern.compile("^(.*?):(.*?)(?::(.*?))?$");
 	
 	private static Map<String, String> namespaceMap = new HashMap<>();
 	static {

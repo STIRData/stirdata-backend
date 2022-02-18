@@ -26,6 +26,7 @@ import com.ails.stirdatabackend.model.PlaceDB;
 import com.ails.stirdatabackend.model.StatisticDB;
 import com.ails.stirdatabackend.model.StatisticResult;
 import com.ails.stirdatabackend.payload.GenericResponse;
+import com.ails.stirdatabackend.payload.CodeLabel;
 import com.ails.stirdatabackend.payload.ComplexResponse;
 import com.ails.stirdatabackend.repository.ActivitiesDBRepository;
 import com.ails.stirdatabackend.repository.PlacesDBRepository;
@@ -155,6 +156,10 @@ public class StatisticsContoller {
 		} else {
 			
 			CountryConfiguration cc = countryConfigurations.get(country);
+			if (cc == null) {
+				return ResponseEntity.ok(sr);
+			}
+			
 			Set<Dimension> stats = cc.getStatistics();
 			
 			if (placedb != null && !(cc.isNuts() || cc.isLau())) {
@@ -387,8 +392,9 @@ public class StatisticsContoller {
 					List<StatisticDB> placeStats;
 					if (stats.contains(Dimension.NUTSLAU) && founding == null && dissolution == null) {
 						placeStats = statisticsRepository.findByCountryAndDimensionAndParentPlaceIsNull(country, Dimension.NUTSLAU.toString());
-//					} else if (stats.contains(Dimension.NUTSLAU_FOUNDING) && founding != null && dissolution == null) {
-//						placeStats = statisticsRepository.findByCountryAndDimensionAndParentPlaceIsNull(country, Dimension.NUTSLAU.toString());
+					} else if (stats.contains(Dimension.NUTSLAU_FOUNDING) && founding != null && dissolution == null) {
+						placeStats = statisticsRepository.findByCountryAndDimensionAndParentPlaceIsNull(country, Dimension.NUTSLAU.toString());
+//						placeStats = statisticsRepository.findByCountryAndDimensionAndDateRange(country, Dimension.FOUNDING.toString(), founding.getFromDate(), founding.getToDate(), Code.date1M, dateRangeName(founding.getDateInterval()));
 					} else {
 						placeStats = mapResults(statisticsService.statistics(cc, Dimension.NUTSLAU, null, null, null, founding, dissolution, false), Dimension.NUTSLAU);
 					}
@@ -470,7 +476,7 @@ public class StatisticsContoller {
 	private List<GenericResponse> iter(List<StatisticDB> stats, PlaceDB placedb, ActivityDB activitydb, Code founding, Code dissolution, String language) {
 		List<GenericResponse> result = new ArrayList<>();
 		for (StatisticDB st : stats) {
-			result.add(GenericResponse.createFromStatistic(st, placedb, activitydb, founding, dissolution, language));
+			result.add(GenericResponse.createFromStatistic(st, countryConfigurations.get(st.getCountry()), placedb, activitydb, founding, dissolution, language));
 		}
 		
 		return result;
@@ -479,7 +485,7 @@ public class StatisticsContoller {
 	private List<GenericResponse> iterFounding(List<StatisticDB> stats, PlaceDB placedb, ActivityDB activitydb, Code founding, Code dissolution, String language) {
 		List<GenericResponse> result = new ArrayList<>();
 		for (StatisticDB st : stats) {
-			result.add(GenericResponse.createFromFoundingStatistic(st, placedb, activitydb, founding, dissolution, language));
+			result.add(GenericResponse.createFromFoundingStatistic(st, countryConfigurations.get(st.getCountry()), placedb, activitydb, founding, dissolution, language));
 		}
 		
 		return result;
@@ -488,7 +494,7 @@ public class StatisticsContoller {
 	private List<GenericResponse> iterDissolution(List<StatisticDB> stats, PlaceDB placedb, ActivityDB activitydb, Code founding, Code dissolution, String language) {
 		List<GenericResponse> result = new ArrayList<>();
 		for (StatisticDB st : stats) {
-			result.add(GenericResponse.createFromDissolutionStatistic(st, placedb, activitydb, founding, dissolution, language));
+			result.add(GenericResponse.createFromDissolutionStatistic(st, countryConfigurations.get(st.getCountry()), placedb, activitydb, founding, dissolution, language));
 		}
 		
 		return result;
@@ -548,7 +554,7 @@ public class StatisticsContoller {
 	    	if (dimension == Dimension.NUTS || dimension == Dimension.NACE) {
 	    		List<StatisticResult> list = statisticsService.statistics(cc, dimension, top != null ? new Code(top) : null, place, activity, founding, dissolution, allLevels);
 	    			
-	    		res = mapGenericResponseFromList(list, dimension);
+	    		res = mapGenericResponseFromList(list, cc, dimension);
 	    			
 	    	} else if (dimension == Dimension.FOUNDING || dimension == Dimension.DISSOLUTION) {
 	    		try {
@@ -574,7 +580,7 @@ public class StatisticsContoller {
 	    				
 	    			List<StatisticResult> list = statisticsService.dateStatistics(cc, dimension, Code.createDateCode(fromDate, toDate), place, activity, founding, dissolution, allLevels);
 	    				
-	    			res = mapGenericResponseFromList(list, dimension);
+	    			res = mapGenericResponseFromList(list, cc, dimension);
 			    		
 	    		} catch (Exception e) {
 	    			e.printStackTrace();
@@ -591,7 +597,7 @@ public class StatisticsContoller {
 
 
 	
-	private List<GenericResponse> mapGenericResponseFromList(List<StatisticResult> list, Dimension dimension) {
+	private List<GenericResponse> mapGenericResponseFromList(List<StatisticResult> list, CountryConfiguration cc, Dimension dimension) {
 		List<GenericResponse> res = new ArrayList<>();
 		   
    		for (StatisticResult sr : list) {
@@ -603,7 +609,9 @@ public class StatisticsContoller {
 				ActivityDB activitydb = activityRepository.findByCode(sr.getCode());
 				gr = GenericResponse.createFromActivity(activitydb, null);
 			}
-			gr.setCountryCode(sr.getCountry());
+			if (sr.getCountry() != null) {
+				gr.setCountry(new CodeLabel(sr.getCountry(), cc.getCountryLabel()));
+			}
 			gr.setCount(sr.getCount());
 			res.add(gr);
 			

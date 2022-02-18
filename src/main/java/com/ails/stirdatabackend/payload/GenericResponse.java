@@ -2,12 +2,10 @@ package com.ails.stirdatabackend.payload;
 
 import com.ails.stirdatabackend.model.ActivityDB;
 import com.ails.stirdatabackend.model.Code;
+import com.ails.stirdatabackend.model.CountryConfiguration;
 import com.ails.stirdatabackend.model.PlaceDB;
-import com.ails.stirdatabackend.model.Statistic;
 import com.ails.stirdatabackend.model.StatisticDB;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,7 +17,7 @@ import lombok.Setter;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class GenericResponse {
 
-	private String countryCode;
+	private CodeLabel country;
 
 	private CodeLabel place;
 
@@ -68,9 +66,12 @@ public class GenericResponse {
 		activity = new CodeLabel(code, label);
 	}
 
-	public static GenericResponse createFromStatistic(StatisticDB st, PlaceDB placedb, ActivityDB activitydb, Code founding, Code dissolution, String lang) {
+	public static GenericResponse createFromStatistic(StatisticDB st, CountryConfiguration cc, PlaceDB placedb, ActivityDB activitydb, Code founding, Code dissolution, String lang) {
 		GenericResponse sr = new GenericResponse();
-		sr.setCountryCode(st.getCountry());
+//		sr.setCountryCode(st.getCountry());
+		if (cc != null) {
+			sr.setCountry(new CodeLabel(st.getCountry(), cc.getCountryLabel()));
+		}
 		
 		if (placedb == null) {
 			placedb = st.getPlace();
@@ -103,9 +104,12 @@ public class GenericResponse {
 
 	}
 	
-	public static GenericResponse createFromFoundingStatistic(StatisticDB st, PlaceDB placedb, ActivityDB activitydb, Code founding, Code dissolution, String lang) {
+	public static GenericResponse createFromFoundingStatistic(StatisticDB st, CountryConfiguration cc, PlaceDB placedb, ActivityDB activitydb, Code founding, Code dissolution, String lang) {
 		GenericResponse sr = new GenericResponse();
-		sr.setCountryCode(st.getCountry());
+//		sr.setCountryCode(st.getCountry());
+		if (cc != null) {
+			sr.setCountry(new CodeLabel(st.getCountry(), cc.getCountryLabel()));
+		}
 		
 		if (placedb == null) {
 			placedb = st.getPlace();
@@ -153,9 +157,12 @@ public class GenericResponse {
 
 	}
 
-	public static GenericResponse createFromDissolutionStatistic(StatisticDB st, PlaceDB placedb, ActivityDB activitydb, Code founding, Code dissolution, String lang) {
+	public static GenericResponse createFromDissolutionStatistic(StatisticDB st, CountryConfiguration cc, PlaceDB placedb, ActivityDB activitydb, Code founding, Code dissolution, String lang) {
 		GenericResponse sr = new GenericResponse();
-		sr.setCountryCode(st.getCountry());
+//		sr.setCountryCode(st.getCountry());
+		if (cc != null) {
+			sr.setCountry(new CodeLabel(st.getCountry(), cc.getCountryLabel()));
+		}
 		
 		if (placedb == null) {
 			placedb = st.getPlace();
