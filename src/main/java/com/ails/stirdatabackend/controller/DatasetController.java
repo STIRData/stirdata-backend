@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.ails.stirdatabackend.model.Code;
 import com.ails.stirdatabackend.model.CountryConfiguration;
 import com.ails.stirdatabackend.model.Dimension;
@@ -37,6 +39,7 @@ import java.util.Set;
 
 @RestController
 @RequestMapping("/api/datasets")
+@Tag(name = "Dataset API")
 public class DatasetController {
 
 	@Autowired
