@@ -32,6 +32,7 @@ public class Code implements Serializable {
     public final static String lauNamespace = "lau";
     public final static String dateIntervalNamespace = "date-range";
     
+    public final static String date1D = "1D";
     public final static String date1M = "1M";
     public final static String date3M = "3M";
     public final static String date1Y = "1Y";    
@@ -100,6 +101,34 @@ public class Code implements Serializable {
 			return null;
 		}
 	}
+	
+	public static String nextDateLevel(String level) {
+		if (level.equals(date10Y)) {
+			return date1Y;
+		} else if (level.equals(date1Y)) {
+			return date3M;
+		} else if (level.equals(date3M)) {
+			return date1M;
+		} else if (level.equals(date1M)) {
+			return date1D;
+		}
+		
+		return null;
+	}
+	
+	public static String previousDateLevel(String level) {
+		if (level.equals(date1Y)) {
+			return date10Y;
+		} else if (level.equals(date3M)) {
+			return date1Y;
+		} else if (level.equals(date1M)) {
+			return date3M;
+		} else if (level.equals(date1D)) {
+			return date1M;
+		}
+		
+		return null;
+	}	
 
 	public static Code createDateCode(String from, String to, String interval) {
 		return new Code(dateIntervalNamespace + ":" + from + ":" + to + ":" + interval);
@@ -168,20 +197,20 @@ public class Code implements Serializable {
 		
 	}
 	
-	public Date getFromDate() {
-		return dateFrom;
-	}
+//	public Date getFromDate() {
+//		return dateFrom;
+//	}
+//
+//	public Date getToDate() {
+//		return dateTo;
+//	}
+//
+//	public String getDateInterval() {
+//		return dateInterval;
+//	}
 
-	public Date getToDate() {
-		return dateTo;
-	}
-
-	public String getDateInterval() {
-		return dateInterval;
-	}
-
-	public boolean isDateInterval1M() {
-		return dateInterval != null && dateInterval.equals("1M");
+	public boolean isDateInterval1D() {
+		return dateInterval != null && dateInterval.equals("1D");
 	}
 	
 	public boolean isDate() {

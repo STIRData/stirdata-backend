@@ -1,6 +1,13 @@
 package com.ails.stirdatabackend.service;
 
+import java.util.Calendar;
 import java.util.List;
+
+import org.apache.jena.datatypes.xsd.XSDDateTime;
+import org.apache.jena.query.QueryExecution;
+import org.apache.jena.query.QueryExecutionFactory;
+import org.apache.jena.query.QuerySolution;
+import org.apache.jena.query.ResultSet;
 
 import com.ails.stirdatabackend.model.Code;
 import com.ails.stirdatabackend.model.CountryConfiguration;
@@ -35,6 +42,48 @@ public class SparqlQuery {
     	return prefix + "SELECT (COUNT(DISTINCT ?entity) AS ?count) " + getGraphPart() + "  WHERE { " + getWhere() + " } " ;
     }
 
+    public String minMaxFoundingDateQuery(CountryConfiguration cc) {
+    	return prefix + "SELECT (MIN(?foundingDate) AS ?minDate) (MAX(?foundingDate) AS ?maxDate) " + getGraphPart() + "  WHERE { " + getWhere() + " " + cc.getFoundingDateSparql() + " } " ;
+    }
+
+    public Calendar[] minMaxFoundingDate(CountryConfiguration cc) {
+   		Calendar[] date = new Calendar[2];
+   		try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), minMaxFoundingDateQuery(cc))) {
+	    	ResultSet rs = qe.execSelect();
+		    	
+	    	while (rs.hasNext()) {
+	    		QuerySolution sol = rs.next();
+		
+	    		date[0] = ((XSDDateTime)sol.get("minDate").asLiteral().getValue()).asCalendar();
+	    		date[1] = ((XSDDateTime)sol.get("maxDate").asLiteral().getValue()).asCalendar();
+	    	}
+	    }
+   		
+   		return date;
+    }
+    
+    public String minMaxDissolutionDateQuery(CountryConfiguration cc) {
+    	return prefix + "SELECT (MIN(?dissolutionDate) AS ?minDate) (MAX(?dissolutionDate) AS ?maxDate) " + getGraphPart() + "  WHERE { " + getWhere() + " " + cc.getDissolutionDateSparql() + " } " ;
+    }
+    
+    public Calendar[] minMaxDissolutionDate(CountryConfiguration cc) {
+    	Calendar[] date = new Calendar[2];
+    	
+   		try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), minMaxDissolutionDateQuery(cc))) {
+	    	ResultSet rs = qe.execSelect();
+		    	
+	    	while (rs.hasNext()) {
+	    		QuerySolution sol = rs.next();
+		
+	    		date[0] = ((XSDDateTime)sol.get("minDate").asLiteral().getValue()).asCalendar();
+	    		date[1] = ((XSDDateTime)sol.get("maxDate").asLiteral().getValue()).asCalendar();
+
+	    	}
+	    }
+   		
+   		return date;
+    }
+
     public String allSelectQuery(int offset, int limit) {
     	return prefix + " SELECT DISTINCT ?entity " + getGraphPart() + " WHERE { " + getWhere() + " } LIMIT " + limit + " OFFSET " + offset;
     }
@@ -62,7 +111,7 @@ public class SparqlQuery {
     	return query;
     }
     
-    public static SparqlQuery buildCoreQuery(CountryConfiguration cc, boolean name, List<String> nuts3, List<String> lau, List<String> nace, Code foundingDate, Code dissolutionDate) {
+    public static SparqlQuery buildCoreQuery(CountryConfiguration cc, boolean active, boolean name, List<String> nuts3, List<String> lau, List<String> nace, Code foundingDate, Code dissolutionDate) {
     
     	SparqlQuery cq = new SparqlQuery(cc.getDataNamedGraph());
     	
@@ -70,8 +119,10 @@ public class SparqlQuery {
         
         sparql += cc.getEntitySparql() + " "; 
         
-        if (cc.isDissolutionDate() && (dissolutionDate == null || (dissolutionDate.getDateFrom() == null && dissolutionDate.getDateTo() == null))) {
-        	sparql += cc.getActiveSparql() + " ";
+        if (active && cc.isDissolutionDate()) {
+        	if (dissolutionDate == null || (dissolutionDate.getDateFrom() == null && dissolutionDate.getDateTo() == null)) {
+	        	sparql += cc.getActiveSparql() + " ";
+	        }
         }
         
         if (name) {
@@ -145,33 +196,29 @@ public class SparqlQuery {
         
 
         // Date filter (if requested)
+        
         if (foundingDate != null && (foundingDate.getDateFrom() != null || foundingDate.getDateTo() != null)) {
             sparql += cc.getFoundingDateSparql() + " ";
 
             if (foundingDate.getDateFrom() != null && foundingDate.getDateTo() == null) {
                 sparql += "FILTER( ?foundingDate >= \"" + foundingDate.getDateFrom() + "\"^^xsd:date) ";
-            }
-            else if (foundingDate.getDateFrom() == null && foundingDate.getDateTo() != null) {
+            } else if (foundingDate.getDateFrom() == null && foundingDate.getDateTo() != null) {
                 sparql += "FILTER( ?foundingDate <= \"" + foundingDate.getDateTo() + "\"^^xsd:date) ";
-            }
-            else {
-                sparql += "FILTER( ?foundingDate >= \"" + foundingDate.getFromDate() + "\"^^xsd:date && ?foundingDate <= \"" + foundingDate.getToDate() + "\"^^xsd:date) ";
+            } else {
+                sparql += "FILTER( ?foundingDate >= \"" + foundingDate.getDateFrom() + "\"^^xsd:date && ?foundingDate <= \"" + foundingDate.getDateTo() + "\"^^xsd:date) ";
 
             }
         }
         
-        if (dissolutionDate != null && (dissolutionDate.getFromDate() != null || dissolutionDate.getToDate() != null)) {
+        if (dissolutionDate != null && (dissolutionDate.getDateFrom() != null || dissolutionDate.getDateTo() != null)) {
             sparql += cc.getDissolutionDateSparql() + " ";
 
-            if (dissolutionDate.getFromDate() != null && dissolutionDate.getToDate() == null) {
-                sparql += "FILTER( ?dissolutionDate >= \"" + dissolutionDate.getFromDate() + "\"^^xsd:date) ";
-            }
-            else if (dissolutionDate.getFromDate() == null && dissolutionDate.getToDate() != null) {
-                sparql += "FILTER( ?dissolutionDate < \"" + dissolutionDate.getToDate() + "\"^^xsd:date) ";
-            }
-            else {
-                sparql += "FILTER( ?dissolutionDate >= \"" + dissolutionDate.getFromDate() + "\"^^xsd:date && ?dissolutionDate < \"" + dissolutionDate.getToDate() + "\"^^xsd:date) ";
-
+            if (dissolutionDate.getDateFrom() != null && dissolutionDate.getDateTo() == null) {
+                sparql += "FILTER( ?dissolutionDate >= \"" + dissolutionDate.getDateFrom() + "\"^^xsd:date) ";
+            } else if (dissolutionDate.getDateFrom() == null && dissolutionDate.getDateTo() != null) {
+                sparql += "FILTER( ?dissolutionDate < \"" + dissolutionDate.getDateTo() + "\"^^xsd:date) ";
+            } else {
+                sparql += "FILTER( ?dissolutionDate >= \"" + dissolutionDate.getDateFrom() + "\"^^xsd:date && ?dissolutionDate < \"" + dissolutionDate.getDateTo() + "\"^^xsd:date) ";
             }
         }
         

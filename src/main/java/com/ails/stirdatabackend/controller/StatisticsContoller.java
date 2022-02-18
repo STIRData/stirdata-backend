@@ -409,7 +409,7 @@ public class StatisticsContoller {
 					List<StatisticDB> foundingStats;
 					if (stats.contains(Dimension.FOUNDING) && dissolution == null) {
 	//					foundingStats = statisticsRepository.findByCountryAndDimensionAndParentActivityAndParentPlaceAndFromDateGreaterThanEqualAndToDateLessThanEqualAndDateInterval(country, Dimension.FOUNDING.toString(), null, null, founding.getFromDate(), founding.getToDate(), founding.getDateInterval());
-						foundingStats = statisticsRepository.findByCountryAndDimensionAndDateRange(country, Dimension.FOUNDING.toString(), founding.getFromDate(), founding.getToDate(), Code.date1M, dateRangeName(founding.getDateInterval()));
+						foundingStats = statisticsRepository.findByCountryAndDimensionAndDateRange(country, Dimension.FOUNDING.toString(), founding.getDateFrom(), founding.getDateTo(), Code.date1M, dateRangeName(founding.getDateInterval()));
 					} else {
 						foundingStats = mapResults(statisticsService.dateStatistics(cc, Dimension.FOUNDING, founding, null, null, null, dissolution, false), Dimension.FOUNDING);
 					}
@@ -425,7 +425,7 @@ public class StatisticsContoller {
 					List<StatisticDB> dissolutionStats;
 					if (stats.contains(Dimension.DISSOLUTION) && founding == null) {
 	//					dissolutionStats = statisticsRepository.findByCountryAndDimensionAndParentActivityAndParentPlaceAndFromDateGreaterThanEqualAndToDateLessThanEqualAndDateInterval(country, Dimension.DISSOLUTION.toString(), null, null, dissolution.getFromDate(), dissolution.getToDate(), dissolution.getDateInterval());
-						dissolutionStats = statisticsRepository.findByCountryAndDimensionAndDateRange(country, Dimension.FOUNDING.toString(), dissolution.getFromDate(), dissolution.getToDate(), Code.date1M, dateRangeName(dissolution.getDateInterval()));
+						dissolutionStats = statisticsRepository.findByCountryAndDimensionAndDateRange(country, Dimension.FOUNDING.toString(), dissolution.getDateFrom(), dissolution.getDateTo(), Code.date1M, dateRangeName(dissolution.getDateInterval()));
 					} else {
 						dissolutionStats = mapResults(statisticsService.dateStatistics(cc, Dimension.DISSOLUTION, dissolution, null, null, founding, null, false), Dimension.DISSOLUTION);
 					}
@@ -524,8 +524,8 @@ public class StatisticsContoller {
 				ActivityDB activitydb = activityRepository.findByCode(sr.getCode());
 				gr.setActivity(activitydb);
 			} else if (dimension == Dimension.FOUNDING || dimension == Dimension.DISSOLUTION) {
-				gr.setFromDate(sr.getCode().getFromDate());
-				gr.setToDate(sr.getCode().getToDate());
+				gr.setFromDate(sr.getCode().getDateFrom());
+				gr.setToDate(sr.getCode().getDateTo());
 
 			}
 			

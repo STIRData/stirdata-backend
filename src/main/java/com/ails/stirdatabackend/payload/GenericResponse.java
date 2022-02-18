@@ -90,11 +90,11 @@ public class GenericResponse {
 		}
 		
 		if (founding != null) {
-			sr.setFoundingDate(new Interval(founding.getFromDate(), founding.getToDate()));
+			sr.setFoundingDate(new Interval(founding.getDateFrom(), founding.getDateTo()));
 		} 
 		
 		if (dissolution != null) {
-			sr.setDissolutionDate(new Interval(dissolution.getFromDate(), dissolution.getToDate()));
+			sr.setDissolutionDate(new Interval(dissolution.getDateFrom(), dissolution.getDateTo()));
 		}
 		
 //		sr.setDateInterval(st.getDateInterval());
@@ -142,11 +142,11 @@ public class GenericResponse {
 //			if (founding.getToDate() != null) {
 //				sr.setFoundingToDate(founding.getToDate().toString());
 //			}
-			sr.setFoundingDate(new Interval(founding.getFromDate(), founding.getToDate()));
+			sr.setFoundingDate(new Interval(founding.getDateFrom(), founding.getDateTo()));
 		} 
 		
 		if (dissolution != null) {
-			sr.setDissolutionDate(new Interval(dissolution.getFromDate(), dissolution.getToDate()));
+			sr.setDissolutionDate(new Interval(dissolution.getDateFrom(), dissolution.getDateTo()));
 		}
 		
 		
@@ -181,7 +181,7 @@ public class GenericResponse {
 		}
 		
 		if (founding != null) {
-			sr.setFoundingDate(new Interval(founding.getFromDate(), founding.getToDate()));
+			sr.setFoundingDate(new Interval(founding.getDateFrom(), founding.getDateTo()));
 		}
 		
 		if (dissolution == null) {
@@ -199,7 +199,7 @@ public class GenericResponse {
 //			if (dissolution.getToDate() != null) {
 //				sr.setDissolutionToDate(dissolution.getToDate().toString());
 //			}
-			sr.setDissolutionDate(new Interval(dissolution.getFromDate(), dissolution.getToDate()));
+			sr.setDissolutionDate(new Interval(dissolution.getDateFrom(), dissolution.getDateTo()));
 		} 
 		
 		

@@ -70,7 +70,7 @@ public class QueryService {
         	}
         	
         	//could use statistics table instead of this if available
-        	SparqlQuery sparql = SparqlQuery.buildCoreQuery(cc, true, nutsLeafUris, lauUris, naceLeafUris, founding, dissolution); 
+        	SparqlQuery sparql = SparqlQuery.buildCoreQuery(cc, true, true, nutsLeafUris, lauUris, naceLeafUris, founding, dissolution); 
 
             if (page == 1) {
             	String countQuery = sparql.countSelectQuery();
@@ -182,7 +182,7 @@ public class QueryService {
 //	        		lau = false;
 //	        	}
 
-        	SparqlQuery sparql = SparqlQuery.buildCoreQuery(cc, false, nutsLeafUris, lauUris, naceLeafUris, founding, dissolution); 
+        	SparqlQuery sparql = SparqlQuery.buildCoreQuery(cc, true, false, nutsLeafUris, lauUris, naceLeafUris, founding, dissolution); 
 
         	if ((nutsLeafUris != null && nutsLeafUris.size() == 0) || (naceLeafUris != null && naceLeafUris.size() == 0)) {
         		responseList.add(new EndpointResponse(cc.getCountryLabel(), mapper.createArrayNode(), 0, null));

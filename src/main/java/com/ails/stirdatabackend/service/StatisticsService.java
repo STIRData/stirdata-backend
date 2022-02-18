@@ -54,8 +54,10 @@ public class StatisticsService {
 
     @Autowired
     private StatisticsRepository statisticsRepository;
+    
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("YYYY-MM-dd");
 
-    public void computeAndSaveAllStatistics(CountryConfiguration cc, Code date, Set<Dimension> dimensions) {
+    public void computeAndSaveAllStatistics(CountryConfiguration cc, Set<Dimension> dimensions) {
     	
     	logger.info("Statistics to compute " + dimensions);
     	
@@ -64,7 +66,7 @@ public class StatisticsService {
     	if (dimensions.contains(Dimension.DATA)) {
 	    	logger.info("Computing DATA statistics for " + cc.getCountryCode());
 	    	
-	    	String query = SparqlQuery.buildCoreQuery(cc, false, null, null, null, null, null).countSelectQuery();
+	    	String query = SparqlQuery.buildCoreQuery(cc, true, false, null, null, null, null, null).countSelectQuery();
 	    	statisticsRepository.deleteAllByCountryAndDimension(cc.getCountryCode(), Dimension.DATA);
 	    	
 	    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), query)) {
@@ -155,8 +157,8 @@ public class StatisticsService {
     				List<Code> nutsLauList = new ArrayList<>();
     				nutsLauList.add(iter.getCode());
         		
-	    			nuts = dateStatistics(cc, Dimension.FOUNDING, date, nutsLauList, null, null, null, true);
-	        		statisticsRepository.deleteAllByCountryAndDimension(cc.getCountryCode(), Dimension.NUTSLAU_FOUNDING);
+	    			nuts = dateStatistics(cc, Dimension.FOUNDING, null, nutsLauList, null, null, null, true);
+//	        		statisticsRepository.deleteAllByCountryAndDimension(cc.getCountryCode(), Dimension.NUTSLAU_FOUNDING);
 	        		
 	        		for (StatisticResult sr : nuts) {
 	        			Statistic stat = new Statistic();
@@ -168,15 +170,15 @@ public class StatisticsService {
     	    			}	        			
 	        			stat.setFromDate(sr.getCode().getDateFrom().toString());
 	        			stat.setToDate(sr.getCode().getDateTo().toString());
-	        			stat.setDateInterval(sr.getCode().getDateInterval());
+	        			stat.setDateInterval(Code.previousDateLevel(sr.getCode().getDateInterval()));
 	        			if (sr.getParentCode() != null) {
 	        				stat.setParentFromDate(sr.getParentCode().getDateFrom().toString());
-	        				stat.setParentToDate(sr.getParentCode().getFromDate().toString());
+	        				stat.setParentToDate(sr.getParentCode().getDateTo().toString());
 	        			}
 	        			stat.setUpdated(cc.getLastUpdated());
 	        			stat.setCount(sr.getCount());
 	        			
-	        			statisticsRepository.save(stat);
+//	        			statisticsRepository.save(stat);
 	        		}
     			}
     		}
@@ -209,7 +211,7 @@ public class StatisticsService {
 		if (cc.isFoundingDate() && dimensions.contains(Dimension.FOUNDING)) {
     		logger.info("Computing founding date statistics for " + cc.getCountryCode());
     		
-    		List<StatisticResult> nuts = dateStatistics(cc, Dimension.FOUNDING, date, null, null, null, null, true);
+    		List<StatisticResult> nuts = dateStatistics(cc, Dimension.FOUNDING, null, null, null, null, null, true);
     		statisticsRepository.deleteAllByCountryAndDimension(cc.getCountryCode(), Dimension.FOUNDING);
     		
     		for (StatisticResult sr : nuts) {
@@ -218,13 +220,15 @@ public class StatisticsService {
     			stat.setDimension(Dimension.FOUNDING);
     			stat.setFromDate(sr.getCode().getDateFrom().toString());
     			stat.setToDate(sr.getCode().getDateTo().toString());
-    			stat.setDateInterval(sr.getCode().getDateInterval());
+    			stat.setDateInterval(Code.previousDateLevel(sr.getCode().getDateInterval()));
     			if (sr.getParentCode() != null) {
     				stat.setParentFromDate(sr.getParentCode().getDateFrom().toString());
-    				stat.setParentToDate(sr.getParentCode().getFromDate().toString());
+    				stat.setParentToDate(sr.getParentCode().getDateTo().toString());
     			}
     			stat.setUpdated(cc.getLastUpdated());
     			stat.setCount(sr.getCount());
+    			
+    			System.out.println(stat.getFromDate() + " " + stat.getToDate() + " " + stat.getDateInterval());
     			
     			statisticsRepository.save(stat);
     		}
@@ -233,7 +237,7 @@ public class StatisticsService {
 		if (cc.isDissolutionDate() && dimensions.contains(Dimension.DISSOLUTION)) {
     		logger.info("Computing dissolution date statistics for " + cc.getCountryCode());
     		
-    		List<StatisticResult> nuts = dateStatistics(cc, Dimension.DISSOLUTION, date, null, null, null, null, true);
+    		List<StatisticResult> nuts = dateStatistics(cc, Dimension.DISSOLUTION, null, null, null, null, null, true);
     		statisticsRepository.deleteAllByCountryAndDimension(cc.getCountryCode(), Dimension.DISSOLUTION);
     		
     		for (StatisticResult sr : nuts) {
@@ -242,10 +246,10 @@ public class StatisticsService {
     			stat.setDimension(Dimension.DISSOLUTION);
     			stat.setFromDate(sr.getCode().getDateFrom().toString());
     			stat.setToDate(sr.getCode().getDateTo().toString());
-    			stat.setDateInterval(sr.getCode().getDateInterval());
+    			stat.setDateInterval(Code.previousDateLevel(sr.getCode().getDateInterval()));
     			if (sr.getParentCode() != null) {
     				stat.setParentFromDate(sr.getParentCode().getDateFrom().toString());
-    				stat.setParentToDate(sr.getParentCode().getFromDate().toString());
+    				stat.setParentToDate(sr.getParentCode().getDateTo().toString());
     			}
     			stat.setUpdated(cc.getLastUpdated());
     			stat.setCount(sr.getCount());
@@ -294,7 +298,10 @@ public class StatisticsService {
    		public List<String> naceLeafUris;
 	    public List<String> nutsLeafUris;
 	    public List<String> lauUris;
-	    	
+	    
+	    Calendar minDate;
+	    Calendar maxDate;
+	    
    		public StatisticsHelper(CountryConfiguration cc, Dimension dimension, List<Code> nutsLauCodes, List<Code> naceCodes) {
    	    	Map<CountryConfiguration, PlaceSelection> countryPlaceMap;
    	    	if (nutsLauCodes != null) {
@@ -305,14 +312,30 @@ public class StatisticsService {
    	    	
    	    	PlaceSelection places = countryPlaceMap.get(cc);
    	    	
-//   	        if (dimension == Dimension.NUTS || dimension == Dimension.LAU) {
-   	    	if (dimension == Dimension.NUTSLAU) {
+//   	    if (dimension == Dimension.NUTSLAU) {
    	        	naceLeafUris = naceService.getLocalNaceLeafUris(cc, naceCodes);
-   	        } else if (dimension == Dimension.NACE) {
+//   	    } else if (dimension == Dimension.NACE) {
    		        nutsLeafUris = places == null ? null : nutsService.getLocalNutsLeafUrisDB(cc, places.getNuts3()); 
    		        lauUris = places == null ? null : nutsService.getLocalLauUris(cc, places.getLau());
-   	        } 
+// 	        } 
 
+   		}
+
+
+   		public void minMaxDates(CountryConfiguration cc, Dimension dimension, Code foundingDate, Code dissolutionDate) {
+   		    SparqlQuery sparql;
+	    	
+   	    	Calendar[] minMaxDate = null; 
+   			if (dimension == Dimension.FOUNDING) {
+   				sparql = SparqlQuery.buildCoreQuery(cc, true, false, nutsLeafUris, lauUris, naceLeafUris, null, dissolutionDate);
+   				minMaxDate = sparql.minMaxFoundingDate(cc); 
+   			} else if (dimension == Dimension.DISSOLUTION) {
+   				sparql = SparqlQuery.buildCoreQuery(cc, false, false, nutsLeafUris, lauUris, naceLeafUris, foundingDate, null);
+   				minMaxDate = sparql.minMaxDissolutionDate(cc);
+   			}   			
+   			
+   			minDate = minMaxDate[0];
+   			maxDate = minMaxDate[1];
    		}
    	}
 
@@ -331,6 +354,7 @@ public class StatisticsService {
    		StatisticsHelper sh = new StatisticsHelper(cc, dimension, nutsLauCodes, naceCodes);
    		
 		statistics(cc, dimension, root, sh, foundingDate, dissolutionDate, res, sc);
+		
    		if (allLevels) {
     		for (int i = 0; i < res.size(); i++) {
     			statistics(cc, dimension, res.get(i).getCode(), sh, foundingDate, dissolutionDate, res, sc);
@@ -341,14 +365,37 @@ public class StatisticsService {
    	}
    	
    	
-   	public List<StatisticResult> dateStatistics(CountryConfiguration cc, Dimension dimension, Code date, List<Code> nutsLauCodes, List<Code> naceCodes, Code foundingDate, Code dissolutionDate, boolean allLevels) {
+//   	public List<StatisticResult> dateStatistics(CountryConfiguration cc, Dimension dimension, Code date, List<Code> nutsLauCodes, List<Code> naceCodes, Code foundingDate, Code dissolutionDate, boolean allLevels) {
+//   		List<StatisticResult> res  = new ArrayList<StatisticResult>();
+//   		
+//   		StatisticsHelper sh = new StatisticsHelper(cc, dimension, nutsLauCodes, naceCodes);
+//   		
+//		dateStatistics(cc, dimension, date, nutsLauCodes, naceCodes, foundingDate, dissolutionDate, res);
+//    		
+//   		if (allLevels) {
+//    		for (int i = 0; i < res.size(); i++) {
+//    			dateStatistics(cc, dimension, res.get(i).getCode(), nutsLauCodes, naceCodes, foundingDate, dissolutionDate, res);
+//    		}
+//		}
+//   		
+//   		return res;
+//   	}
+   	
+   	public List<StatisticResult> dateStatistics(CountryConfiguration cc, Dimension dimension, Code root, List<Code> nutsLauCodes, List<Code> naceCodes, Code foundingDate, Code dissolutionDate, boolean allLevels) {
    		List<StatisticResult> res  = new ArrayList<StatisticResult>();
    		
-		dateStatistics(cc, dimension, date, nutsLauCodes, naceCodes, foundingDate, dissolutionDate, res);
+   		StatisticsHelper sh = new StatisticsHelper(cc, dimension, nutsLauCodes, naceCodes);
+   		sh.minMaxDates(cc, dimension, foundingDate, dissolutionDate);
+   		
+   		if (root == null) {
+   			root = Code.createDateCode(new Date(sh.minDate.getTime().getTime()), new Date(sh.maxDate.getTime().getTime()), Code.date10Y);
+   		}
+   		
+		dateStatistics(cc, dimension, root, sh, foundingDate, dissolutionDate, res);
     		
    		if (allLevels) {
     		for (int i = 0; i < res.size(); i++) {
-    			dateStatistics(cc, dimension, res.get(i).getCode(), nutsLauCodes, naceCodes, foundingDate, dissolutionDate, res);
+    			dateStatistics(cc, dimension, res.get(i).getCode(), sh, foundingDate, dissolutionDate, res);
     		}
 		}
    		
@@ -386,9 +433,9 @@ public class StatisticsService {
 //	        if (dimension == Dimension.NUTS) {
     		if (dimension == Dimension.NUTSLAU) {
 	        	if (code.isNuts()) {
-	        		sparql = SparqlQuery.buildCoreQuery(cc, false, nutsService.getLocalNutsLeafUrisDB(cc, code), null, sh.naceLeafUris, foundingDate, dissolutionDate);
+	        		sparql = SparqlQuery.buildCoreQuery(cc, true, false, nutsService.getLocalNutsLeafUrisDB(cc, code), null, sh.naceLeafUris, foundingDate, dissolutionDate);
 	        	} else if (code.isLau()) {
-	        		sparql = SparqlQuery.buildCoreQuery(cc, false, null, Arrays.asList(nutsService.getLocalLauUri(cc, code)), sh.naceLeafUris, foundingDate, dissolutionDate);
+	        		sparql = SparqlQuery.buildCoreQuery(cc, true, false, null, Arrays.asList(nutsService.getLocalLauUri(cc, code)), sh.naceLeafUris, foundingDate, dissolutionDate);
 	        	}
 	        } else if (dimension == Dimension.NACE) {
 	        	List<String> naceLeafUris = (sc == null) ? naceService.getLocalNaceLeafUris(cc, code) : sc.nacelookup(code);
@@ -397,7 +444,7 @@ public class StatisticsService {
             		continue;
             	}
             	
-		        sparql = SparqlQuery.buildCoreQuery(cc, false, sh.nutsLeafUris, sh.lauUris, naceLeafUris, foundingDate, dissolutionDate); 
+		        sparql = SparqlQuery.buildCoreQuery(cc, true, false, sh.nutsLeafUris, sh.lauUris, naceLeafUris, foundingDate, dissolutionDate); 
 	        }
 	  
 	        String query = sparql.countSelectQuery() ;
@@ -409,6 +456,8 @@ public class StatisticsService {
 	        
 	        int tries = 0;
 	        while (tries < 3) {
+	        	tries++;
+	        	
 		        try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), query)) {
 	            	ResultSet rs = qe.execSelect();
 	            	
@@ -434,7 +483,6 @@ public class StatisticsService {
 		        	System.out.println(ex.getResponse());
 		        	System.out.println(ex.getResponseCode());
 		        	System.out.println(ex.getResponseMessage());
-		        	tries++;
 		        	continue;
 		        }	        
 		        
@@ -452,11 +500,13 @@ public class StatisticsService {
 		List<String> lauUris = (nutsLauCode != null && nutsLauCode.isLau()) ? Arrays.asList(nutsService.getLocalLauUri(cc, nutsLauCode)) : null ;    		
     	List<String> naceUris = naceCode != null ? naceService.getLocalNaceLeafUris(cc, naceCode) : null ;
     	
-        String query = SparqlQuery.buildCoreQuery(cc, false, nutsUris, lauUris, naceUris, foundingDate, dissolutionDate).countSelectQuery() ;
+        String query = SparqlQuery.buildCoreQuery(cc, true, false, nutsUris, lauUris, naceUris, foundingDate, dissolutionDate).countSelectQuery() ;
 //	    System.out.println(query);
         
         int tries = 0;
         while (tries < 3) {
+        	tries++;
+        	
 	        try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), query)) {
 	        	ResultSet rs = qe.execSelect();
 	        	
@@ -477,7 +527,6 @@ public class StatisticsService {
 	        	System.out.println(ex.getResponseCode());
 	        	System.out.println(ex.getResponseMessage());
 	        	
-	        	tries++;
 	        	continue;
 	        }
 	        
@@ -486,118 +535,105 @@ public class StatisticsService {
     
     	return res;
 
-    }    
+    }
     
-    public void dateStatistics(CountryConfiguration cc, Dimension dimension, Code root, List<Code> nutsLauCode, List<Code> naceCode, Code foundingDate, Code dissolutionDate,  List<StatisticResult> res) {
+//    public static void main(String[] args) {
+//    	Date date = Date.valueOf("2020-07-31");
+//    	
+//    	Calendar cal = Calendar.getInstance();
+//    	cal.setTime(new Date(date.getTime()));
+//
+//    	System.out.println(cal.getTime());
+//
+//    	System.out.println();
+//    	System.out.println(round(cal, Code.date1M, false).getTime());
+//    	System.out.println(round(cal, Code.date1M, true).getTime());
+//    	System.out.println();
+//    	System.out.println(round(cal, Code.date3M, false).getTime());
+//    	System.out.println(round(cal, Code.date3M, true).getTime());
+//    	System.out.println();
+//    	System.out.println(round(cal, Code.date1Y, false).getTime());
+//    	System.out.println(round(cal, Code.date1Y, true).getTime());
+//    	System.out.println();
+//    	System.out.println(round(cal, Code.date10Y, false).getTime());
+//    	System.out.println(round(cal, Code.date10Y, true).getTime());
+//    }
+    
+    private void dateStatistics(CountryConfiguration cc, Dimension dimension, Code root, StatisticsHelper sh, Code foundingDate, Code dissolutionDate,  List<StatisticResult> res) {
 //    	System.out.println(">> " + root);
     	
-    	if (root.isDateInterval1M()) {
+    	if (root.isDateInterval1D()) {
     		return;
     	}
     	
-    	Map<CountryConfiguration, PlaceSelection> requestMap;
-    	if (nutsLauCode != null) {
-    		requestMap = nutsService.getEndpointsByNuts(nutsLauCode);
-    	} else {
-    		requestMap = nutsService.getEndpointsByNuts(); 
-    	}
-    	
-    	PlaceSelection regions = requestMap.get(cc);
+		Calendar minDate = sh.minDate;
+		Calendar maxDate = sh.maxDate;
 
-    	List<String> naceLeafUris = naceService.getLocalNaceLeafUris(cc, naceCode);
-    	List<String> nutsLeafUris = regions == null ? null : nutsService.getLocalNutsLeafUrisDB(cc, regions.getNuts3());
-    	List<String> lauUris = regions == null ? null : nutsService.getLocalLauUris(cc, regions.getLau());
-    	
-    	String prefix = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
-                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "+
-                "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> ";
-
-    	SparqlQuery sparql = null; 
-		String query = null;
-		
-		if (dimension == Dimension.FOUNDING) {
-			sparql = SparqlQuery.buildCoreQuery(cc, false, nutsLeafUris, lauUris, naceLeafUris, null, dissolutionDate);
-   			query = prefix + "SELECT (MIN(?foundingDate) AS ?date) WHERE { " + sparql.getWhere() + " " + cc.getFoundingDateSparql() + " } " ;
-		} else if (dimension == Dimension.DISSOLUTION) {
-			sparql = SparqlQuery.buildCoreQuery(cc, false, nutsLeafUris, lauUris, naceLeafUris, foundingDate, null);
-			query = prefix + "SELECT (MIN(?dissolutionDate) AS ?date) WHERE { " + sparql.getWhere() + " " + cc.getDissolutionDateSparql() + " } " ;
+		if (root.getDateFrom() != null) {
+			Calendar minRootDate = Calendar.getInstance();
+			minRootDate.setTime(root.getDateFrom());
+			
+			if (minRootDate.after(minDate)) {
+				minDate = minRootDate; 
+			}
 		}
-
-   		Calendar minDate = null;
-   		if (root.getDateFrom() == null) {
-	   		try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), query)) {
-		    	ResultSet rs = qe.execSelect();
-		    	
-		    	while (rs.hasNext()) {
-		    		QuerySolution sol = rs.next();
 		
-		    		minDate = ((XSDDateTime)sol.get("date").asLiteral().getValue()).asCalendar();
-		    	}
-		    }
-   		} else {
-   			minDate = Calendar.getInstance();
-			minDate.setTime(root.getDateFrom());
-   		}
+		if (root.getDateTo() != null) {
+			Calendar maxRootDate = Calendar.getInstance();
+			maxRootDate.setTime(root.getDateTo());
+			
+			if (maxRootDate.before(maxDate)) {
+				maxDate = maxRootDate; 
+			}
+		}
+		
+		String interval = root.getDateInterval();
+		String nextInterval = Code.nextDateLevel(interval);
+		
+//		System.out.println("\t\t\t\t\t" + root);
+//		System.out.println("\t\t\t\t\t" + dateFormat.format(minDate.getTime()) + " >>> " + dateFormat.format(maxDate.getTime()) );
+		
+		minDate = round(minDate, interval, false);
+		maxDate = round(maxDate, interval, true);
+
+//		Code parentCode = Code.createDateCode(new Date(minDate.getTime().getTime()), new Date(maxDate.getTime().getTime()), interval);
    		
-   		Calendar maxDate = Calendar.getInstance();
-   		if (root.getDateTo() != null) {
-			maxDate.setTime(root.getDateTo());
-   		}
+		System.out.println(dateFormat.format(minDate.getTime()) + " >>> " + dateFormat.format(maxDate.getTime()) );
    		
-//   		System.out.println(dateFormat.format(minDate.getTime()) + " >>> " + dateFormat.format(maxDate.getTime()) );
-   		Calendar endDate = maxDate;
-   		endDate.add(Calendar.DAY_OF_MONTH, 1);
-   		
-   		String interval = root.getDateInterval();
-   		while (endDate.after(minDate)) {
-   			String resInterval = null;
-   			Calendar startDate = (Calendar)endDate.clone();
-//   			startDate.add(Calendar.DAY_OF_MONTH, -1);
-   			if (interval == null) {
-   				startDate.add(Calendar.YEAR, -10);
-//   				startDate.add(Calendar.DAY_OF_MONTH, 1);
-   				resInterval = "10Y";
-   			} else if (interval.equals("10Y")) {
-   				startDate.add(Calendar.YEAR, -1);
-//   				startDate.add(Calendar.DAY_OF_MONTH, 1);
-   				resInterval = "1Y";
+		Calendar fromDate = (Calendar)minDate.clone();
+
+   		while (fromDate.before(maxDate)) {
+
+   			Calendar toDate = (Calendar)fromDate.clone();
+   			if (interval.equals("1M")) {
+   				toDate.add(Calendar.MONTH, 1);
+   				toDate.add(Calendar.DAY_OF_MONTH, -1);
+   			} else if (interval.equals("3M")) {
+   	   			toDate.add(Calendar.MONTH, 3);
+   	   			toDate.add(Calendar.DAY_OF_MONTH, -1);
    			} else if (interval.equals("1Y")) {
-   				startDate.add(Calendar.MONTH, -1);
-//   				startDate.add(Calendar.DAY_OF_MONTH, 1);
-   				resInterval = "1M";
+   	   			toDate.add(Calendar.YEAR, 1);
+   	   			toDate.add(Calendar.DAY_OF_MONTH, -1);
+   			} else if (interval.equals("10Y")) {
+   	   			toDate.add(Calendar.YEAR, 10);
+   	   			toDate.add(Calendar.DAY_OF_MONTH, -1);
    			}
    			
-   			if (startDate.before(minDate)) {
-   				startDate = minDate;
-   				
-   				Calendar startDate2 = (Calendar)startDate.clone();
-   				startDate2.add(Calendar.YEAR, 1);
-   				if (startDate2.after((endDate)) || startDate2.equals(endDate)) {
-   					resInterval = "1Y";
-   				} else {
-   					startDate2.add(Calendar.YEAR, -1);
-   					startDate2.add(Calendar.MONTH, 1);
-   	   				if (startDate2.after((endDate)) || startDate2.equals(endDate)) {
-   	   					resInterval = "1M";
-   	   				}
-   				}
-   			}
-   			
-   			endDate.add(Calendar.DAY_OF_MONTH, -1);
-   			
+   			SparqlQuery sparql = null;
    			if (dimension == Dimension.FOUNDING) {
-   				sparql = SparqlQuery.buildCoreQuery(cc, false, nutsLeafUris, lauUris, naceLeafUris, Code.createDateCode(new Date(startDate.getTime().getTime()), new Date(endDate.getTime().getTime())), dissolutionDate); 
+   				sparql = SparqlQuery.buildCoreQuery(cc, true, false, sh.nutsLeafUris, sh.lauUris, sh.naceLeafUris, Code.createDateCode(new Date(fromDate.getTime().getTime()), new Date(toDate.getTime().getTime())), dissolutionDate); 
    			} else if (dimension == Dimension.DISSOLUTION) {
-   				sparql = SparqlQuery.buildCoreQuery(cc, false, nutsLeafUris, lauUris, naceLeafUris, foundingDate, Code.createDateCode(new Date(startDate.getTime().getTime()), new Date(endDate.getTime().getTime())));
+   				sparql = SparqlQuery.buildCoreQuery(cc, false, false, sh.nutsLeafUris, sh.lauUris, sh.naceLeafUris, foundingDate, Code.createDateCode(new Date(fromDate.getTime().getTime()), new Date(toDate.getTime().getTime())));
    			}
    			
-	        query = sparql.countSelectQuery() ;
+	        String query = sparql.countSelectQuery() ;
 	
 //	        System.out.println(dateFormat.format(startDate.getTime()) + " - " + dateFormat.format(endDate.getTime()) + " " + resInterval);
-	        System.out.println(query);
+//	        System.out.println(query);
 	
 	        int tries = 0;
 	        while (tries < 3) {
+	        	tries++;
 		        
 	            try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), query)) {
 	            	ResultSet rs = qe.execSelect();
@@ -605,16 +641,18 @@ public class StatisticsService {
 	            	while (rs.hasNext()) {
 	            		QuerySolution sol = rs.next();
 	
-	//            		System.out.println(sol);
 	            		int count = sol.get("count").asLiteral().getInt();
 	            		
-	//        			System.out.println(Code.createDateCode(new Date(startDate.getTime().getTime()).toString(), new Date(endDate.getTime().getTime()).toString(), resInterval) + " " + count);
 	            		if (count > 0) {
 	            			StatisticResult sr = new StatisticResult();
 	            			sr.setCountry(cc.getCountryCode());
-	            			sr.setCode(Code.createDateCode(new Date(startDate.getTime().getTime()).toString(), new Date(endDate.getTime().getTime()).toString(), resInterval));
+	            			sr.setCode(Code.createDateCode(new Date(fromDate.getTime().getTime()).toString(), new Date(toDate.getTime().getTime()).toString(), nextInterval));
 	            			sr.setCount(count);
-	            			sr.setParentCode(root);
+	            			if (!root.getDateInterval().equals(Code.date10Y)) {
+	            				sr.setParentCode(root);
+	            			}
+	            			
+//	            			System.out.println("\t\t" + Code.createDateCode(new Date(fromDate.getTime().getTime()).toString(), new Date(toDate.getTime().getTime()).toString(), nextInterval));
 	            			res.add(sr);
 	            		}
 	            	}
@@ -624,15 +662,233 @@ public class StatisticsService {
 		        	System.out.println(ex.getResponseCode());
 		        	System.out.println(ex.getResponseMessage());
 		        	
-		        	tries++;
 		        	continue;
 		        }
 	            
 	            break;
 	        }
             
-            endDate = startDate;
+            fromDate = toDate;
+            fromDate.add(Calendar.DAY_OF_MONTH, 1);
    		}
 
     }        
+    
+//    public void dateStatistics(CountryConfiguration cc, Dimension dimension, Code root, List<Code> nutsLauCode, List<Code> naceCode, Code foundingDate, Code dissolutionDate,  List<StatisticResult> res) {
+//    	System.out.println(">> " + root);
+//    	
+//    	if (root.isDateInterval1M()) {
+//    		return;
+//    	}
+//    	
+//    	Map<CountryConfiguration, PlaceSelection> requestMap;
+//    	if (nutsLauCode != null) {
+//    		requestMap = nutsService.getEndpointsByNuts(nutsLauCode);
+//    	} else {
+//    		requestMap = nutsService.getEndpointsByNuts(); 
+//    	}
+//    	
+//    	PlaceSelection regions = requestMap.get(cc);
+//
+//    	List<String> naceLeafUris = naceService.getLocalNaceLeafUris(cc, naceCode);
+//    	List<String> nutsLeafUris = regions == null ? null : nutsService.getLocalNutsLeafUrisDB(cc, regions.getNuts3());
+//    	List<String> lauUris = regions == null ? null : nutsService.getLocalLauUris(cc, regions.getLau());
+//    	
+//    	SparqlQuery sparql = null; 
+//		String query = null;
+//		
+//		if (dimension == Dimension.FOUNDING) {
+//			sparql = SparqlQuery.buildCoreQuery(cc, false, nutsLeafUris, lauUris, naceLeafUris, null, dissolutionDate);
+//			query = sparql.minFoundingDateQuery(cc); 
+//		} else if (dimension == Dimension.DISSOLUTION) {
+//			sparql = SparqlQuery.buildCoreQuery(cc, false, nutsLeafUris, lauUris, naceLeafUris, foundingDate, null);
+//			query = sparql.minDissolutionDateQuery(cc);
+//		}
+//
+//   		Calendar minDate = null;
+//   		if (root.getDateFrom() == null) {
+//	   		try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), query)) {
+//		    	ResultSet rs = qe.execSelect();
+//		    	
+//		    	while (rs.hasNext()) {
+//		    		QuerySolution sol = rs.next();
+//		
+//		    		minDate = ((XSDDateTime)sol.get("date").asLiteral().getValue()).asCalendar();
+//		    	}
+//		    }
+//   		} else {
+//   			minDate = Calendar.getInstance();
+//			minDate.setTime(root.getDateFrom());
+//   		}
+//   		
+//   		Calendar maxDate = Calendar.getInstance();
+//   		if (root.getDateTo() != null) {
+//			maxDate.setTime(root.getDateTo());
+//   		}
+//   		
+//   		System.out.println(dateFormat.format(minDate.getTime()) + " >>> " + dateFormat.format(maxDate.getTime()) );
+//   		Calendar endDate = maxDate;
+//   		endDate.add(Calendar.DAY_OF_MONTH, 1);
+//   		
+//   		String interval = root.getDateInterval();
+//   		while (endDate.after(minDate)) {
+//   			String resInterval = null;
+//   			Calendar startDate = (Calendar)endDate.clone();
+////   			startDate.add(Calendar.DAY_OF_MONTH, -1);
+//   			if (interval == null) {
+//   				startDate.add(Calendar.YEAR, -10);
+////   				startDate.add(Calendar.DAY_OF_MONTH, 1);
+//   				resInterval = "10Y";
+//   			} else if (interval.equals("10Y")) {
+//   				startDate.add(Calendar.YEAR, -1);
+////   				startDate.add(Calendar.DAY_OF_MONTH, 1);
+//   				resInterval = "1Y";
+//   			} else if (interval.equals("1Y")) {
+//   				startDate.add(Calendar.MONTH, -1);
+////   				startDate.add(Calendar.DAY_OF_MONTH, 1);
+//   				resInterval = "1M";
+//   			}
+//   			
+//   			if (startDate.before(minDate)) {
+//   				startDate = minDate;
+//   				
+//   				Calendar startDate2 = (Calendar)startDate.clone();
+//   				startDate2.add(Calendar.YEAR, 1);
+//   				if (startDate2.after((endDate)) || startDate2.equals(endDate)) {
+//   					resInterval = "1Y";
+//   				} else {
+//   					startDate2.add(Calendar.YEAR, -1);
+//   					startDate2.add(Calendar.MONTH, 1);
+//   	   				if (startDate2.after((endDate)) || startDate2.equals(endDate)) {
+//   	   					resInterval = "1M";
+//   	   				}
+//   				}
+//   			}
+//   			
+//   			endDate.add(Calendar.DAY_OF_MONTH, -1);
+//   			
+//   			
+//   			if (dimension == Dimension.FOUNDING) {
+//   				sparql = SparqlQuery.buildCoreQuery(cc, false, nutsLeafUris, lauUris, naceLeafUris, Code.createDateCode(new Date(startDate.getTime().getTime()), new Date(endDate.getTime().getTime())), dissolutionDate); 
+//   			} else if (dimension == Dimension.DISSOLUTION) {
+//   				sparql = SparqlQuery.buildCoreQuery(cc, false, nutsLeafUris, lauUris, naceLeafUris, foundingDate, Code.createDateCode(new Date(startDate.getTime().getTime()), new Date(endDate.getTime().getTime())));
+//   			}
+//   			
+//	        query = sparql.countSelectQuery() ;
+//	
+////	        System.out.println(dateFormat.format(startDate.getTime()) + " - " + dateFormat.format(endDate.getTime()) + " " + resInterval);
+//	        System.out.println("DS " + query);
+//	
+//	        int tries = 0;
+//	        while (tries < 3) {
+//	        	tries++;
+//		        
+//	            try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), query)) {
+//	            	ResultSet rs = qe.execSelect();
+//	            	
+//	            	while (rs.hasNext()) {
+//	            		QuerySolution sol = rs.next();
+//	
+//	//            		System.out.println(sol);
+//	            		int count = sol.get("count").asLiteral().getInt();
+//	            		
+//	//        			System.out.println(Code.createDateCode(new Date(startDate.getTime().getTime()).toString(), new Date(endDate.getTime().getTime()).toString(), resInterval) + " " + count);
+//	            		if (count > 0) {
+//	            			StatisticResult sr = new StatisticResult();
+//	            			sr.setCountry(cc.getCountryCode());
+//	            			sr.setCode(Code.createDateCode(new Date(startDate.getTime().getTime()).toString(), new Date(endDate.getTime().getTime()).toString(), resInterval));
+//	            			sr.setCount(count);
+//	            			sr.setParentCode(root);
+//	            			res.add(sr);
+//	            		}
+//	            	}
+//		        } catch (QueryExceptionHTTP ex) {
+//		        	System.out.println(ex.getMessage());
+//		        	System.out.println(ex.getResponse());
+//		        	System.out.println(ex.getResponseCode());
+//		        	System.out.println(ex.getResponseMessage());
+//		        	
+//		        	continue;
+//		        }
+//	            
+//	            break;
+//	        }
+//            
+//            endDate = startDate;
+//   		}
+//
+//    }        
+
+    private static Calendar round(Calendar idate, String accuracy, boolean up) {
+
+    	Calendar date = Calendar.getInstance();
+    	date.setTime(idate.getTime());
+    	
+    	int year = date.get(Calendar.YEAR);
+    	int month = date.get(Calendar.MONTH);
+    	
+    	if (accuracy.equals(Code.date1M)) {
+    		if (up) {
+    			if (month == 0 || month == 2 || month == 4 || month == 6 || month == 7 || month == 9 || month == 11) {
+	    			date.set(Calendar.DAY_OF_MONTH, 31);
+    			} else if (month == 1) {
+    				date.set(Calendar.MONTH, 2);
+    				date.set(Calendar.DAY_OF_MONTH, 1);
+    				date.add(Calendar.DAY_OF_MONTH, -1);
+    			} else if (month == 3 || month == 5 || month == 8 || month == 10) {
+    				date.set(Calendar.DAY_OF_MONTH, 30);
+    			}
+    		} else {
+   				date.set(Calendar.DAY_OF_MONTH, 1);
+    		}
+    	} else if (accuracy.equals(Code.date3M)) {
+    		if (up) {
+    			if (month <= 2) {
+    				date.set(Calendar.MONTH, 2);
+	    			date.set(Calendar.DAY_OF_MONTH, 31);
+    			} else if (month <= 5) {
+    				date.set(Calendar.MONTH, 5);
+    				date.set(Calendar.DAY_OF_MONTH, 30);
+    			} else if (month <= 8) {
+    				date.set(Calendar.MONTH, 8);
+    				date.set(Calendar.DAY_OF_MONTH, 30);
+    			} else if (month <= 11) {
+    				date.set(Calendar.MONTH, 11);
+    				date.set(Calendar.DAY_OF_MONTH, 31);
+    			}
+    		} else {
+   				if (month <= 2) {
+    				date.set(Calendar.MONTH, 0);
+    			} else if (month <= 5) {
+    				date.set(Calendar.MONTH, 3);
+    			} else if (month <= 8) {
+    				date.set(Calendar.MONTH, 6);
+    			} else if (month <= 11) {
+    				date.set(Calendar.MONTH, 9);
+    			}
+   				date.set(Calendar.DAY_OF_MONTH, 1);
+    		}
+    	} else if (accuracy.equals(Code.date1Y)) {
+    		if (up) {
+   				date.set(Calendar.MONTH, 11);
+    			date.set(Calendar.DAY_OF_MONTH, 31);
+    		} else {
+   				date.set(Calendar.MONTH, 0);
+    			date.set(Calendar.DAY_OF_MONTH, 1);
+    		}
+    	
+    	} else if (accuracy.equals(Code.date10Y)) {
+    		if (up) {
+   				date.set(Calendar.YEAR, year + 9 - year % 10);
+   				date.set(Calendar.MONTH, 11);
+       			date.set(Calendar.DAY_OF_MONTH, 31);
+   			} else {
+   				date.set(Calendar.YEAR, year - year % 10);
+   				date.set(Calendar.MONTH, 0);
+       			date.set(Calendar.DAY_OF_MONTH, 1);
+   			}
+    	}
+    	
+    	return date;
+    }
 }

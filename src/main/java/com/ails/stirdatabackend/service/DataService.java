@@ -68,7 +68,7 @@ public class DataService {
 	@Autowired
 	ApplicationContext context;
 	
-	public void loadCountry(String c, boolean stats, Code date) {
+	public void loadCountry(String c, boolean stats) {
 //		System.out.println("Loading " + c);
 		
 		Set<String> supportedModelUrls = new HashSet<>() ;
@@ -214,29 +214,29 @@ public class DataService {
         	if (cc.isNuts()) {
 //        		dims.add(Dimension.NUTSLAU);
 
-//            	if (cc.isNace()) {
+            	if (cc.isNace()) {
 //            		dims.add(Dimension.NUTSLAU_NACE);
-//            	}
-            	if (cc.isFoundingDate()) {
-            		dims.add(Dimension.NUTSLAU_FOUNDING);
             	}
-//            	if (cc.isDissolutionDate()) {
+            	if (cc.isFoundingDate()) {
+//            		dims.add(Dimension.NUTSLAU_FOUNDING);
+            	}
+            	if (cc.isDissolutionDate()) {
 //            		dims.add(Dimension.NUTSLAU_DISSOLUTION);
-//            	}
+            	}
 
         	}
-//        	if (cc.isNace()) {
+        	if (cc.isNace()) {
 //        		dims.add(Dimension.NACE);
-//        	}
-//        	if (cc.isFoundingDate()) {
-//        		dims.add(Dimension.FOUNDING);
-//        	}
-//        	if (cc.isDissolutionDate()) {
+        	}
+        	if (cc.isFoundingDate()) {
+        		dims.add(Dimension.FOUNDING);
+        	}
+        	if (cc.isDissolutionDate()) {
 //        		dims.add(Dimension.DISSOLUTION);
-//        	}
+        	}
         	
         	
-	    	statisticsService.computeAndSaveAllStatistics(cc, date, dims);
+	    	statisticsService.computeAndSaveAllStatistics(cc, dims);
 	    	
 			List<Statistic> list = statisticsRepository.findByCountryAndDimension(cc.getCountryCode(), Dimension.DATA);
 			if (!list.isEmpty()) {
