@@ -137,7 +137,7 @@ public class StatisticsContoller {
 		List<GenericResponse> dissolutionDates = null;
 
 		if (country == null) {
-			if (placedb != null & activitydb == null && founding == null && dissolution == null) {
+			if (placedb == null & activitydb == null && founding == null && dissolution == null) {
 				if (cactivity) {
 					List<StatisticDB> activityStats = statisticsRepository.findByDimensionAndParentActivityIsNullGroupByActivity(Dimension.NACE.toString());
 					activities = iter(activityStats, null, null, null, null, language);
@@ -399,8 +399,6 @@ public class StatisticsContoller {
 					if (founding == null) {
 						founding = defaultDate;
 					}
-					
-//					System.out.println(">> " + founding.getDateInterval());
 					
 					List<StatisticDB> foundingStats;
 					if (stats.contains(Dimension.FOUNDING) && dissolution == null) {
