@@ -18,6 +18,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.ails.stirdatabackend.model.ActivityDB;
 import com.ails.stirdatabackend.model.Code;
 import com.ails.stirdatabackend.model.CountryConfiguration;
@@ -35,6 +43,7 @@ import com.ails.stirdatabackend.service.StatisticsService;
 
 @RestController
 @RequestMapping("/api/statistics")
+@Tag(name = "Statistics API")
 public class StatisticsContoller {
 
 	@Autowired 
@@ -57,14 +66,71 @@ public class StatisticsContoller {
     @Qualifier("country-configurations")
     private Map<String, CountryConfiguration> countryConfigurations;
     
+	@Operation(
+		summary = "Get statistics for selected place, activity, time",
+		description = 	"The place, activity, founding, dissolution variables narrow down the results of your search.\n" +
+						"The \"dimension\" variable filters out the response data \n"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(
+			responseCode = "200",
+			description = "OK",
+			content = {@Content(
+				mediaType = "application/json",
+				schema = @Schema(implementation = ComplexResponse.class)
+			)}
+		),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Internal Server Error",
+            content = {@Content(
+                mediaType = "application/json",
+                schema = @Schema(hidden = true)
+            )}
+        )
+	})
 	@GetMapping(produces = "application/json")
-    public ResponseEntity<?> getStatistics(@RequestParam(required = false) Code place,
-                                           @RequestParam(required = false) Code activity,
-                                           @RequestParam(required = false) Code founding,
-                                           @RequestParam(required = false) Code dissolution,
-                                           @RequestParam(defaultValue = "selection") String dimension,
-                                           @RequestParam(defaultValue = "en") String language,
-                                           @RequestParam(required = false) String geometry) {
+    public ResponseEntity<?> getStatistics(@RequestParam(required = false) 
+											@Parameter(
+												description = "Place definition in the format [prefix]:[code]" +
+																		"where prefix= nuts, lau",
+												schema = @Schema(implementation = String.class),
+												example = "nuts:NO"
+											)
+												Code place,
+                                           @RequestParam(required = false) 
+										   	@Parameter(
+												description = "Activity definition in the format [prefix]:[code]" +
+																						"where prefix = nace-rev2",
+												schema = @Schema(implementation = String.class),
+												example = "nace-rev2:F"
+											) 
+												Code activity,
+                                           @RequestParam(required = false)  
+										   	@Parameter(
+												schema = @Schema(implementation = String.class)
+											) 
+												Code founding,
+                                           @RequestParam(required = false)  
+											@Parameter(
+													schema = @Schema(implementation = String.class)
+											) 
+												Code dissolution,
+                                           @RequestParam(defaultValue = "selection")  
+										   	@Parameter(
+												description = 	"Select the return types of the API call." +
+												  			  	"To select multiple, append it in a string separated by comma. "+
+																"Available values: any combination of selection, place, activity, foundingDate, dissolutionDate",
+												example = "place,activity"
+											) 
+												String dimension,
+                                           @RequestParam(defaultValue = "en") 
+										   	@Parameter(
+												description = "Select the language of the labels on response"
+											) 
+												String language,
+                                           @RequestParam(required = false) 
+										   		String geometry) {
 		
 		ComplexResponse sr = new ComplexResponse();
 		
