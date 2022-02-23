@@ -35,8 +35,6 @@ public class CountryConfiguration {
 	private Resource source;
 	
 	private Date lastUpdated;
-	
-//	private String source;
 
 	private String accrualPeriodicity;
     
