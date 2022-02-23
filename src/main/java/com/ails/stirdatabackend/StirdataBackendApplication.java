@@ -77,9 +77,10 @@ public class StirdataBackendApplication implements CommandLineRunner {
 	public void run(String... args) throws Exception {
 //		System.out.println("A " + countryConfigurations);
 //		String[] countries = new String[] { "BE", "CY", "CZ", "EE", "EL", "FI", "LV", "NO", "RO", "UK" };
-//		String[] countries = new String[] { "CZ" }; 
+//		String[] countries = new String[] { "BE", "CY",  "EE", "EL", "FI", "LV", "NO", "RO", "UK"}; 
+//		
 //		for (String cc : countries) {
-//			dataService.loadCountry(cc, true);
+//			dataService.loadCountry(cc, false);
 //		}
 //		System.out.println("FINISHED");
 		
