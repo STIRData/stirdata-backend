@@ -32,6 +32,8 @@ public class CountryConfiguration {
 	
 	private String conformsTo;
 	
+	private Resource source;
+	
 	private Date lastUpdated;
 	
 //	private String source;

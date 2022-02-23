@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.ails.stirdatabackend.model.Resource;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import lombok.Getter;
@@ -27,16 +28,12 @@ public class CountryResponse {
 	private Interval foundingDate;
 	private Interval dissolutionDate;
 
-	@JsonInclude(JsonInclude.Include.NON_NULL)
 	private Date lastUpdated;
 	
-	@JsonInclude(JsonInclude.Include.NON_NULL)
-	private String source;
+	private Resource source;
 	
-	@JsonInclude(JsonInclude.Include.NON_NULL)
 	private String sparqlEndpoint;
 	
-	@JsonInclude(JsonInclude.Include.NON_NULL)
 	private String accrualPeriodicity;
 	
 	public void setCountry(String code, String label) {

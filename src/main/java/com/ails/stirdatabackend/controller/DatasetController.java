@@ -85,6 +85,8 @@ public class DatasetController {
 			
 			ci.setSparqlEndpoint(cc.getDataEndpoint());
 			ci.setLastUpdated(cc.getLastUpdated());
+			ci.setSource(cc.getSource());
+			
 			List<Statistic> list = statisticsRepository.findByCountryAndDimension(cc.getCountryCode(), Dimension.DATA);
 			if (!list.isEmpty()) {
 				ci.setLegalEntityCount(list.get(0).getCount());

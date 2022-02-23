@@ -21,6 +21,8 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
@@ -32,12 +34,12 @@ import com.ails.stirdatabackend.model.Code;
 import com.ails.stirdatabackend.model.CountryConfiguration;
 import com.ails.stirdatabackend.model.Dimension;
 import com.ails.stirdatabackend.model.ModelConfiguration;
+import com.ails.stirdatabackend.model.Resource;
 import com.ails.stirdatabackend.model.Statistic;
 import com.ails.stirdatabackend.repository.CountriesRepository;
 import com.ails.stirdatabackend.repository.StatisticsRepository;
 import com.ails.stirdatabackend.vocs.DCATVocabulary;
 import com.ails.stirdatabackend.vocs.DCTVocabulary;
-
 
 @Service
 public class DataService {
@@ -229,7 +231,7 @@ public class DataService {
 //        		dims.add(Dimension.NACE);
         	}
         	if (cc.isFoundingDate()) {
-        		dims.add(Dimension.FOUNDING);
+//        		dims.add(Dimension.FOUNDING);
         	}
         	if (cc.isDissolutionDate()) {
 //        		dims.add(Dimension.DISSOLUTION);
@@ -291,8 +293,9 @@ public class DataService {
         }
         
 		sparql = 
-				"SELECT ?issued ?modified ?accrualPeriodicity WHERE { " + 
+				"SELECT ?issued ?modified ?source ?accrualPeriodicity WHERE { " + 
 		        "  ?dcat a <" + DCATVocabulary.Dataset + "> . " +
+		        "  OPTIONAL { ?dcat <" + DCTVocabulary.source + "> ?source } . " +						
 		        "  OPTIONAL { ?dcat <" + DCTVocabulary.issued + "> ?issued } . " +
 		        "  OPTIONAL { ?dcat <" + DCTVocabulary.modified + "> ?modified } . " +
 		        "  OPTIONAL { ?dcat <" + DCTVocabulary.accrualPeriodicity + "> ?accrualPeriodicity } . " +
@@ -304,7 +307,15 @@ public class DataService {
         	while (rs.hasNext()) {
         		String lastUpdated = null;
         		
-        		QuerySolution sol = rs.next(); 
+        		QuerySolution sol = rs.next();
+        		
+        		if (sol.get("source") != null && sol.get("source").isResource()) {
+        			String uri = sol.get("source").asResource().toString();
+        			String label = getPageTitle(uri);
+        			
+        			cc.setSource(new Resource(uri, label));
+        		}
+        		
         		if (sol.get("issued") != null) {
         			lastUpdated = sol.get("issued").asLiteral().getLexicalForm();
         		}
@@ -315,7 +326,7 @@ public class DataService {
         		
         		if (lastUpdated != null) {
         			try {
-        				SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+        				SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
         				cc.setLastUpdated(format.parse(lastUpdated));
         			} catch (ParseException ex) {
         				ex.printStackTrace();
@@ -354,6 +365,22 @@ public class DataService {
         		break;
         	}
         }
+	}
+	
+	private static String getPageTitle(String uri) {
+	    Document document;
+	    try {
+			document = Jsoup.connect(uri).get();
+		 
+			//Get title from document object.
+			return document.title();
+		 
+	    } catch (Exception e) {
+	    	System.out.println("Access failed: " + uri);
+	    	e.printStackTrace();
+	    }
+	    
+	    return null;
 	}
 	
 	
