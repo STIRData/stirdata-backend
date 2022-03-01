@@ -69,5 +69,13 @@ public interface StatisticsDBRepository extends JpaRepository<StatisticDB, Integ
       @Query("SELECT new com.ails.stirdatabackend.model.StatisticDB(SUM(s.count), s.activity) FROM StatisticDB s WHERE s.dimension = :dimension AND s.parentActivity is null GROUP BY s.activity")
       public List<StatisticDB> findByDimensionAndParentActivityIsNullGroupByActivity(@Param("dimension") String dimension);
 
-      
+      @Query("SELECT new com.ails.stirdatabackend.model.StatisticDB(SUM(s.count), s.activity) FROM StatisticDB s WHERE s.dimension = :dimension AND s.activity = :activity GROUP BY s.activity")
+      public List<StatisticDB> findByDimensionAndActivityGroupByActivity(@Param("dimension") String dimension, @Param("activity") ActivityDB activity);
+
+      @Query("SELECT new com.ails.stirdatabackend.model.StatisticDB(SUM(s.count), s.activity) FROM StatisticDB s WHERE s.dimension = :dimension AND s.parentActivity = :parentActivity GROUP BY s.activity")
+      public List<StatisticDB> findByDimensionAndParentActivityGroupByActivity(@Param("dimension") String dimension, @Param("parentActivity") ActivityDB parentActivity);
+
+//      @Query("SELECT new com.ails.stirdatabackend.model.StatisticDB(SUM(s.count), s.activity) FROM StatisticDB s WHERE s.dimension = :dimension AND s.parentActivity = :parentActivity")
+      public List<StatisticDB> findByDimensionAndActivity(@Param("dimension") String dimension, @Param("activity") ActivityDB activity);
+
 }

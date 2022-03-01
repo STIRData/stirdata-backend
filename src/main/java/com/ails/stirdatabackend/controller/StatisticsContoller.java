@@ -204,7 +204,7 @@ public class StatisticsContoller {
 		List<GenericResponse> dissolutionDates = null;
 
 		if (country == null) {
-			if (placedb == null & activitydb == null && founding == null && dissolution == null) {
+			if (placedb == null && activitydb == null && founding == null && dissolution == null) {
 				if (cactivity) {
 					List<StatisticDB> activityStats = statisticsRepository.findByDimensionAndParentActivityIsNullGroupByActivity(Dimension.NACE.toString());
 					activities = iter(activityStats, null, null, null, null, language);
@@ -215,9 +215,25 @@ public class StatisticsContoller {
 					places = iter(placeStats, null, null, null, null, language);
 				}
 				
+			} else if (placedb == null && founding == null && dissolution == null) {
+				if (ccurrent) {
+					List<StatisticDB> entityStats = statisticsRepository.findByDimensionAndActivityGroupByActivity(Dimension.NACE.toString(), activitydb);
+					entity = iter(entityStats, null, null, null, null, language);
+				}
+				
+				if (cactivity) {
+					List<StatisticDB> activityStats = statisticsRepository.findByDimensionAndParentActivityGroupByActivity(Dimension.NACE.toString(), activitydb);
+					activities = iter(activityStats, null, null, null, null, language);
+				}
+				
+				if (cplace) {
+					List<StatisticDB> placeStats = statisticsRepository.findByDimensionAndActivity(Dimension.NACE.toString(), activitydb);
+					places = iter(placeStats, null, null, null, null, language);
+				}
+				
 			} else {
 				return ResponseEntity.ok(sr);
-			}
+			} 
 			
 		} else {
 			

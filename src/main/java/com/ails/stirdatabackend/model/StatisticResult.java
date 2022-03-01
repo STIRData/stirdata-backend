@@ -1,5 +1,7 @@
 package com.ails.stirdatabackend.model;
 
+import java.util.Date;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import lombok.Getter;
@@ -26,6 +28,8 @@ public class StatisticResult {
 //	private Date parentToDate;
 
 	private int count;
+	
+	private Date computed;
 	
 	public String toString() {
 //		return (code != null ?  code :  fromDate + " - " + toDate) + " : " + count + (parentCode != null ? " [ " + parentCode + " ] " :""); 

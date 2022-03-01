@@ -211,11 +211,14 @@ public class DataService {
     	
         if (stats) {
         	Set<Dimension> dims = new HashSet<>();
+        	
+//        	dims.add(Dimension.DATA);
+        	
         	if (cc.isNuts()) {
 //        		dims.add(Dimension.NUTSLAU);
 
             	if (cc.isNace()) {
-//            		dims.add(Dimension.NUTSLAU_NACE);
+            		dims.add(Dimension.NUTSLAU_NACE);
             	}
             	if (cc.isFoundingDate()) {
 //            		dims.add(Dimension.NUTSLAU_FOUNDING);
@@ -381,5 +384,53 @@ public class DataService {
 	    return null;
 	}
 	
+
+	public void precompute(String[] countries) {
+		
+		for (String s : countries) {
+			
+			CountryConfiguration cc = countryConfigurations.get(s);
+			System.out.println(s);
+			
+			if (cc.isNace()) {
+				String sparql = "SELECT (COUNT(DISTINCT ?entity) AS ?count) ?nace WHERE { " + cc.getNaceSparql() + " } GROUP BY ?nace ";
+				
+		        try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), sparql)) {
+		        	ResultSet rs = qe.execSelect();
+		        	
+		        	while (rs.hasNext()) {
+		        		QuerySolution sol = rs.next();
+		        		System.out.println(sol.get("nace") + " " + sol.get("count"));
+		        	}
+		        }
 	
+			} 
+			
+			if (cc.isNuts()) {
+				String sparql = "SELECT (COUNT(DISTINCT ?entity) AS ?count) ?nuts3 WHERE { " + cc.getNuts3Sparql() + " } GROUP BY ?nuts3 ";
+				
+				try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), sparql)) {
+		        	ResultSet rs = qe.execSelect();
+		        	
+		        	while (rs.hasNext()) {
+		        		QuerySolution sol = rs.next();
+		        		System.out.println(sol.get("nuts3") + " " + sol.get("count"));
+		        	}
+		        }
+			}
+			
+			if (cc.isNuts()) {
+				String sparql = "SELECT (COUNT(DISTINCT ?entity) AS ?count) ?lau WHERE { " + cc.getLauSparql() + " } GROUP BY ?lau ";
+				
+				try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), sparql)) {
+		        	ResultSet rs = qe.execSelect();
+		        	
+		        	while (rs.hasNext()) {
+		        		QuerySolution sol = rs.next();
+		        		System.out.println(sol.get("lau") + " " + sol.get("count"));
+		        	}
+		        }
+			}
+		}
+	}
 }
