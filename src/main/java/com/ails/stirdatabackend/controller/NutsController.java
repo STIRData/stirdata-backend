@@ -1,7 +1,7 @@
 package com.ails.stirdatabackend.controller;
 
 import com.ails.stirdatabackend.model.Code;
-import com.ails.stirdatabackend.model.CountryConfiguration;
+import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.PlaceDB;
 import com.ails.stirdatabackend.payload.ComplexResponse;
 import com.ails.stirdatabackend.payload.GenericResponse;
@@ -28,23 +28,24 @@ public class NutsController {
     @Autowired
     private NutsService nutsService;
 
+    @Autowired
+    @Qualifier("country-configurations")
+    private Map<String, CountryDB> countryConfigurations;
+
 //    @Autowired
 //    @Qualifier("nuts-geojson-cache")
 //    private Cache geojsonCache;
     
-    @Autowired
-    @Qualifier("country-configurations")
-    private Map<String, CountryConfiguration> countryConfigurations;
-
-    // old: from triples store
-    @GetMapping(value = "/ts", produces = "application/json")
-    public ResponseEntity<?> getNutsTs(@RequestParam(required = false) Optional<String> parent, 
-    		                           @RequestParam(required = false) String spatialResolution) {
-        
-    	String res = nutsService.getNextNutsLevelJsonTs(parent.orElse(null), spatialResolution);
-
-        return ResponseEntity.ok(res);
-    }
+//
+//    // old: from triples store
+//    @GetMapping(value = "/ts", produces = "application/json")
+//    public ResponseEntity<?> getNutsTs(@RequestParam(required = false) Optional<String> parent, 
+//    		                           @RequestParam(required = false) String spatialResolution) {
+//        
+//    	String res = nutsService.getNextNutsLevelJsonTs(parent.orElse(null), spatialResolution);
+//
+//        return ResponseEntity.ok(res);
+//    }
 
     @GetMapping(produces = "application/json")
     public ResponseEntity<?> getNutsDb(@RequestParam(required = false) Code top, 
@@ -57,8 +58,8 @@ public class NutsController {
     		places = nutsService.getNextNutsLauLevelListDb(null);
     	} else if (top.isStirdata()) { 
 	        List<Code> codes = new ArrayList<>();
-	        for (CountryConfiguration cc : countryConfigurations.values()) {
-	       		codes.add(Code.createNutsCode(cc.getCountryCode()));
+	        for (CountryDB cc : countryConfigurations.values()) {
+	       		codes.add(Code.createNutsCode(cc.getCode()));
 	        }
 	        places = nutsService.getNutsLauLevelListDb(codes);
     	} else {

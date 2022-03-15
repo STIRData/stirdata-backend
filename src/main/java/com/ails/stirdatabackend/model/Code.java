@@ -102,6 +102,14 @@ public class Code implements Serializable {
 		}
 	}
 	
+	public static Code fromLauUri(String s, CountryDB cc) {
+		if (s.startsWith(cc.getLauPrefix())) {
+			return createLauCode(s.substring(cc.getLauPrefix().length()));
+		} else {
+			return null;
+		}
+	}
+	
 	public static String nextDateLevel(String level) {
 		if (level.equals(date10Y)) {
 			return date1Y;
@@ -161,6 +169,14 @@ public class Code implements Serializable {
 	public static Code fromNaceRev2Uri(String s) {
 		if (s.startsWith(naceRev2Prefix)) {
 			return createNaceRev2Code(s.substring(naceRev2Prefix.length()));
+		} else {
+			return null;
+		}
+	}
+	
+	public static Code fromNaceUri(String s, CountryDB cc) {
+		if (s.startsWith(cc.getNacePrefix())) {
+			return new Code(cc.getNaceNamespace() + ":" + s.substring(cc.getNacePrefix().length()));
 		} else {
 			return null;
 		}

@@ -24,15 +24,15 @@ public class NaceController {
     @Autowired
     private NaceService naceService;
 
-    // old: from triples store
-    @GetMapping(value = "/ts", produces = "application/json")
-    public ResponseEntity<?> getNaceTs(@RequestParam(required = false) Optional<String> parent,
-                                       @RequestParam(required = false) Optional<String> language) {
-
-        String res = naceService.getNextNaceLevelJsonTs(parent.orElse(null), language.orElse("en"));
-
-        return ResponseEntity.ok(res);
-    }
+//    // old: from triples store
+//    @GetMapping(value = "/ts", produces = "application/json")
+//    public ResponseEntity<?> getNaceTs(@RequestParam(required = false) Optional<String> parent,
+//                                       @RequestParam(required = false) Optional<String> language) {
+//
+//        String res = naceService.getNextNaceLevelJsonTs(parent.orElse(null), language.orElse("en"));
+//
+//        return ResponseEntity.ok(res);
+//    }
     
     @GetMapping(produces = "application/json")
     public ResponseEntity<?> getNace(@RequestParam(required = false) Code top,

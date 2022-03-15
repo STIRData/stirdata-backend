@@ -4,6 +4,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
@@ -18,7 +19,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(name = "Activities")
+@Table(name = "Activities", indexes = { @Index(columnList = "parent") } )
 public class ActivityDB {
 	
 	@Id
@@ -26,9 +27,13 @@ public class ActivityDB {
 	@Type(type = "com.ails.stirdatabackend.model.db.CodeDataType")
 	Code code;
 	
-	@ManyToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "parent")
 	private ActivityDB parent;
+	
+	@ManyToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "exact_match")
+	private ActivityDB exactMatch;	
 
 	@Column(name = "label_bg")
 	private String labelBg;

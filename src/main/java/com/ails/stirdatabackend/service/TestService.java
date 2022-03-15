@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
-import com.ails.stirdatabackend.model.CountryConfiguration;
+import com.ails.stirdatabackend.model.CountryDB;
 
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
@@ -32,7 +32,7 @@ public class TestService {
 
     @Autowired
     @Qualifier("country-configurations")
-    private Map<String, CountryConfiguration> countryConfigurations;
+    private Map<String, CountryDB> countryConfigurations;
     
     public List<String> testSparqlQueryCzech() {
         String sparql = "SELECT * WHERE {?p ?q ?r } LIMIT 10";

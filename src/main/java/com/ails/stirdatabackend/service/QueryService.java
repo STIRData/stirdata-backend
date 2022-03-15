@@ -1,25 +1,40 @@
 package com.ails.stirdatabackend.service;
 
+import com.ails.stirdatabackend.model.ActivityDB;
 import com.ails.stirdatabackend.model.Code;
-import com.ails.stirdatabackend.model.CountryConfiguration;
+import com.ails.stirdatabackend.model.CountryDB;
+import com.ails.stirdatabackend.model.PlaceDB;
+import com.ails.stirdatabackend.payload.Address;
+import com.ails.stirdatabackend.payload.CodeLabel;
 import com.ails.stirdatabackend.payload.EndpointResponse;
+import com.ails.stirdatabackend.payload.LegalEntity;
+import com.ails.stirdatabackend.payload.Page;
+import com.ails.stirdatabackend.payload.QueryResponse;
 import com.ails.stirdatabackend.service.NutsService.PlaceSelection;
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.jsonldjava.core.JsonLdError;
 
 import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.Model;
+import org.apache.jena.riot.JsonLDWriteContext;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFFormat;
+import org.apache.jena.riot.writer.JsonLDWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.StringWriter;
 import java.sql.Date;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -35,15 +50,77 @@ public class QueryService {
     @Autowired
     private NaceService naceService;
 
+    @Autowired
+    private DataService dataService;
+
+	@Autowired
+	@Qualifier("country-configurations")
+    private Map<String, CountryDB> countryConfigurations;
+	
+	@Autowired
+	@Qualifier("model-jsonld-context")
+    private JsonLDWriteContext context;
+	
     @Value("${page.size}")
     private int pageSize;
 
-    
-    public List<EndpointResponse> paginatedQuery(List<Code> nutsLauCodes, List<Code> naceCodes, Code founding, Code dissolution, int page, String country) {
+    public LegalEntity lookupEntity(String uri) {
+    	CountryDB cc = dataService.findCountry(uri);
         
-    	List<EndpointResponse> responseList = new ArrayList<>();
+       	String sparqlConstruct = 
+        		"CONSTRUCT { " + 
+                        "  ?entity a <http://www.w3.org/ns/legal#LegalEntity> . " + 
+                        "  ?entity <http://www.w3.org/ns/legal#legalName> ?entityName . " +
+                        "  ?entity <http://www.w3.org/ns/legal#companyActivity> ?nace . " +
+                		"  ?entity <http://www.w3.org/ns/legal#registeredAddress> ?address . ?address ?ap ?ao . " + 
+                        "  ?entity <https://schema.org/foundingDate> ?foundingDate . }" +	           		
+        		" WHERE { " +
+                cc.getEntitySparql() + " " +
+                cc.getLegalNameSparql() + " " + 
+                cc.getActiveSparql() + " " +
+                "OPTIONAL { " + cc.getNuts3Sparql() + " ?address ?ap ?ao . } " + 
+	            "OPTIONAL { " + cc.getNaceSparql() + " } " +
+                "OPTIONAL { " + cc.getFoundingDateSparql() + " } " +
+                "VALUES ?entity { <" + uri + "> } } ";
+
+       	LegalEntity entity = null;
+       	
+       	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), QueryFactory.create(sparqlConstruct, Syntax.syntaxARQ))) {
+            Model model = qe.execConstruct();
+                
+            Map<String, Object> jn = (Map)JsonLDWriter.toJsonLDJavaAPI((RDFFormat.JSONLDVariant)RDFFormat.JSONLD_COMPACT_PRETTY.getVariant(), DatasetFactory.wrap(model).asDatasetGraph(), null, null, context);
+                
+            List<Map<String, Object>> graph = (List)jn.get("@graph");
+                
+            Map<String, Address> addresses = null;
+            addresses = new HashMap<>();
+	                
+            for (Map<String, Object> entry : graph) {
+            	if (entry.get("@type").equals("http://www.w3.org/ns/locn#Address")) {
+            		addresses.put((String)entry.get("@id"), createAddressFromJsonld(entry, cc));
+            	}
+            }
+
+            for (Map<String, Object> entry : graph) {
+            	if (entry.get("@type").equals("http://www.w3.org/ns/legal#LegalEntity")) {
+            		entity = new LegalEntity((String)entry.get("@id"));
+            		createLegalEntityFromJsonld(entity, entry, cc, addresses);
+            	}
+            }
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+        }
         
-    	Map<CountryConfiguration, PlaceSelection> countryPlaceMap;
+        return entity;
+    }
+
+	
+    public List<QueryResponse> paginatedQuery(List<Code> nutsLauCodes, List<Code> naceCodes, Code founding, Code dissolution, int page, boolean details) {
+        
+    	List<QueryResponse> responseList = new ArrayList<>();
+        
+    	Map<CountryDB, PlaceSelection> countryPlaceMap;
     	if (nutsLauCodes != null) {
     		countryPlaceMap = nutsService.getEndpointsByNuts(nutsLauCodes);
     	} else {
@@ -52,21 +129,29 @@ public class QueryService {
     	
         int offset = (page - 1) * pageSize;
         
-        ObjectMapper mapper = new ObjectMapper();
+//        ObjectMapper mapper = new ObjectMapper();
         
-        for (Map.Entry<CountryConfiguration, PlaceSelection> ccEntry : countryPlaceMap.entrySet()) {
-        	CountryConfiguration cc = ccEntry.getKey();
+        for (Map.Entry<CountryDB, PlaceSelection> ccEntry : countryPlaceMap.entrySet()) {
+        	CountryDB cc = ccEntry.getKey();
         	PlaceSelection places = ccEntry.getValue();
         	
         	List<String> naceLeafUris = naceService.getLocalNaceLeafUris(cc, naceCodes);
         	List<String> nutsLeafUris = places == null ? null : nutsService.getLocalNutsLeafUrisDB(cc, places.getNuts3()); 
         	List<String> lauUris = places == null ? null : nutsService.getLocalLauUris(cc, places.getLau());
         	
-        	int count = 0;
+//        	int count = 0;
         	
+            Page pg = new Page();
+            pg.setPageNumber(page);
+
+            QueryResponse qr = new QueryResponse();
+            qr.setCountry(new CodeLabel(cc.getCode(), cc.getLabel()));
+            qr.setPage(pg);
+
         	if ((nutsLeafUris != null && nutsLeafUris.size() == 0 && lauUris != null && lauUris.size() == 0) || (naceLeafUris != null && naceLeafUris.size() == 0)) {
-        		responseList.add(new EndpointResponse(cc.getCountryLabel(), mapper.createArrayNode(), count, country));
-//        		return responseList;
+        		pg.setPageSize(0);
+        		qr.setLegalEntities(new ArrayList<>());
+        		responseList.add(qr);
         	}
         	
         	//could use statistics table instead of this if available
@@ -82,36 +167,51 @@ public class QueryService {
                     ResultSet rs = qe.execSelect();
                     while (rs.hasNext()) {
                         QuerySolution sol = rs.next();
-                        count = sol.get("count").asLiteral().getInt();
+                        pg.setTotalResults(sol.get("count").asLiteral().getInt());
                     }
                 }
-            } else {
-            	count = -1;
+//            } else {
+//            	count = -1;
             }
+            
+            
+//            System.out.println(count);
             
             String query = sparql.allSelectQuery(offset, pageSize);
             
 //           System.out.println(query);
 
-            List<String> companyUris = new ArrayList<>();
+            Map<String, LegalEntity> companies = new LinkedHashMap<>();
 
-            StringWriter sw = new StringWriter();
+//            StringWriter sw = new StringWriter();
             try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), QueryFactory.create(query, Syntax.syntaxARQ))) {
                 ResultSet rs = qe.execSelect();
                 while (rs.hasNext()) {
                     QuerySolution sol = rs.next();
-                    companyUris.add(sol.get("entity").asResource().toString());
+                    String uri = sol.get("entity").asResource().toString();
+                    companies.put(uri, new LegalEntity(uri));
                 }
             }
+            
+//            System.out.println(companyUris.size() + " "+ companyUris);
 
-            if (!companyUris.isEmpty()) {
-                String sparqlConstruct = 
+            if (!companies.isEmpty()) {
+            	
+            	String values = "";
+                for (String uri : companies.keySet()) {
+                    values += "<" + uri + "> ";
+                 }
+
+            	String sparqlConstruct = null;
+            	
+            	if (details) {
+            		sparqlConstruct = 
                 		"CONSTRUCT { " + 
-	                    "  ?entity a <http://www.w3.org/ns/regorg#RegisteredOrganization> . " + 
-	                    "  ?entity <http://www.w3.org/ns/regorg#legalName> ?entityName . " +
-	                    "  ?entity <http://www.w3.org/ns/regorg#orgActivity> ?nace . " +
-	            		"  ?entity <http://www.w3.org/ns/org#siteAddress> ?address . ?address ?ap ?ao . " + 
-	                    "  ?entity <https://schema.org/foundingDate> ?foundingDate . }" +	            		
+                                "  ?entity a <http://www.w3.org/ns/legal#LegalEntity> . " + 
+                                "  ?entity <http://www.w3.org/ns/legal#legalName> ?entityName . " +
+                                "  ?entity <http://www.w3.org/ns/legal#companyActivity> ?nace . " +
+                        		"  ?entity <http://www.w3.org/ns/legal#registeredAddress> ?address . ?address ?ap ?ao . " + 
+                                "  ?entity <https://schema.org/foundingDate> ?foundingDate . }" +	           		
 	            		" WHERE { " +
                         cc.getEntitySparql() + " " +
                         cc.getLegalNameSparql() + " " + 
@@ -119,27 +219,66 @@ public class QueryService {
                         "OPTIONAL { " + cc.getNuts3Sparql() + " ?address ?ap ?ao . } " + 
         	            "OPTIONAL { " + cc.getNaceSparql() + " } " +
 	                    "OPTIONAL { " + cc.getFoundingDateSparql() + " } " +
-	                                     
-	                    "VALUES ?entity { ";
-                for (String uri : companyUris) {
-                   sparqlConstruct += " <" + uri + "> ";
-                }
-                sparqlConstruct += "} } ";
+	                    "VALUES ?entity { " + values + "} } ";
+            	} else {
+            		sparqlConstruct =
+	            		"CONSTRUCT { " + 
+	                            "  ?entity a <http://www.w3.org/ns/legal#LegalEntity> . " + 
+	                            "  ?entity <http://www.w3.org/ns/legal#legalName> ?entityName . " +
+	                            "  ?entity <https://schema.org/foundingDate> ?foundingDate . }" +	           		
+	            		" WHERE { " +
+	                    cc.getEntitySparql() + " " +
+	                    cc.getLegalNameSparql() + " " + 
+	                    "OPTIONAL { " + cc.getFoundingDateSparql() + " } " +
+	                    "VALUES ?entity { " + values + "} } ";
+            	}
 	
 //                System.out.println(sparqlConstruct);
 	            try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), QueryFactory.create(sparqlConstruct, Syntax.syntaxARQ))) {
 	                Model model = qe.execConstruct();
-	                RDFDataMgr.write(sw, model, RDFFormat.JSONLD_EXPAND_PRETTY);
+	                
+	                Map<String,Object> jn = (Map)JsonLDWriter.toJsonLDJavaAPI((RDFFormat.JSONLDVariant)RDFFormat.JSONLD_COMPACT_PRETTY.getVariant(), DatasetFactory.wrap(model).asDatasetGraph(), null, null, context);
+	                
+	                List<Map<String, Object>> graph = (List)jn.get("@graph");
+	                
+	                Map<String, Address> addresses = null;
+	                if (details) {
+		                addresses = new HashMap<>();
+		                
+		                for (Map<String, Object> entry : graph) {
+		                	if (entry.get("@type").equals("http://www.w3.org/ns/locn#Address")) {
+		                		addresses.put((String)entry.get("@id"), createAddressFromJsonld(entry, cc));
+		                	}
+		                }
+
+		                for (Map<String, Object> entry : graph) {
+		                	if (entry.get("@type").equals("http://www.w3.org/ns/legal#LegalEntity")) {
+		                		createLegalEntityFromJsonld(companies.get((String)entry.get("@id")), entry, cc, addresses);
+		                	}
+		                }
+	                } else {
+		                for (Map<String, Object> entry : graph) {
+	                		createLegalEntityFromJsonld(companies.get((String)entry.get("@id")), entry, cc, addresses);
+		                }
+	                }
+
+	            } catch (IOException e) {
+	    			// TODO Auto-generated catch block
+	    			e.printStackTrace();
 	            }
-	            try {
-	                responseList.add(new EndpointResponse(cc.getCountryLabel(), mapper.readTree(sw.toString()), count, country));
-	            } catch (Exception e) {
-	                e.printStackTrace();
-	                return null;
-	            }
+
+	            pg.setPageSize(companies.size());
+	            qr.setLegalEntities(new ArrayList<>(companies.values()));
+
+	            responseList.add(qr);
+	            
             } else {
-            	responseList.add(new EndpointResponse(cc.getCountryLabel(), mapper.createArrayNode(), count, country));
+                pg.setPageSize(0);
+                qr.setLegalEntities(new ArrayList<>());
+                
+                responseList.add(qr);
             }
+
         }
         
         return responseList;
@@ -149,7 +288,7 @@ public class QueryService {
         
     	List<EndpointResponse> responseList = new ArrayList<>();
 //        
-    	Map<CountryConfiguration, PlaceSelection> countryPlaceMap;
+    	Map<CountryDB, PlaceSelection> countryPlaceMap;
     	if (nutsLauCodes != null) {
     		countryPlaceMap = nutsService.getEndpointsByNuts(nutsLauCodes);
     	} else {
@@ -158,8 +297,8 @@ public class QueryService {
     	
         ObjectMapper mapper = new ObjectMapper();
 
-        for (Map.Entry<CountryConfiguration, PlaceSelection> ccEntry : countryPlaceMap.entrySet()) {
-        	CountryConfiguration cc = ccEntry.getKey();
+        for (Map.Entry<CountryDB, PlaceSelection> ccEntry : countryPlaceMap.entrySet()) {
+        	CountryDB cc = ccEntry.getKey();
         	PlaceSelection places = ccEntry.getValue();
 
         	boolean nace = gnace;
@@ -185,14 +324,14 @@ public class QueryService {
         	SparqlQuery sparql = SparqlQuery.buildCoreQuery(cc, true, false, nutsLeafUris, lauUris, naceLeafUris, founding, dissolution); 
 
         	if ((nutsLeafUris != null && nutsLeafUris.size() == 0) || (naceLeafUris != null && naceLeafUris.size() == 0)) {
-        		responseList.add(new EndpointResponse(cc.getCountryLabel(), mapper.createArrayNode(), 0, null));
+        		responseList.add(new EndpointResponse(cc.getLabel(), mapper.createArrayNode(), 0, null));
         		return responseList;
         	}
         	
             
             String query = sparql.groupBySelectQuery(nuts3, nace);
 //	            System.out.println(sparql);
-            System.out.println(QueryFactory.create(query));
+//            System.out.println(QueryFactory.create(query));
 
             String json;
             try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), query)) {
@@ -203,7 +342,7 @@ public class QueryService {
             }
             
             try {
-                responseList.add(new EndpointResponse(cc.getCountryLabel(), mapper.readTree(json), 0, null));
+                responseList.add(new EndpointResponse(cc.getLabel(), mapper.readTree(json), 0, null));
             } catch (Exception e) {
                 e.printStackTrace();
                 return null;
@@ -213,7 +352,184 @@ public class QueryService {
         return responseList;
     }
     
+	public LegalEntity createLegalEntityFromJsonld(LegalEntity lg, Map<String, Object> map, CountryDB cc, Map<String, Address> addressMap) {
+		
+		Object legalNameObj = map.get("legalName");
+		if (legalNameObj != null) {
+    		if (legalNameObj instanceof String) {
+    			lg.addLegalName((String)legalNameObj);
+    		} else if (legalNameObj instanceof Map) {
+    			lg.addLegalName((String)((Map)legalNameObj).get("@value"), (String)((Map)legalNameObj).get("@language"));
+    		} else if (legalNameObj instanceof List) {
+				for (Object s : (List)legalNameObj) {
+		    		if (s instanceof String) {
+		    			lg.addLegalName((String)s);
+		    		} else if (s instanceof Map) {
+		    			lg.addLegalName((String)((Map)s).get("@value"), (String)((Map)s).get("@language"));
+		    		}
+				}
+			}
+		}
+		
+		Object registeredAddressObj = map.get("registeredAddress");
+		if (registeredAddressObj != null) {
+			if (registeredAddressObj instanceof String) {
+				lg.addRegisteredAddress(addressMap.get(registeredAddressObj));
+			} else if (registeredAddressObj instanceof List) {
+				for (Object s : (List)registeredAddressObj) {
+					lg.addRegisteredAddress(addressMap.get((String)s));
+				}
+			}
+		}
+		
+		Object companyActivityObj = map.get("companyActivity");
+		if (companyActivityObj != null) {
+			if (companyActivityObj instanceof String) {
+				
+				ActivityDB activity = naceService.getByCode(Code.fromNaceUri((String)companyActivityObj, cc));
+				if (activity != null) {
+					lg.addCompanyActivity(new CodeLabel(activity.getCode().toString(), activity.getLabel(cc.getPreferredNaceLanguage())));
+				}
+				
+			} else if (companyActivityObj instanceof List) {
+				for (Object s : (List)companyActivityObj) {
+					ActivityDB activity = naceService.getByCode(Code.fromNaceUri((String)s, cc));
 
+					if (activity != null) {
+						lg.addCompanyActivity(new CodeLabel(activity.getCode().toString(), activity.getLabel(cc.getPreferredNaceLanguage())));
+					}
+
+				}
+			}
+		}
+ 		
+		Object foundingDateObj = map.get("foundingDate");
+		if (foundingDateObj != null) {
+			lg.setFoundingDate(Date.valueOf((String)foundingDateObj));
+		}
+
+//		Object dissolutionDateObj = map.get("dissolutionDate");
+//		if (dissolutionDateObj != null) {
+//			lg.setDissolutionDate(Date.valueOf((String)dissolutionDateObj));
+//		}
+		
+		return lg;
+	}
+	
+	public Address createAddressFromJsonld(Map<String, Object> map, CountryDB cc) {
+		
+		Address address = new Address();
+		
+		Object adminUnitL1Obj = map.get("adminUnitL1");
+		if (adminUnitL1Obj != null) {
+			if (adminUnitL1Obj instanceof String) {
+				address.setAdminUnitL1((String)adminUnitL1Obj);
+			} else if (adminUnitL1Obj instanceof Map) {
+				address.setAdminUnitL1((String)((Map)adminUnitL1Obj).get("@value"));
+			} else if (adminUnitL1Obj instanceof List) {
+				address.setAdminUnitL1((String)((Map)((List)adminUnitL1Obj).get(0)).get("@value")); // choose first -- should fix
+			}
+		}
+		
+		Object adminUnitL2Obj = map.get("adminUnitL2");
+		if (adminUnitL2Obj != null) { 
+			if (adminUnitL2Obj instanceof String) {
+				address.setAdminUnitL2((String)adminUnitL2Obj);
+			} else if (adminUnitL2Obj instanceof Map) {
+				address.setAdminUnitL2((String)((Map)adminUnitL2Obj).get("@value"));
+			} else if (adminUnitL2Obj instanceof List) {
+				address.setAdminUnitL2((String)((Map)((List)adminUnitL2Obj).get(0)).get("@value")); // choose first -- should fix
+			}
+		}
+		
+		Object fullAddressObj = map.get("fullAddress");
+		if (fullAddressObj != null) {
+			if (fullAddressObj instanceof String) {
+				address.setFullAddress((String)fullAddressObj);
+			} else if (fullAddressObj instanceof Map) {
+				address.setFullAddress((String)((Map)fullAddressObj).get("@value"));
+			} else if (fullAddressObj instanceof List) {
+				address.setFullAddress((String)((Map)((List)fullAddressObj).get(0)).get("@value")); // choose first -- should fix
+			}
+		}
+		
+		Object postCodeObj = map.get("postCode");
+		if (postCodeObj != null) {
+			if (postCodeObj instanceof String) {
+				address.setPostCode((String)postCodeObj);
+			} else if (postCodeObj instanceof Map) {
+				address.setPostCode((String)((Map)postCodeObj).get("@value"));
+			} else if (postCodeObj instanceof List) {
+				address.setPostCode((String)((Map)((List)postCodeObj).get(0)).get("@value")); // choose first -- should fix
+			}			
+		}
+		
+		Object postNameObj = map.get("postName");
+		if (postNameObj != null) {
+			if (postNameObj instanceof String) {
+				address.setPostName((String)postNameObj);
+			} else if (postNameObj instanceof Map) {
+				address.setPostName((String)((Map)postNameObj).get("@value"));
+			} else if (postNameObj instanceof List) {
+				address.setPostName((String)((Map)((List)postNameObj).get(0)).get("@value")); // choose first -- should fix
+			}						
+		}
+		
+		Object thoroughfareObj = map.get("thoroughfare");
+		if (thoroughfareObj != null) {
+			if (thoroughfareObj instanceof String) {
+				address.setThoroughfare((String)thoroughfareObj);
+			} else if (thoroughfareObj instanceof Map) {
+				address.setThoroughfare((String)((Map)thoroughfareObj).get("@value"));
+			} else if (thoroughfareObj instanceof List) {
+				address.setThoroughfare((String)((Map)((List)thoroughfareObj).get(0)).get("@value")); // choose first -- should fix
+			}
+		}
+		
+		Object locatorNameObj = map.get("locatorName");
+		if (locatorNameObj != null) {
+			if (locatorNameObj instanceof String) {
+				address.setLocatorName((String)locatorNameObj);
+			} else if (locatorNameObj instanceof Map) {
+				address.setLocatorName((String)((Map)locatorNameObj).get("@value"));
+			} else if (locatorNameObj instanceof List) {
+				address.setLocatorName((String)((Map)((List)locatorNameObj).get(0)).get("@value")); // choose first -- should fix
+			}		
+		}
+		
+		Object locatorDesignatorObj = map.get("locatorDesignator");
+		if (locatorDesignatorObj != null) {
+			if (locatorDesignatorObj instanceof String) {
+				address.setLocatorDesignator((String)locatorDesignatorObj);
+			} else if (locatorDesignatorObj instanceof Map) {
+				address.setLocatorDesignator((String)((Map)locatorDesignatorObj).get("@value"));
+			} else if (locatorDesignatorObj instanceof List) {
+				address.setLocatorDesignator((String)((Map)((List)locatorDesignatorObj).get(0)).get("@value")); // choose first -- should fix
+			}		
+		}
+		
+		Object nuts3Obj = map.get("nuts3");
+		if (nuts3Obj != null) {
+			if (nuts3Obj instanceof String) {
+				PlaceDB place = nutsService.getByCode(Code.fromNutsUri((String)nuts3Obj));
+				if (place != null) {
+					address.setNuts3(new CodeLabel(place.getCode().toString(), place.getLatinName() != null ? place.getLatinName() : place.getNationalName()));
+				}
+			}
+		}	
+		
+		Object lauObj = map.get("lau");
+		if (lauObj != null) {
+			if (lauObj instanceof String) {
+				PlaceDB place = nutsService.getByCode(Code.fromLauUri((String)lauObj, cc));
+				if (place != null) {
+					address.setLau(new CodeLabel(place.getCode().toString(), place.getLatinName() != null ? place.getLatinName() : place.getNationalName()));
+				}
+			}	
+		}
+		
+		return address;
+	}
 
 
 }

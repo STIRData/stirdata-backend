@@ -46,4 +46,6 @@ public class Statistic {
 
 	   private Date updated;
 	   
+	   private Date referenceDate;
+	   
 }

@@ -5,6 +5,7 @@ import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
+import javax.persistence.Index; 
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
@@ -19,7 +20,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(name = "Places")
+@Table(name = "Places", indexes = { @Index(columnList = "parent") } )
 public class PlaceDB {
 	
 	@Id
@@ -27,7 +28,7 @@ public class PlaceDB {
 	@Type(type = "com.ails.stirdatabackend.model.db.CodeDataType")
 	Code code;
 	
-	@ManyToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "parent")
 //	@Column(name = "parent")
 	private PlaceDB parent;

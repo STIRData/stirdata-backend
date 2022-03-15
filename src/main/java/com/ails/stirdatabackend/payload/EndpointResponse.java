@@ -13,7 +13,8 @@ import lombok.Setter;
 public class EndpointResponse {
     private String endpointName;
 
-    private JsonNode response;
+//    private JsonNode response;
+    private Object response;
     private int count;
     private String countryCode;
 

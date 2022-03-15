@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 
 import com.ails.stirdatabackend.model.ActivityDB;
 import com.ails.stirdatabackend.model.Code;
-import com.ails.stirdatabackend.model.CountryConfiguration;
+import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.repository.ActivitiesDBRepository;
 
 import java.io.ByteArrayOutputStream;
@@ -27,7 +27,7 @@ import java.util.Set;
 @Service
 public class NaceService {
 
-	private final static Logger logger = LoggerFactory.getLogger(NaceService.class);
+//	private final static Logger logger = LoggerFactory.getLogger(NaceService.class);
 	
     @Autowired
     @Qualifier("endpoint-nace-eu")
@@ -37,9 +37,9 @@ public class NaceService {
 //    @Qualifier("namedgraph-nace-eu")
 //    private String naceNamedgraphEU;
     
-    @Autowired
-    @Qualifier("country-configurations")
-    private Map<String, CountryConfiguration> countryConfigurations;
+//    @Autowired
+//    @Qualifier("country-configurations")
+//    private Map<String, CountryConfiguration> countryConfigurations;
 
     @Autowired
     private ActivitiesDBRepository activitiesRepository;
@@ -51,6 +51,21 @@ public class NaceService {
     public ActivityDB getByCode(Code code) {
     	return activitiesRepository.findByCode(code);
     }
+
+    public ActivityDB getNaceRev2Ancestor(ActivityDB activity) {
+    	if (activity.getLevel() <= 4 && activity.getExactMatch() != null) {
+    		return activity.getExactMatch();
+    	} else if (activity.getLevel() == 5) {
+    		return activitiesRepository.findLevel4NaceRev2AncestorFromLevel5(activity);
+    	} else if (activity.getLevel() == 6) {
+    		return activitiesRepository.findLevel4NaceRev2AncestorFromLevel6(activity);
+    	} else if (activity.getLevel() == 7) {
+    		return activitiesRepository.findLevel4NaceRev2AncestorFromLevel7(activity);
+    	} else {
+    		return null;
+    	}
+    }
+
     
     public List<ActivityDB> getNextNaceLevelListDb(Code parent) {
 
@@ -105,24 +120,28 @@ public class NaceService {
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     // LOCAL NACE 
 
-    public List<String> getLocalNaceLeafUris(CountryConfiguration cc, Code naceCode) {
+    public List<String> getLocalNaceLeafUris(CountryDB cc, Code naceCode) {
     	return getLocalNaceLeafUris(cc, Arrays.asList(new Code[] { naceCode }));
    	}
     
-    public List<String> getLocalNaceLeafUris(CountryConfiguration cc, List<Code> naceCodes) {
+    public List<String> getLocalNaceLeafUris(CountryDB cc, List<Code> naceCodes) {
     	List<String> naceLeafUris = null;
     	if (naceCodes != null) {
     		naceLeafUris = new ArrayList<>();
-    		
-    		for (Code code : naceCodes) {
-       			naceLeafUris.addAll(getNaceLeafUris(cc, code));
+
+			for (Code code : naceCodes) {
+				if (cc.getNacePathSparql() != null) {
+					naceLeafUris.add(Code.naceRev2Prefix + code.getCode());	
+				} else {
+					naceLeafUris.addAll(getNaceLeafUris(cc, code));
+				}
             }
     	}
     	
     	return naceLeafUris;
     }    
     
-    private Set<String> getNaceLeafUris(CountryConfiguration cc, Code code) {
+    private Set<String> getNaceLeafUris(CountryDB cc, Code code) {
     	Set<String> res = new HashSet<>();
 
     	int level = code.getNaceRev2Level();
@@ -161,5 +180,6 @@ public class NaceService {
     	return res;
 
     }    
+    
 
 }

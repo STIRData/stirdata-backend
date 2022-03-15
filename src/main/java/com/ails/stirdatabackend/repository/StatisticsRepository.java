@@ -3,10 +3,13 @@ package com.ails.stirdatabackend.repository;
 import com.ails.stirdatabackend.model.Dimension;
 import com.ails.stirdatabackend.model.Statistic;
 import com.ails.stirdatabackend.model.User;
+
+import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,10 +22,20 @@ public interface StatisticsRepository extends MongoRepository<Statistic, String>
 	  public void deleteAllByCountryAndDimension(String country, Dimension dimension);
 	  
 	  public void deleteAllByCountryAndDimensionAndPlace(String country, Dimension dimension, String place);
+	  
+	  public void deleteAllByCountryAndDimensionAndActivity(String country, Dimension dimension, String activity);
 
 	  public void deleteAllByDimension(Dimension dimension);
 	  
+	  @Aggregation(pipeline = {
+			  "{ '$match': { 'country': ?0 } }", 
+			  "{ '$group': { '_id': '$dimension', count: { '$sum': 1 }, dimension: {'$first': '$dimension' },  referenceDate: { $max: '$referenceDate'} } }" })
+	  public List<Statistic> groupCountDimensionsByCountry(String country);
+	  
 	  public List<Statistic> findByCountry(String country);
+	  
+//	  public List<Statistic> findByCountryAndReferenceDate(String country, Date referenceDate);
+	  public List<Statistic> findByCountryAndDimensionAndReferenceDate(String country, Dimension dimension, Date referenceDate);
 	  
 	  public List<Statistic> findByCountryAndDimension(String country, Dimension dimension);
 	  

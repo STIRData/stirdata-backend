@@ -3,6 +3,7 @@ package com.ails.stirdatabackend.payload;
 import com.ails.stirdatabackend.model.ActivityDB;
 import com.ails.stirdatabackend.model.Code;
 import com.ails.stirdatabackend.model.CountryConfiguration;
+import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.PlaceDB;
 import com.ails.stirdatabackend.model.StatisticDB;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -66,11 +67,11 @@ public class GenericResponse {
 		activity = new CodeLabel(code, label);
 	}
 
-	public static GenericResponse createFromStatistic(StatisticDB st, CountryConfiguration cc, PlaceDB placedb, ActivityDB activitydb, Code founding, Code dissolution, String lang) {
+	public static GenericResponse createFromStatistic(StatisticDB st, CountryDB cc, PlaceDB placedb, ActivityDB activitydb, Code founding, Code dissolution, String lang) {
 		GenericResponse sr = new GenericResponse();
 //		sr.setCountryCode(st.getCountry());
 		if (cc != null) {
-			sr.setCountry(new CodeLabel(st.getCountry(), cc.getCountryLabel()));
+			sr.setCountry(new CodeLabel(st.getCountry(), cc.getLabel()));
 		}
 		
 		if (placedb == null) {
@@ -104,11 +105,11 @@ public class GenericResponse {
 
 	}
 	
-	public static GenericResponse createFromFoundingStatistic(StatisticDB st, CountryConfiguration cc, PlaceDB placedb, ActivityDB activitydb, Code founding, Code dissolution, String lang) {
+	public static GenericResponse createFromFoundingStatistic(StatisticDB st, CountryDB cc, PlaceDB placedb, ActivityDB activitydb, Code founding, Code dissolution, String lang) {
 		GenericResponse sr = new GenericResponse();
 //		sr.setCountryCode(st.getCountry());
 		if (cc != null) {
-			sr.setCountry(new CodeLabel(st.getCountry(), cc.getCountryLabel()));
+			sr.setCountry(new CodeLabel(st.getCountry(), cc.getLabel()));
 		}
 		
 		if (placedb == null) {
@@ -134,7 +135,8 @@ public class GenericResponse {
 //			if (st.getToDate() != null) {
 //				sr.setFoundingToDate(st.getToDate().toString());
 //			}
-			sr.setFoundingDate(new Interval(st.getFromDate(), st.getToDate()));
+			
+			sr.setFoundingDate(new Interval(st.getFoundingFromDate(), st.getFoundingToDate()));
 		} else {
 //			if (founding.getFromDate() != null) {
 //				sr.setFoundingFromDate(founding.getFromDate().toString());
@@ -157,11 +159,11 @@ public class GenericResponse {
 
 	}
 
-	public static GenericResponse createFromDissolutionStatistic(StatisticDB st, CountryConfiguration cc, PlaceDB placedb, ActivityDB activitydb, Code founding, Code dissolution, String lang) {
+	public static GenericResponse createFromDissolutionStatistic(StatisticDB st, CountryDB cc, PlaceDB placedb, ActivityDB activitydb, Code founding, Code dissolution, String lang) {
 		GenericResponse sr = new GenericResponse();
 //		sr.setCountryCode(st.getCountry());
 		if (cc != null) {
-			sr.setCountry(new CodeLabel(st.getCountry(), cc.getCountryLabel()));
+			sr.setCountry(new CodeLabel(st.getCountry(), cc.getLabel()));
 		}
 		
 		if (placedb == null) {
@@ -191,7 +193,7 @@ public class GenericResponse {
 //			if (st.getToDate() != null) {
 //				sr.setDissolutionToDate(st.getToDate().toString());
 //			}
-			sr.setDissolutionDate(new Interval(st.getFromDate(), st.getToDate()));
+			sr.setDissolutionDate(new Interval(st.getDissolutionFromDate(), st.getDissolutionToDate()));
 		} else {
 //			if (dissolution.getFromDate() != null) {
 //				sr.setDissolutionFromDate(dissolution.getFromDate().toString());

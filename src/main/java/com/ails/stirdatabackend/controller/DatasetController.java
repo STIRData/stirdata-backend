@@ -20,11 +20,12 @@ import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import com.ails.stirdatabackend.model.Code;
-import com.ails.stirdatabackend.model.CountryConfiguration;
+import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.Dimension;
 import com.ails.stirdatabackend.model.Statistic;
 import com.ails.stirdatabackend.payload.CountryResponse;
 import com.ails.stirdatabackend.payload.Interval;
+import com.ails.stirdatabackend.payload.Resource;
 import com.ails.stirdatabackend.repository.StatisticsRepository;
 
 import java.io.StringWriter;
@@ -52,7 +53,7 @@ public class DatasetController {
 
     @Autowired
     @Qualifier("country-configurations")
-    private Map<String, CountryConfiguration> countryConfigurations;
+    private Map<String, CountryDB> countryConfigurations;
     
     @Autowired
     StatisticsRepository statisticsRepository;
@@ -61,9 +62,9 @@ public class DatasetController {
 	public ResponseEntity<?> info()  {
 		List<CountryResponse> results = new ArrayList<>();
 			
-		for (CountryConfiguration cc : countryConfigurations.values()) {
+		for (CountryDB cc : countryConfigurations.values()) {
 			CountryResponse ci = new CountryResponse();
-			ci.setCountry(cc.getCountryCode(), cc.getCountryLabel());
+			ci.setCountry(cc.getCode(), cc.getLabel());
 			
 			if (cc.isNace()) {
 				ci.addActivity(Code.naceRev2Namespace);
@@ -85,14 +86,13 @@ public class DatasetController {
 			
 			ci.setSparqlEndpoint(cc.getDataEndpoint());
 			ci.setLastUpdated(cc.getLastUpdated());
-			ci.setSource(cc.getSource());
+			ci.setSource(new Resource(cc.getSourceUri(), cc.getSourceLabel()));
 			
-			List<Statistic> list = statisticsRepository.findByCountryAndDimension(cc.getCountryCode(), Dimension.DATA);
-			if (!list.isEmpty()) {
-				ci.setLegalEntityCount(list.get(0).getCount());
-			}
+			ci.setLegalEntityCount(cc.getTotalLegalEntityCount());
+			ci.setActiveLegalEntityCount(cc.getActiveLegalEntityCount());
+			
 			String acc = cc.getAccrualPeriodicity();
-			if (acc.startsWith("http://publications.europa.eu/resource/authority/frequency/DAILY")) {
+			if (acc != null && acc.startsWith("http://publications.europa.eu/resource/authority/frequency/")) {
 				ci.setAccrualPeriodicity(acc.substring("http://publications.europa.eu/resource/authority/frequency/".length()).toLowerCase());
 			}
 			

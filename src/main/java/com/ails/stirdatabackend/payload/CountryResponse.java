@@ -4,22 +4,22 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import com.ails.stirdatabackend.model.Resource;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
 @Getter
 @Setter
 @NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class CountryResponse {
 
 	private CodeLabel country;
 	
-	private int legalEntityCount;
+	private Integer legalEntityCount;
+	private Integer activeLegalEntityCount;
 	
 	private String conformsTo;
 	

@@ -29,7 +29,11 @@ public class StatisticResult {
 
 	private int count;
 	
+	private Code groupByCode;
+	
 	private Date computed;
+	
+	private boolean skip;
 	
 	public String toString() {
 //		return (code != null ?  code :  fromDate + " - " + toDate) + " : " + count + (parentCode != null ? " [ " + parentCode + " ] " :""); 

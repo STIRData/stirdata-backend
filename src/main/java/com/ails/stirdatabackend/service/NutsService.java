@@ -1,7 +1,7 @@
 package com.ails.stirdatabackend.service;
 
 import com.ails.stirdatabackend.model.Code;
-import com.ails.stirdatabackend.model.CountryConfiguration;
+import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.PlaceDB;
 import com.ails.stirdatabackend.repository.PlacesDBRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -51,7 +51,7 @@ public class NutsService {
 
     @Autowired
     @Qualifier("country-configurations")
-    private Map<String, CountryConfiguration> countryConfigurations;
+    private Map<String, CountryDB> countryConfigurations;
     
     @Autowired
     private PlacesDBRepository placesRepository;
@@ -78,9 +78,9 @@ public class NutsService {
     	}
     }
     
-    public List<String> getLocalNutsLeafUris(CountryConfiguration cc, List<Code> nutsCodes) {
+    public List<String> getLocalNutsLeafUris(CountryDB cc, List<Code> nutsCodes) {
     	
-    	if (nutsCodes != null && nutsCodes.contains(Code.createNutsCode(cc.getCountryCode()))) { // entire country, ignore nuts
+    	if (nutsCodes != null && nutsCodes.contains(Code.createNutsCode(cc.getCode()))) { // entire country, ignore nuts
     		return null;
     	}
     	
@@ -98,9 +98,9 @@ public class NutsService {
 
     }
     
-    public List<String> getLocalNutsLeafUrisDB(CountryConfiguration cc, List<Code> nutsCodes) {
+    public List<String> getLocalNutsLeafUrisDB(CountryDB cc, List<Code> nutsCodes) {
     	
-    	if (nutsCodes != null && nutsCodes.contains(Code.createNutsCode(cc.getCountryCode()))) { // entire country, ignore nuts
+    	if (nutsCodes != null && nutsCodes.contains(Code.createNutsCode(cc.getCode()))) { // entire country, ignore nuts
     		return null;
     	}
     	
@@ -118,7 +118,7 @@ public class NutsService {
 
     }
     
-    public List<String> getLocalNutsLeafUrisDB(CountryConfiguration cc, Code nutsCode) {
+    public List<String> getLocalNutsLeafUrisDB(CountryDB cc, Code nutsCode) {
     	List<String> res = new ArrayList<>();
     	
     	int level = nutsCode.getNutsLevel();
@@ -148,7 +148,7 @@ public class NutsService {
     	return res;
     }
     
-    public Set<String> getLocalNutsLeafUris(CountryConfiguration cc, Code nutsCode) {
+    public Set<String> getLocalNutsLeafUris(CountryDB cc, Code nutsCode) {
     	Set<String> res = new HashSet<>();
     	
     	int level = nutsCode.getNutsLevel();
@@ -189,7 +189,7 @@ public class NutsService {
     	return res;
     }
     
-    public List<String> getLocalLauUris(CountryConfiguration cc, List<Code> lauCodes) {
+    public List<String> getLocalLauUris(CountryDB cc, List<Code> lauCodes) {
     	
     	List<String> res = null;
     	if (lauCodes != null) {
@@ -205,26 +205,36 @@ public class NutsService {
 
     }
     
-    public String getLocalLauUri(CountryConfiguration cc, Code lauCode) {
+    public String getLocalLauUri(CountryDB cc, Code lauCode) {
   		//adjust prefix
    		return cc.getLauPrefix() + lauCode.getCode();
     }
     
-    public Map<CountryConfiguration, PlaceSelection> getEndpointsByNuts() {
-        Map<CountryConfiguration, PlaceSelection> res = new HashMap<>();
-        for (CountryConfiguration cc : countryConfigurations.values()) {
+    public Code getLauCodeFromLocalUri(CountryDB cc, String uri) {
+  		//adjust prefix
+    	return Code.createLauCode(uri.substring(cc.getLauPrefix().length()));
+    }
+    
+    public Code getNutsCodeFromLocalUri(CountryDB cc, String uri) {
+  		//adjust prefix
+    	return Code.createLauCode(uri.substring(cc.getNutsPrefix().length()));
+    }
+    
+    public Map<CountryDB, PlaceSelection> getEndpointsByNuts() {
+        Map<CountryDB, PlaceSelection> res = new HashMap<>();
+        for (CountryDB cc : countryConfigurations.values()) {
        		res.put(cc, null);
         }
         return res;
     }
     
-    public Map<CountryConfiguration, PlaceSelection> getEndpointsByNuts(List<Code> nutsLauCodes) {
-        Map<CountryConfiguration, PlaceSelection> res = new HashMap<>();
+    public Map<CountryDB, PlaceSelection> getEndpointsByNuts(List<Code> nutsLauCodes) {
+        Map<CountryDB, PlaceSelection> res = new HashMap<>();
 
         for (Code code : nutsLauCodes) {
         	
         	if (code.isNuts()) {
-        		CountryConfiguration cc = countryConfigurations.get(code.getNutsCountry());
+        		CountryDB cc = countryConfigurations.get(code.getNutsCountry());
         		
         		PlaceSelection rc = res.get(cc);
         		if (rc == null) {
@@ -235,7 +245,7 @@ public class NutsService {
                 rc.addNuts3(code);
                 
         	} else if (code.isLau()) {
-        		CountryConfiguration cc = countryConfigurations.get(code.getLauCountry());
+        		CountryDB cc = countryConfigurations.get(code.getLauCountry());
         		
         		PlaceSelection rc = res.get(cc);
         		if (rc == null) {
@@ -263,15 +273,12 @@ public class NutsService {
     		parentPlace = (new PlaceDB(parent));
     	}
 
-    	boolean lauChildren = false;
-    	
     	while (true) {
     		places = placesRepository.findByParent(parentPlace);
-    		int size = places.size();
 
     		// inefficient!
         	for (int i = 0; i < places.size(); ) {
-        		if (!places.get(i).isNuts()) { // only for nuts 
+        		if (!places.get(i).isNuts()) { // we are in lau
         			break;
         		}
         		
@@ -282,26 +289,12 @@ public class NutsService {
         		}
         	}
         	
-        	if (size > 0 && places.size() == 0) {
-        		break;
-        	}
-        	
             if (places.size() == 1) {
             	PlaceDB place = places.get(0); 
             
-            	if (!lauChildren && place.isNuts() && place.getLevel()  < 3) {
+            	if (place.isNuts()) {
             		parentPlace = place;
-            		lauChildren = false;
-            	} else if (!lauChildren && place.isNuts() && place.getLevel() == 3) {
-            		parentPlace = place;
-            		lauChildren = true;
-            	} else if (lauChildren) {
-            		break;
-            	}
-            } else if (places.size() == 0) {
-            	if (!lauChildren) {
-            		lauChildren = true;
-            	} else {
+            	} else if (place.isLau()) {
             		break;
             	}
             } else {

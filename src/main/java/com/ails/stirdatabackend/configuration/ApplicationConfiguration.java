@@ -2,8 +2,10 @@ package com.ails.stirdatabackend.configuration;
 
 import com.ails.stirdatabackend.controller.URIDescriptor;
 import com.ails.stirdatabackend.model.CountryConfiguration;
+import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.ModelConfiguration;
 import com.ails.stirdatabackend.model.StatisticDB;
+import com.ails.stirdatabackend.repository.CountriesDBRepository;
 import com.ails.stirdatabackend.repository.CountriesRepository;
 import com.ails.stirdatabackend.repository.StatisticsDBRepository;
 import com.ails.stirdatabackend.vocs.DCATVocabulary;
@@ -18,8 +20,10 @@ import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.riot.JsonLDWriteContext;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.sparql.util.Symbol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,10 +34,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.util.FileCopyUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.IDN;
+import java.nio.charset.StandardCharsets;
 import java.sql.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -52,9 +58,6 @@ public class ApplicationConfiguration {
 	@Value("${cache.labels.live-time}")
 	private int liveTime;
 	
-	@Value("${app.countries}")
-	private String countries;
-
 	@Value("${app.data-models}")
 	private String models;
 	
@@ -62,10 +65,10 @@ public class ApplicationConfiguration {
 	private String fromDate;
 
 	@Autowired
-	private CountriesRepository countriesRepository;
+	private CountriesDBRepository countriesRepository;
 
 	@Autowired
-	private StatisticsDBRepository statisticsRepository;
+	ResourceLoader resourceLoader;
 	
 	@Bean(name = "labels-cache")
 	public Cache getLabelsCache() {
@@ -176,126 +179,34 @@ public class ApplicationConfiguration {
 	
 	@Bean(name = "country-configurations")
 	@DependsOn("model-configurations")
-	public Map<String, CountryConfiguration> getSupportedCountriesConfigurations(@Qualifier("model-configurations") Map<String,ModelConfiguration> mcMap) {
-		Map<String, CountryConfiguration> map = new HashMap<>();
+	public Map<String, CountryDB> getSupportedCountriesConfigurations(@Qualifier("model-configurations") Map<String, ModelConfiguration> mcMap) {
+		Map<String, CountryDB> map = new HashMap<>();
 		
-//		System.out.println("LOADING COUNTRIES: ");
+		System.out.println("LOADING COUNTRIES: ");
 		String s = "";
-		for (CountryConfiguration cc  : countriesRepository.findAll()) {
+		for (CountryDB cc  : countriesRepository.findAll()) {
 			cc.setModelConfiguration(mcMap.get(cc.getConformsTo()));
-			cc.setStatistics(new HashSet<>(statisticsRepository.findDimensionsByCountry(cc.getCountryCode())));
+//			cc.setStatistics(new HashSet<>(statisticsRepository.findDimensionsByCountry(cc.getCode())));
 			
-			s += cc.getCountryCode() + " ";
-			map.put(cc.getCountryCode(), cc);
+			s += cc.getCode() + " ";
+			map.put(cc.getCode(), cc);
 		}
 		logger.info("Loaded countries: " + s);
 		
 		return map;
 	}
 	
-//	public Map<String, CountryConfiguration> getSupportedCountriesConfigurations(@Qualifier("model-configurations") Map<String,ModelConfiguration> mcMap) {
-//
-//		Set<String> supportedModelUrls = new HashSet<>() ;
-//		Map<String, ModelConfiguration> mcUriMap = new HashMap<>() ;
-//		for (ModelConfiguration mc : mcMap.values()) {
-//			supportedModelUrls.add(mc.getUrl());
-//			mcUriMap.put(mc.getUrl(), mc);
-//		}
-//		
-////		System.out.println(supportedModelUrls);
-//		Map<String, CountryConfiguration> map = new HashMap<>();
-//		
-//		String defaultNaceEndpoint = env.getProperty("endpoint.nace.00");
-//		String defaultNutsEndpoint = env.getProperty("endpoint.nuts.00");
-//
-//		String defaultNacePath1 = env.getProperty("nace.path-1.00");
-//		String defaultNacePath2 = env.getProperty("nace.path-2.00");
-//		String defaultNacePath3 = env.getProperty("nace.path-3.00");
-//		String defaultNacePath4 = env.getProperty("nace.path-4.00");
-//		String defaultNaceFixedLevel = env.getProperty("nace.fixed-level.00");
-//		
-//		String defaultNutsPrefix = env.getProperty("nuts.prefix.00");
-//		String defaultLauPrefix = env.getProperty("lau.prefix.00");
-//
-//		String[] cntr = countries.split(",");
-//		
-//		for (String c : cntr) {
-////			System.out.println(c);
-//			CountryConfiguration cc = new CountryConfiguration(c);
-//			
-//			cc.setCountryLabel(env.getProperty("country.label." + c));
-//			
-////			String dcat = env.getProperty("country.dcat." + c);
-////			
-////			if (dcat != null) {
-////				processDcat(cc, dcat, supportedModelUrls, mcUriMap);
-////			}
-//			
-//			for (String d : env.getProperty("country.dimensions." + c).split(",")) {
-//				if (d.equalsIgnoreCase("nace")) {
-//					cc.setNace(true);
-//				} else if (d.equalsIgnoreCase("nuts")) {
-//					cc.setNuts(true);
-//				} else if (d.equalsIgnoreCase("lau")) {
-//					cc.setLau(true);
-//				} else if (d.equalsIgnoreCase("founding")) {
-//					cc.setFoundingDate(true);
-//				} else if (d.equalsIgnoreCase("dissolution")) {
-//					cc.setDissolutionDate(true);
-//				}
-//			}
-//			
-//
-//			if (cc.getDataEndpoint() == null) {
-//				String dataEndpoint = env.getProperty("endpoint.data." + c);
-//				cc.setDataEndpoint(dataEndpoint);
-//			}
-//			
-////			System.out.println(cc.getCountry() + " : " + cc.getDataEndpoint().getSparqlEndpoint());
-//			
-//			String naceEndpoint = env.getProperty("endpoint.nace." + c);
-//			cc.setNaceEndpoint(naceEndpoint != null ? naceEndpoint : defaultNaceEndpoint); 
-//
-//			String nutsEndpoint = env.getProperty("endpoint.nuts." + c);
-//			cc.setNutsEndpoint(nutsEndpoint != null ? nutsEndpoint : defaultNutsEndpoint); 
-//
-//		    String naceScheme = env.getProperty("nace.scheme." + c);
-//		    cc.setNaceScheme(naceScheme);
-//
-//		    String nacePath1 = env.getProperty("nace.path-1." + c);
-//		    cc.setNacePath1(nacePath1 != null ? nacePath1 : defaultNacePath1);
-//
-//		    String nacePath2 = env.getProperty("nace.path-2." + c);
-//		    cc.setNacePath2(nacePath2 != null ? nacePath2 : defaultNacePath2);
-//		    
-//		    String nacePath3 = env.getProperty("nace.path-3." + c);
-//		    cc.setNacePath3(nacePath3 != null ? nacePath3 : defaultNacePath3);
-//
-//		    String nacePath4 = env.getProperty("nace.path-4." + c);
-//		    cc.setNacePath4(nacePath4 != null ? nacePath4 : defaultNacePath4);
-//
-//		    String naceFixedLevel = env.getProperty("nace.fixed-level." + c);
-//		    cc.setNaceFixedLevel(naceFixedLevel != null ? Integer.parseInt(naceFixedLevel) : Integer.parseInt(defaultNaceFixedLevel));
-//		    
-//		    String nutsPrefix = env.getProperty("nuts.prefix." + c);
-//		    cc.setNutsPrefix(nutsPrefix != null ? nutsPrefix : defaultNutsPrefix);	
-//
-//		    String lauPrefix = env.getProperty("lau.prefix." + c);
-//		    cc.setLauPrefix(lauPrefix != null ? lauPrefix : defaultLauPrefix);	
-//
-//		    cc.setEntitySparql(env.getProperty("sparql.entity." + c));
-//	    	cc.setLegalNameSparql(env.getProperty("sparql.legalName." + c));	
-//	    	cc.setActiveSparql(env.getProperty("sparql.active." + c));
-//	    	cc.setNuts3Sparql(env.getProperty("sparql.nuts3." + c));	
-//	    	cc.setLauSparql(env.getProperty("sparql.lau." + c));	
-//	    	cc.setNaceSparql(env.getProperty("sparql.nace." + c));	
-//	    	cc.setFoundingDateSparql(env.getProperty("sparql.foundingDate." + c));
-//	    	cc.setDissolutionDateSparql(env.getProperty("sparql.dissolutionDate." + c));
-//	    	
-//			map.put(c, cc);
-//		}
-//		
-//		return map;
-//	}
+	@Bean(name = "model-jsonld-context")
+	public JsonLDWriteContext getContext() {
+		JsonLDWriteContext ctx = new JsonLDWriteContext();
+		
+		try (InputStream in = resourceLoader.getResource("classpath:stirdata.jsonld").getInputStream()) {
+	        ctx.setJsonLDContext(new String(FileCopyUtils.copyToByteArray(in), StandardCharsets.UTF_8));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		return ctx;
+	}
 	
 }
