@@ -19,7 +19,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(name = "Activities", indexes = { @Index(columnList = "parent") } )
+@Table(name = "Activities", indexes = { @Index(columnList = "parent"), @Index(columnList = "type") } )
 public class ActivityDB {
 	
 	@Id

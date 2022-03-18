@@ -825,7 +825,11 @@ public class DataStoring  {
 	                activity.setLevel(i);
 	                
 //	                System.out.println(activity.getCode());
-	                activitiesDBRepository.save(activity);
+	                try {
+	                	activitiesDBRepository.save(activity);
+	                } catch (Exception e) {
+	                	System.out.println(e.getMessage());
+	                }
 	                
 	            }
 	        }

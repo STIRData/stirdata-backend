@@ -277,4 +277,8 @@ public class CountryDB {
     	return null;
     }
     
+    public String toString() {
+    	return code;
+    }
+    
 }

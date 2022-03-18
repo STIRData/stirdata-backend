@@ -775,7 +775,8 @@ public class StatisticsService {
    		        lauUris = places == null ? null : nutsService.getLocalLauUris(cc, places.getLau());
 // 	        } 
    		        
-   		        if (places.getNuts3() != null) {
+   		    if (places != null) {
+		        if (places.getNuts3() != null) {
 	   		        nuts3Roots = places.getNuts3().size() > 0;
 	   		        for (Code c : places.getNuts3()) {
 	   		        	if (c.getNutsLevel() != 3) {
@@ -783,9 +784,9 @@ public class StatisticsService {
 	   		        		break;
 	   		        	}
 	   		        }
-   		        }
-   		        
-   		        if ( places.getLau() != null) {
+		        }
+		        
+		        if ( places.getLau() != null) {
 	   		        lauRoots = places.getLau().size() > 0;
 	   		        for (Code c : places.getLau()) {
 	   		        	if (!c.isLau()) {
@@ -793,8 +794,11 @@ public class StatisticsService {
 	   		        		break;
 	   		        	}
 	   		        }
-   		        }
-
+		        }
+   		    } else {
+   		    	nuts3Roots = false;
+   		    	lauRoots = false;
+   		    }
    		}
 
 
@@ -859,10 +863,9 @@ public class StatisticsService {
    	
    	public List<StatisticResult> dateStatistics(CountryDB cc, Dimension dimension, Code root, List<Code> nutsLauCodes, List<Code> naceCodes, Code foundingDate, Code dissolutionDate, boolean allLevels) {
    		List<StatisticResult> res  = new ArrayList<StatisticResult>();
-   		
+
    		StatisticsHelper sh = new StatisticsHelper(cc, dimension, nutsLauCodes, naceCodes);
    		sh.minMaxDates(cc, dimension, foundingDate, dissolutionDate);
-
 
    		if (root == null) {
    			root = Code.createDateCode(new java.sql.Date(sh.minDate.getTime().getTime()), new java.sql.Date(sh.maxDate.getTime().getTime()), Code.date10Y);
@@ -933,7 +936,7 @@ public class StatisticsService {
             		continue;
             	}
             	
-            	System.out.println(sh.nuts3Roots + " " + sh.lauRoots);
+//            	System.out.println(sh.nuts3Roots + " " + sh.lauRoots);
             	if (sh.nuts3Roots || sh.lauRoots) {
             		sparql = SparqlQuery.buildCoreQueryGroupPlace(cc, true, false, sh.nutsLeafUris, sh.lauUris, naceLeafUris, foundingDate, dissolutionDate);
             		if (sh.nuts3Roots) {
@@ -951,7 +954,7 @@ public class StatisticsService {
 	
 //	        System.out.println(uri);
 //	        System.out.println(cc.getDataEndpoint());
-	        System.out.println(query);
+//	        System.out.println(query);
 	        long start = System.currentTimeMillis();
 	        
 	        int tries = 0;
