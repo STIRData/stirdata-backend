@@ -19,7 +19,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(name = "Activities", indexes = { @Index(columnList = "parent"), @Index(columnList = "type") } )
+@Table(name = "Activities", indexes = { @Index(columnList = "parent"), @Index(columnList = "scheme") } )
 public class ActivityDB {
 	
 	@Id
@@ -113,8 +113,8 @@ public class ActivityDB {
 	@Column(name = "label_tr")
 	private String labelTr;
 	
-	@Column(name = "type")
-	private String type;
+	@Column(name = "scheme")
+	private String scheme;
 
 	@Column(name = "level", nullable = false)
 	private int level;

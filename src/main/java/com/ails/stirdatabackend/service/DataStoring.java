@@ -672,7 +672,7 @@ public class DataStoring  {
 	                	activity.setLabelTr(sol.get("trLabel").asLiteral().getLexicalForm());
 	                }
 	                
-	                activity.setType("nace-rev2");
+	                activity.setScheme("nace-rev2");
 	                activity.setLevel(i);
 	                
 //	                System.out.println(activity.getCode());
@@ -684,10 +684,20 @@ public class DataStoring  {
 		
 		activitiesDBRepository.flush();
 	}
+
+	@Transactional
+	public void deleteNACEFromRDBMS(CountryDB cc) throws IOException {
+
+		activitiesDBRepository.deleteAllByScheme(cc.getNaceNamespace());
+	}
+	
 	
 	public void copyNACEFromVirtuosoToRDBMS(CountryDB cc) throws IOException {
 
+//		deleteNACEFromRDBMS(cc);
+
 		for (int i = 1; i <= cc.getNaceLevels(); i++) {
+			
 			String naceSparql = "SELECT * " + 
 //		       (naceNamedgraphEU != null ? "FROM <" + naceNamedgraphEU + "> " : "") + 
 		       " WHERE {" +
@@ -730,6 +740,8 @@ public class DataStoring  {
 	            while (qe.hasNext()) {
 	                QuerySolution sol = qe.next();
 	                
+//	                System.out.println(sol);
+	                
 	                ActivityDB activity = new ActivityDB();
 	                
 	                activity.setCode(Code.fromNaceUri(sol.get("nace").toString(), cc));
@@ -739,7 +751,7 @@ public class DataStoring  {
 	                }
 	                
 	                if (sol.get("exactMatch") != null) {
-	                	activity.setParent(new ActivityDB(Code.fromNaceRev2Uri(sol.get("exactMatch").toString())));
+	                	activity.setExactMatch(new ActivityDB(Code.fromNaceRev2Uri(sol.get("exactMatch").toString())));
 	                }
 	                
 	                if (sol.get("bgLabel") != null) {
@@ -821,7 +833,7 @@ public class DataStoring  {
 	                	activity.setLabelTr(sol.get("trLabel").asLiteral().getLexicalForm());
 	                }
 	                
-	                activity.setType(cc.getNaceNamespace());
+	                activity.setScheme(cc.getNaceNamespace());
 	                activity.setLevel(i);
 	                
 //	                System.out.println(activity.getCode());

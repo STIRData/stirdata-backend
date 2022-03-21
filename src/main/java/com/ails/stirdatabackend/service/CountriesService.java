@@ -369,16 +369,18 @@ public class CountriesService {
        		
         }
 
-       	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), "SELECT ?entity WHERE { " +  cc.getEntitySparql()  + " } LIMIT 50 OFFSET " + (cc.getTotalLegalEntityCount() - 50) )) {
-       		
-       		ResultSet rs = qe.execSelect();
-       		while (rs.hasNext()) {
-       			QuerySolution qs = rs.next();
-       			entityUris.add(qs.get("entity").toString());
-            }
-       		
-        }
-
+       	if (cc.getTotalLegalEntityCount() - 50 > 0 ) {
+	       	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), "SELECT ?entity WHERE { " +  cc.getEntitySparql()  + " } LIMIT 50 OFFSET " + (cc.getTotalLegalEntityCount() - 50) )) {
+	       		
+	       		ResultSet rs = qe.execSelect();
+	       		while (rs.hasNext()) {
+	       			QuerySolution qs = rs.next();
+	       			entityUris.add(qs.get("entity").toString());
+	            }
+	       		
+	        }
+       	}
+       	
    		String entityPrefix = StringUtils.getCommonPrefix(entityUris.toArray(new String[] {}));
    		
    		while (entityPrefix.charAt(entityPrefix.length() - 1) != '/' && entityPrefix.charAt(entityPrefix.length() - 1) != '#') {

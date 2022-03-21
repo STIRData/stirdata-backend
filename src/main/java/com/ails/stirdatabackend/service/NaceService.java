@@ -74,7 +74,7 @@ public class NaceService {
     		parentActivity = new ActivityDB(parent);
     	}
     	
-    	return activitiesRepository.findByParent(parentActivity);
+    	return activitiesRepository.findBySchemeAndParent(Code.naceRev2Namespace, parentActivity);
     }
 
     public String getNextNaceLevelJsonTs(String parent, String lang) {

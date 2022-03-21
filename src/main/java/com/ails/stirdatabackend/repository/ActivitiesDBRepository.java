@@ -12,9 +12,11 @@ import org.springframework.data.repository.query.Param;
 
 public interface ActivitiesDBRepository extends JpaRepository<ActivityDB, String> {
 	
+	  public void deleteAllByScheme(String scheme);
+	
 	  public ActivityDB findByCode(Code code);
 
-	  public List<ActivityDB> findByParent(ActivityDB parent);
+	  public List<ActivityDB> findBySchemeAndParent(String scheme, ActivityDB parent);
 	  
       @Query("SELECT s FROM ActivityDB s, ActivityDB a4, ActivityDB a5 WHERE a5 = :activity AND a5.parent = a4 AND a4.exactMatch = s")
       public ActivityDB findLevel4NaceRev2AncestorFromLevel5(@Param("activity") ActivityDB activity);
