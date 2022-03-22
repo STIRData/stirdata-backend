@@ -316,6 +316,7 @@ public class CountriesService {
         
         if (cc.isNace() && cc.getNaceEndpoint() != null) {
         	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), "SELECT (MAX(?level) AS ?maxLevel) WHERE { ?nace <http://www.w3.org/2004/02/skos/core#inScheme> <" +  cc.getNaceScheme() + "> . ?nace <https://lod.stirdata.eu/nace/ont/level> ?level }")) {
+        		
            		ResultSet rs = qe.execSelect();
            		while (rs.hasNext()) {
            			QuerySolution qs = rs.next();

@@ -110,12 +110,13 @@ public class Code implements Serializable {
 		}
 	}
 	
+	// 10Y 1Y 1M 1D
 	public static String nextDateLevel(String level) {
 		if (level.equals(date10Y)) {
 			return date1Y;
 		} else if (level.equals(date1Y)) {
-			return date3M;
-		} else if (level.equals(date3M)) {
+//			return date3M;
+//		} else if (level.equals(date3M)) {
 			return date1M;
 		} else if (level.equals(date1M)) {
 			return date1D;
@@ -127,10 +128,12 @@ public class Code implements Serializable {
 	public static String previousDateLevel(String level) {
 		if (level.equals(date1Y)) {
 			return date10Y;
-		} else if (level.equals(date3M)) {
-			return date1Y;
+//		} else if (level.equals(date3M)) {
+//			return date1Y;
+//		} else if (level.equals(date1M)) {
+//			return date3M;
 		} else if (level.equals(date1M)) {
-			return date3M;
+			return date1Y;
 		} else if (level.equals(date1D)) {
 			return date1M;
 		}

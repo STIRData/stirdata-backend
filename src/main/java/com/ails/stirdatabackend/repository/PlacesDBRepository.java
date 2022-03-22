@@ -29,4 +29,7 @@ public interface PlacesDBRepository extends JpaRepository<PlaceDB, String> {
       @Query("SELECT s FROM PlaceDB s, PlaceDB s1, PlaceDB s2 WHERE s.level = '3' and s.parent = s1 and s1.parent = s2 and s2.parent = ?1")
       public List<PlaceDB> findNUTS0Leaves(PlaceDB nuts2);
 
+	@Query("SELECT new com.ails.stirdatabackend.model.StatisticDB(COUNT(s), s.parent) FROM PlaceDB s GROUP BY s.parent")
+    public List<StatisticDB> groupByParentPlace();
+
 }

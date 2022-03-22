@@ -44,6 +44,12 @@ public class PlaceDB {
 
 	@Column(name = "level", nullable = false)
 	private int level;
+	
+	@Column(name = "number_of_children")
+	private int numberOfChildren = 0;
+
+	@Column(name = "country", nullable = false)
+	private String country;
 
 	@Column(name = "geometry_1m", columnDefinition="TEXT")
 	private String geometry1M;
@@ -60,6 +66,7 @@ public class PlaceDB {
 	@Column(name = "geometry_60m", columnDefinition="TEXT")
 	private String geometry60M;
 	
+
 	public PlaceDB(Code code) {
 		setCode(code);
 	}

@@ -265,6 +265,37 @@ public class NutsService {
     	return placesRepository.findByCode(code);
     }
     
+    
+    public PlaceNode buildPlaceTree(CountryDB cc) {
+    	PlaceNode res = new PlaceNode();
+    	
+    	List<PlaceDB> next = getNextNutsLauLevelListDb(Code.createNutsCode(cc.getCode()));
+    	
+    	for (PlaceDB r : next) {
+    		res.addChild(r);
+    	}
+    	
+    	for (PlaceNode r : res.getNext()) {
+    		buildPlaceTreeIter(r);
+    	}
+    	
+    	return res;
+    }
+    
+    public void buildPlaceTreeIter(PlaceNode place) {
+    	List<PlaceDB> next = getNextNutsLauLevelListDb(place.getNode().getCode());
+    	
+    	for (PlaceDB r : next) {
+    		place.addChild(r);
+    	}
+    	
+    	if (place.getNext() != null) {
+	    	for (PlaceNode r : place.getNext()) {
+	    		buildPlaceTreeIter(r);
+	    	}
+    	}    	
+    }
+    
     public List<PlaceDB> getNextNutsLauLevelListDb(Code parent) {
     	List<PlaceDB> places = new ArrayList<>();
     	

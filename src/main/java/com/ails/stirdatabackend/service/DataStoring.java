@@ -412,6 +412,24 @@ public class DataStoring  {
 	}	
 	
 	
+	public void updateNUTSDB() {
+//		List<StatisticDB> group = placesDBRepository.groupByParentPlace();
+//		for (StatisticDB st : group) {
+//			System.out.println(st.getPlace().getCode() + " " + st.getCount());
+//			PlaceDB placedb = placesDBRepository.findByCode(st.getPlace().getCode());
+//			placedb.setNumberOfChildren(st.getCount());
+//			placesDBRepository.save(placedb);
+//		}		
+
+		List<PlaceDB> list = placesDBRepository.findAll();
+		for (PlaceDB st : list) {
+			System.out.println(st.getCode());
+			st.setCountry(st.getCode().getCode().substring(0,2));
+			placesDBRepository.save(st);
+		}		
+
+	}
+	
 	public void copyNUTSFromVirtuosoToRDBMS() throws IOException {
 
 		for (int i = 0; i <= 3; i++) {
@@ -454,6 +472,7 @@ public class DataStoring  {
 	                }
 	                place.setType("NUTS");
 	                place.setLevel(i);
+	                place.setCountry(code.getCode().substring(0,2));
 	                
 	                if (sol.get("geo60M") != null) {
 	                	place.setGeometry60M(sol.get("geo60M").asLiteral().getLexicalForm());
@@ -512,10 +531,12 @@ public class DataStoring  {
 //                if (broaderCode.isNutsZ()) {
 //                	continue;
 //                }
+
+                Code code = Code.fromLauUri(sol.get("lau").toString(),"2021");
                 
                 PlaceDB place = new PlaceDB();
                 
-                place.setCode(Code.fromLauUri(sol.get("lau").toString(), "2021"));
+                place.setCode(code);
                 if (sol.get("broader") != null) {
                 	place.setParent(new PlaceDB(broaderCode));
                 }
@@ -525,6 +546,7 @@ public class DataStoring  {
                 }
                 place.setType("LAU");
                 place.setLevel(0);
+                place.setCountry(code.getCode().substring(0,2));
                 
                 if (sol.get("geo1M") != null) {
                 	place.setGeometry1M(sol.get("geo1M").asLiteral().getLexicalForm());

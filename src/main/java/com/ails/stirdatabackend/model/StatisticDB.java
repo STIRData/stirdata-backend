@@ -134,6 +134,11 @@ public class StatisticDB {
 		this.count = (int)count;
 	}	
 
+	public StatisticDB(long count, PlaceDB place) {
+		this.count = (int)count;
+		this.place = place;
+	}	
+	
 	public StatisticDB(long count, ActivityDB activity) {
 		this.count = (int)count;
 		this.activity = activity;
