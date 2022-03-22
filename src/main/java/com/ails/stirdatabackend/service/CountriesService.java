@@ -98,6 +98,21 @@ public class CountriesService {
     private StatisticsService statisticsService;
     
     
+	public void reload() {
+		Map<String, CountryDB> countryConfigurations = new HashMap<>();
+		
+		System.out.println("LOADING COUNTRIES: ");
+		String s = "";
+		for (CountryDB cc  : countriesRepository.findAll()) {
+			cc.setModelConfiguration(modelConfigurations.get(cc.getConformsTo()));
+//			cc.setStatistics(new HashSet<>(statisticsRepository.findDimensionsByCountry(cc.getCode())));
+			
+			s += cc.getCode() + " ";
+			countryConfigurations.put(cc.getCode(), cc);
+		}
+		logger.info("Loaded countries: " + s);
+	}
+	
     public boolean replace(Country country)  {
 		logger.info("Replacing country " + country.getCode() + ".");
 		
