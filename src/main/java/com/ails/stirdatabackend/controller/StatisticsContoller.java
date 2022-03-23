@@ -270,7 +270,7 @@ public class StatisticsContoller {
 			cfounding &= cc.isFoundingDate();
 			cdissolution &= cc.isDissolutionDate();
 			
-			Code defaultDate = Code.createDateCode(defaultFromDate, new Date(new java.util.Date().getTime()), Code.date10Y).normalizeDate(defaultFromDate);
+			Code defaultDate = Code.createDateCode(defaultFromDate, new Date(new java.util.Date().getTime()), Code.date1Y).normalizeDate(defaultFromDate);
 		    
 			/////////////////////
 			if (placedb != null && activitydb != null) {
@@ -602,7 +602,6 @@ public class StatisticsContoller {
 				}
 			
 			} else {
-				
 				if (ccurrent) {
 					
 					if (cc.getStatsDate(Dimension.DATA) != null && founding == null && dissolution == null) {
