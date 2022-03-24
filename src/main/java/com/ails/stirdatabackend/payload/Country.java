@@ -68,6 +68,11 @@ public class Country {
     private String foundingDateSparql;
     
     private String dissolutionDateSparql;
+    
+    private String licenceLabel;
+    
+    private String licenceUri;
+    
 		
 	public Country(String code) {
 		this.code = code;
@@ -76,6 +81,11 @@ public class Country {
 	public void setNaceScheme(String scheme, String namespace) {
 		this.naceScheme = scheme;
 		this.naceNamespace = namespace;
+	}
+	
+	public void setLicense(String label, String uri) {
+		this.licenceLabel = label;
+		this.licenceUri = uri;
 	}
 	
 }

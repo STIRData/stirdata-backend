@@ -203,6 +203,12 @@ public class CountryDB {
     @Column(name = "stats_nace_dissolution_date")
     private Date statsNaceDissolutionDate;
 
+    @Column(name = "license_label")
+    private String licenseLabel;
+
+    @Column(name = "license_uri")
+    private String licenseUri;
+
 	@Transient
     private ModelConfiguration modelConfiguration;
 	

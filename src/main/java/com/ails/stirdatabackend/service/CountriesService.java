@@ -195,6 +195,9 @@ public class CountriesService {
 
 //    	cc.setLegalEntityPrefix(country.getLegalEntityPrefix());
     	
+    	cc.setLicenseLabel(country.getLicenceLabel());
+    	cc.setLicenseUri(country.getLicenceUri());
+    	
     	if (cc.getDcat() == null) {
     		return false;
     	}

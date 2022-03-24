@@ -86,7 +86,16 @@ public class DatasetController {
 			
 			ci.setSparqlEndpoint(cc.getDataEndpoint());
 			ci.setLastUpdated(cc.getLastUpdated());
-			ci.setSource(new Resource(cc.getSourceUri(), cc.getSourceLabel()));
+			
+			if (cc.getSourceUri() != null) {
+				ci.setSource(new Resource(cc.getSourceUri(), cc.getSourceLabel()));
+			}
+			
+			if (cc.getLicenseUri() != null) {
+				ci.setLicense(new Resource(cc.getLicenseUri(), cc.getLicenseLabel()));
+			}
+			
+			
 			
 			ci.setLegalEntityCount(cc.getTotalLegalEntityCount());
 			ci.setActiveLegalEntityCount(cc.getActiveLegalEntityCount());

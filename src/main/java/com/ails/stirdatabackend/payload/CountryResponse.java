@@ -31,6 +31,7 @@ public class CountryResponse {
 	private Date lastUpdated;
 	
 	private Resource source;
+	private Resource license;
 
 	private String sparqlEndpoint;
 	
