@@ -155,6 +155,7 @@ public class ApplicationConfiguration {
 			
 		    String entitySparql = env.getProperty("sparql.entity." + m);
 		    String legalNameSparql = env.getProperty("sparql.legalName." + m);
+		    String tradingNameSparql = env.getProperty("sparql.tradingName." + m);
 		    String activeSparql = env.getProperty("sparql.active." + m);
 		    String nuts3Sparql = env.getProperty("sparql.nuts3." + m);
 		    String lauSparql = env.getProperty("sparql.lau." + m);
@@ -164,6 +165,7 @@ public class ApplicationConfiguration {
 
 		    mc.setEntitySparql(entitySparql);
 	    	mc.setLegalNameSparql(legalNameSparql);	
+	    	mc.setTradingNameSparql(tradingNameSparql);
 	    	mc.setActiveSparql(activeSparql);
 	    	mc.setNuts3Sparql(nuts3Sparql);	
 	    	mc.setLauSparql(lauSparql);	

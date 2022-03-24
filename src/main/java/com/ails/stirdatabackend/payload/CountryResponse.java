@@ -23,8 +23,11 @@ public class CountryResponse {
 	
 	private String conformsTo;
 	
+	private List<String> names;
+	
 	private List<String> placeVocabularies;
 	private List<String> activityVocabularies;
+	
 	private Interval foundingDate;
 	private Interval dissolutionDate;
 
@@ -53,6 +56,14 @@ public class CountryResponse {
 			activityVocabularies = new ArrayList<>();
 		}
 		activityVocabularies.add(s);
+	}
+	
+	
+	public void addName(String s) {
+		if (names == null) {
+			names = new ArrayList<>();
+		}
+		names.add(s);
 	}
 	   
 	

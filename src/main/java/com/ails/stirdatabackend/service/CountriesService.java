@@ -327,7 +327,15 @@ public class CountriesService {
            		}
             }	
         }
-        
+
+        try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), "ASK WHERE { " +  cc.getLegalNameSparql() + " }")) {
+			cc.setLegalName(qe.execAsk());
+        }
+
+        try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), "ASK WHERE { " +  cc.getTradingNameSparql() + " }")) {
+			cc.setTradingName(qe.execAsk());
+        }
+
         try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), "ASK WHERE { " +  cc.getNuts3Sparql() + " }")) {
 			cc.setNuts(qe.execAsk());
         }

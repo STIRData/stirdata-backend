@@ -75,6 +75,13 @@ public class DatasetController {
 			if (cc.isLau()) {
 				ci.addPlace(Code.lauNamespace);
 			}
+			
+			if (cc.isLegalName()) {
+				ci.addName("legal");
+			}
+			if (cc.isTradingName()) {
+				ci.addName("trading");
+			}
 
 			if (cc.isFoundingDate()) {
 				ci.setFoundingDate(new Interval(cc.getFoundingDateFrom(), cc.getFoundingDateTo()));

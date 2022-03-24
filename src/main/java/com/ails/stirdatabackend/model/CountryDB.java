@@ -128,6 +128,12 @@ public class CountryDB {
     private boolean nuts;
     private boolean nace;
     
+    @Column(name = "legal_name")
+    private boolean legalName;
+    
+    @Column(name = "trading_name")
+    private boolean tradingName;
+    
     @Column(name = "founding_date")
     private boolean foundingDate;
     
@@ -151,7 +157,10 @@ public class CountryDB {
     
     @Column(name = "legal_name_sparql")
     private String legalNameSparql;
-    
+
+    @Column(name = "trading_name_sparql")
+    private String tradingNameSparql;
+
     @Column(name = "active_sparql")
     private String activeSparql;
     
@@ -221,6 +230,10 @@ public class CountryDB {
     
     public String getLegalNameSparql() {
     	return legalNameSparql != null ? legalNameSparql : modelConfiguration.getLegalNameSparql();
+    }
+
+    public String getTradingNameSparql() {
+    	return tradingNameSparql != null ? tradingNameSparql : modelConfiguration.getTradingNameSparql();
     }
 
     public String getActiveSparql() {

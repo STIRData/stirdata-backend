@@ -13,6 +13,7 @@ public class ModelConfiguration {
     
     private String entitySparql;
     private String legalNameSparql;
+    private String tradingNameSparql;
     private String activeSparql;
     private String nuts3Sparql;
     private String naceSparql;
