@@ -42,12 +42,15 @@ public class PlaceDB {
 	@Column(name = "type", nullable = false)
 	private String type;
 
-	@Column(name = "level", nullable = false)
+	@Column(name = "level")
 	private int level;
 	
 	@Column(name = "number_of_children")
 	private int numberOfChildren = 0;
 
+	@Column(name = "extra_regio") // true for Z nuts
+	private boolean extraRegio;
+	
 	@Column(name = "country", nullable = false)
 	private String country;
 
@@ -100,5 +103,9 @@ public class PlaceDB {
 		}
 		
 		return null;
+	}
+	
+	public String toString() {
+		return code.toString();
 	}
 }

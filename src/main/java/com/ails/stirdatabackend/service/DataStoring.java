@@ -105,6 +105,14 @@ public class DataStoring  {
 			copyStatisticsFromMongoToRDBMS(cc, s);
 		}
 	}
+	
+	public void copyStatisticsFromMongoToRDBMS(CountryDB cc, Set<Dimension> dimensions) {
+		for (Statistic s : statisticsRepository.groupCountDimensionsByCountry(cc.getCode()) ) {
+			if (dimensions.contains(s.getDimension())) {
+				copyStatisticsFromMongoToRDBMS(cc, s);
+			}
+		}
+	}
 
 	private void copyStatisticsFromMongoToRDBMS(CountryDB cc, Statistic mongoStatistic) {
 		Dimension d = mongoStatistic.getDimension(); 
@@ -138,7 +146,7 @@ public class DataStoring  {
 	
 			if (ccDate.getTime().equals(mongoStatistic.getReferenceDate())) {
 				logger.info("DB statistics for " + cc.getCode() + " / " + d + " already up to date.");
-				return;
+		//		return;
 			}
 		}
 		
@@ -146,15 +154,15 @@ public class DataStoring  {
 		
 		List<Statistic> stats = statisticsRepository.findByCountryAndDimensionAndReferenceDate(cc.getCode(), d, newReferenceDate);
 
-		logger.info("Updating " + stats.size() + " DB statistics for " + cc.getCode() + " / " + d + ".");
+		logger.info("Updating " + stats.size() + " DB statistics for " + cc.getCode() + " / " + d + " / " + newReferenceDate + ".");
 		
 		copyStatisticsFromMongoToRDBMS(stats);
-		
+//		
 		if (stats.size() > 0) {
 			System.out.println(stats.size() + ".");
 		}
 		
-		statisticsDBRepository.deleteAllByCountryAndReferenceDateNot(cc.getCode(), newReferenceDate);
+		statisticsDBRepository.deleteAllByCountryAndDimensionAndReferenceDateNot(cc.getCode(), d.toString(), newReferenceDate);
 		statisticsDBRepository.flush();
 		
 		if (d.equals(Dimension.DATA)) {
@@ -413,20 +421,29 @@ public class DataStoring  {
 	
 	
 	public void updateNUTSDB() {
-//		List<StatisticDB> group = placesDBRepository.groupByParentPlace();
-//		for (StatisticDB st : group) {
-//			System.out.println(st.getPlace().getCode() + " " + st.getCount());
-//			PlaceDB placedb = placesDBRepository.findByCode(st.getPlace().getCode());
-//			placedb.setNumberOfChildren(st.getCount());
-//			placesDBRepository.save(placedb);
+//		List<PlaceDB> list = placesDBRepository.findByType("NUTS");
+//		for (PlaceDB st : list) {
+//			if (st.getCode().isNutsZ()) {
+//				System.out.println(st.getCode());
+//				st.setIgnore(true);
+//			}
+//			placesDBRepository.save(st);
 //		}		
-
-		List<PlaceDB> list = placesDBRepository.findAll();
-		for (PlaceDB st : list) {
-			System.out.println(st.getCode());
-			st.setCountry(st.getCode().getCode().substring(0,2));
-			placesDBRepository.save(st);
+		
+		List<StatisticDB> group = placesDBRepository.groupByParentPlace();
+		for (StatisticDB st : group) {
+			System.out.println(st.getPlace().getCode() + " " + st.getCount());
+			PlaceDB placedb = placesDBRepository.findByCode(st.getPlace().getCode());
+			placedb.setNumberOfChildren(st.getCount());
+			placesDBRepository.save(placedb);
 		}		
+
+//		List<PlaceDB> list = placesDBRepository.findAll();
+//		for (PlaceDB st : list) {
+//			System.out.println(st.getCode());
+//			st.setCountry(st.getCode().getCode().substring(0,2));
+//			placesDBRepository.save(st);
+//		}		
 
 	}
 	
@@ -473,6 +490,10 @@ public class DataStoring  {
 	                place.setType("NUTS");
 	                place.setLevel(i);
 	                place.setCountry(code.getCode().substring(0,2));
+	                
+	                if (code.isNutsZ()) {
+	    				place.setExtraRegio(true);
+	                }
 	                
 	                if (sol.get("geo60M") != null) {
 	                	place.setGeometry60M(sol.get("geo60M").asLiteral().getLexicalForm());
@@ -547,6 +568,8 @@ public class DataStoring  {
                 place.setType("LAU");
                 place.setLevel(0);
                 place.setCountry(code.getCode().substring(0,2));
+                
+                place.setExtraRegio(false);
                 
                 if (sol.get("geo1M") != null) {
                 	place.setGeometry1M(sol.get("geo1M").asLiteral().getLexicalForm());

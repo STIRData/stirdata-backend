@@ -1,5 +1,8 @@
 package com.ails.stirdatabackend.payload;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.ails.stirdatabackend.model.ActivityDB;
 import com.ails.stirdatabackend.model.Code;
 import com.ails.stirdatabackend.model.CountryConfiguration;
@@ -20,7 +23,7 @@ public class GenericResponse {
 
 	private CodeLabel country;
 
-	private CodeLabel place;
+	private List<CodeLabel> place;
 
 //	private String placeLabel;
 
@@ -28,7 +31,7 @@ public class GenericResponse {
 
 //   private String placeLatinName;
 
-	private CodeLabel activity;
+	private List<CodeLabel> activity;
 
 //	private String activityLabel;
 
@@ -55,39 +58,54 @@ public class GenericResponse {
 //
 //	}
 
-	public void setPlace(String code, String label) {
-		place = new CodeLabel(code, label);
+	public void addPlace(String code, String label) {
+		if (place == null) {
+			place = new ArrayList<>();
+		}
+		place.add(new CodeLabel(code, label));
 	}
 	
-	public void setPlace(String code, String label, String geometry) {
-		place = new CodeLabel(code, label, geometry);
+	public void addPlace(String code, String label, String geometry) {
+		if (place == null) {
+			place = new ArrayList<>();
+		}
+		place.add(new CodeLabel(code, label, geometry));
 	}
 
-	public void setActivity(String code, String label) {
-		activity = new CodeLabel(code, label);
+	public void addActivity(String code, String label) {
+		if (activity == null) {
+			activity = new ArrayList<>();
+		}
+		activity.add(new CodeLabel(code, label));
 	}
 
-	public static GenericResponse createFromStatistic(StatisticDB st, CountryDB cc, PlaceDB placedb, ActivityDB activitydb, Code founding, Code dissolution, String lang) {
+	public static GenericResponse createFromStatistic(StatisticDB st, CountryDB cc, List<PlaceDB> placedb, List<ActivityDB> activitydb, Code founding, Code dissolution, String lang) {
 		GenericResponse sr = new GenericResponse();
 //		sr.setCountryCode(st.getCountry());
 		if (cc != null) {
 			sr.setCountry(new CodeLabel(st.getCountry(), cc.getLabel()));
 		}
 		
-		if (placedb == null) {
-			placedb = st.getPlace();
+		if (placedb == null && st.getPlace() != null) {
+			placedb = new ArrayList<>();
+			placedb.add(st.getPlace());
 		}
 		
 		if (placedb != null) {
-			sr.setPlace(placedb.getCode().toString(), placedb.getLatinName() != null ? placedb.getLatinName() : placedb.getNationalName());
+			for (PlaceDB pl : placedb) {
+				sr.addPlace(pl.getCode().toString(), pl.getLatinName() != null ? pl.getLatinName() : pl.getNationalName());
+			}
 		}
 		
-		if (activitydb == null) {
-			activitydb = st.getActivity();
+		if (activitydb == null && st.getActivity() != null) {
+			activitydb = new ArrayList<>();
+			activitydb.add(st.getActivity());
 		}
 
 		if (activitydb != null) {
-			sr.setActivity(activitydb.getCode().toString(), activitydb.getLabel(lang));
+			for (ActivityDB ac : activitydb) {
+				sr.addActivity(ac.getCode().toString(), ac.getLabel(lang));
+			}
 		}
 		
 		if (founding != null) {
@@ -105,27 +123,33 @@ public class GenericResponse {
 
 	}
 	
-	public static GenericResponse createFromFoundingStatistic(StatisticDB st, CountryDB cc, PlaceDB placedb, ActivityDB activitydb, Code founding, Code dissolution, String lang) {
+	public static GenericResponse createFromFoundingStatistic(StatisticDB st, CountryDB cc, List<PlaceDB> placedb, List<ActivityDB> activitydb, Code founding, Code dissolution, String lang) {
 		GenericResponse sr = new GenericResponse();
 //		sr.setCountryCode(st.getCountry());
 		if (cc != null) {
 			sr.setCountry(new CodeLabel(st.getCountry(), cc.getLabel()));
 		}
 		
-		if (placedb == null) {
-			placedb = st.getPlace();
+		if (placedb == null && st.getPlace() != null) {
+			placedb = new ArrayList<>();
+			placedb.add(st.getPlace());
 		}
 		
 		if (placedb != null) {
-			sr.setPlace(placedb.getCode().toString(), placedb.getLatinName() != null ? placedb.getLatinName() : placedb.getNationalName());
+			for (PlaceDB pl : placedb) {
+				sr.addPlace(pl.getCode().toString(), pl.getLatinName() != null ? pl.getLatinName() : pl.getNationalName());
+			}
 		}
 		
-		if (activitydb == null) {
-			activitydb = st.getActivity();
+		if (activitydb == null && st.getActivity() != null) {
+			activitydb = new ArrayList<>();
+			activitydb.add(st.getActivity());
 		}
 
 		if (activitydb != null) {
-			sr.setActivity(activitydb.getCode().toString(), activitydb.getLabel(lang));
+			for (ActivityDB ac : activitydb) {
+				sr.addActivity(ac.getCode().toString(), ac.getLabel(lang));
+			}
 		}
 		
 		if (founding == null) {
@@ -159,27 +183,33 @@ public class GenericResponse {
 
 	}
 
-	public static GenericResponse createFromDissolutionStatistic(StatisticDB st, CountryDB cc, PlaceDB placedb, ActivityDB activitydb, Code founding, Code dissolution, String lang) {
+	public static GenericResponse createFromDissolutionStatistic(StatisticDB st, CountryDB cc, List<PlaceDB> placedb, List<ActivityDB> activitydb, Code founding, Code dissolution, String lang) {
 		GenericResponse sr = new GenericResponse();
 //		sr.setCountryCode(st.getCountry());
 		if (cc != null) {
 			sr.setCountry(new CodeLabel(st.getCountry(), cc.getLabel()));
 		}
 		
-		if (placedb == null) {
-			placedb = st.getPlace();
+		if (placedb == null && st.getPlace() != null) {
+			placedb = new ArrayList<>();
+			placedb.add(st.getPlace());
 		}
 		
 		if (placedb != null) {
-			sr.setPlace(placedb.getCode().toString(), placedb.getLatinName() != null ? placedb.getLatinName() : placedb.getNationalName());
+			for (PlaceDB pl : placedb) {
+				sr.addPlace(pl.getCode().toString(), pl.getLatinName() != null ? pl.getLatinName() : pl.getNationalName());
+			}
 		}
 		
-		if (activitydb == null) {
-			activitydb = st.getActivity();
+		if (activitydb == null && st.getActivity() != null) {
+			activitydb = new ArrayList<>();
+			activitydb.add(st.getActivity());
 		}
 
 		if (activitydb != null) {
-			sr.setActivity(activitydb.getCode().toString(), activitydb.getLabel(lang));
+			for (ActivityDB ac : activitydb) {
+				sr.addActivity(ac.getCode().toString(), ac.getLabel(lang));
+			}
 		}
 		
 		if (founding != null) {
@@ -214,7 +244,7 @@ public class GenericResponse {
 	
 	public static GenericResponse createFromActivity(ActivityDB activity, String lang) {
 		GenericResponse sr = new GenericResponse();
-		sr.setActivity(activity.getCode().toString(), activity.getLabel(lang));
+		sr.addActivity(activity.getCode().toString(), activity.getLabel(lang));
 
 		return sr;
 
@@ -222,7 +252,7 @@ public class GenericResponse {
 
 	public static GenericResponse createFromPlace(PlaceDB place, String resolution) {
 		GenericResponse sr = new GenericResponse();
-		sr.setPlace(place.getCode().toString(), place.getNationalName(), place.getGeometry(resolution));
+		sr.addPlace(place.getCode().toString(), place.getNationalName(), place.getGeometry(resolution));
 
 		return sr;
 	}

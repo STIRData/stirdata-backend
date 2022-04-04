@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import com.ails.stirdatabackend.model.ActivityDB;
 import com.ails.stirdatabackend.model.Code;
 import com.ails.stirdatabackend.model.CountryDB;
+import com.ails.stirdatabackend.model.PlaceDB;
 import com.ails.stirdatabackend.repository.ActivitiesDBRepository;
 
 import java.io.ByteArrayOutputStream;
@@ -66,6 +67,16 @@ public class NaceService {
     	}
     }
 
+    public List<ActivityDB> getParents(ActivityDB activity) {
+    	List<ActivityDB> parents = new ArrayList<>();
+    	
+    	while (activity.getParent() != null) {
+    		parents.add(0, activity.getParent());
+    		activity = activity.getParent();
+    	}
+    	
+    	return parents;
+    }
     
     public List<ActivityDB> getNextNaceLevelListDb(Code parent) {
 

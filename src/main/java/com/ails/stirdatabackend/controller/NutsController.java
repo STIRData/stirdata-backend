@@ -49,13 +49,15 @@ public class NutsController {
 
     @GetMapping(produces = "application/json")
     public ResponseEntity<?> getNutsDb(@RequestParam(required = false) Code top, 
+    		                           @RequestParam(defaultValue = "true") boolean lau,
     		                           @RequestParam(required = false) String geometry) {
         
     	PlaceDB parent = null;
     	List<PlaceDB> places = new ArrayList<>();
     	
     	if (top == null) {
-    		places = nutsService.getNextNutsLauLevelListDb(null);
+//    		places = nutsService.getNextNutsLauLevelListDb(null);
+    		places = nutsService.getNextDeepestListDb(null, lau);
     	} else if (top.isStirdata()) { 
 	        List<Code> codes = new ArrayList<>();
 	        for (CountryDB cc : countryConfigurations.values()) {
@@ -65,7 +67,8 @@ public class NutsController {
     	} else {
     		if (top.isNuts() || top.isLau()) {
     			parent = nutsService.getByCode(top);
-    			places = nutsService.getNextNutsLauLevelListDb(top);
+//    			places = nutsService.getNextNutsLauLevelListDb(top);
+    			places = nutsService.getNextDeepestListDb(top, lau);
     		}
     	}
     	

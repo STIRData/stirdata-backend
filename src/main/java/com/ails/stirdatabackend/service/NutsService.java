@@ -217,7 +217,7 @@ public class NutsService {
     
     public Code getNutsCodeFromLocalUri(CountryDB cc, String uri) {
   		//adjust prefix
-    	return Code.createLauCode(uri.substring(cc.getNutsPrefix().length()));
+    	return Code.createNutsCode(uri.substring(cc.getNutsPrefix().length()));
     }
     
     public Map<CountryDB, PlaceSelection> getEndpointsByNuts() {
@@ -265,25 +265,36 @@ public class NutsService {
     	return placesRepository.findByCode(code);
     }
     
+    public List<PlaceDB> getParents(PlaceDB place) {
+    	List<PlaceDB> parents = new ArrayList<>();
+    	
+    	while (place.getParent() != null) {
+    		parents.add(0, place.getParent());
+    		place = place.getParent();
+    	}
+    	
+    	return parents;
+    }
     
-    public PlaceNode buildPlaceTree(CountryDB cc) {
+    
+    public PlaceNode buildPlaceTree(CountryDB cc, boolean lau) {
     	PlaceNode res = new PlaceNode();
     	
-    	List<PlaceDB> next = getNextNutsLauLevelListDb(Code.createNutsCode(cc.getCode()));
+    	List<PlaceDB> next = this.getNextDeepestListDb(Code.createNutsCode(cc.getCode()), lau);
     	
     	for (PlaceDB r : next) {
     		res.addChild(r);
     	}
     	
     	for (PlaceNode r : res.getNext()) {
-    		buildPlaceTreeIter(r);
+    		buildPlaceTreeIter(r, lau);
     	}
     	
     	return res;
     }
     
-    public void buildPlaceTreeIter(PlaceNode place) {
-    	List<PlaceDB> next = getNextNutsLauLevelListDb(place.getNode().getCode());
+    public void buildPlaceTreeIter(PlaceNode place, boolean lau) {
+    	List<PlaceDB> next = getNextDeepestListDb(place.getNode().getCode(), lau);
     	
     	for (PlaceDB r : next) {
     		place.addChild(r);
@@ -291,9 +302,61 @@ public class NutsService {
     	
     	if (place.getNext() != null) {
 	    	for (PlaceNode r : place.getNext()) {
-	    		buildPlaceTreeIter(r);
+	    		buildPlaceTreeIter(r, lau);
 	    	}
     	}    	
+    }
+    
+    private PlaceDB getNextDeepestSingle(PlaceDB parent, boolean lau) {
+    	PlaceDB res = parent;
+    
+    	while (true) {
+    		
+    		if (res.getNumberOfChildren() > 1 || res.isLau() || (!lau && res.getCode().getNutsLevel() == 3)) {
+    			break;
+    		}
+    	
+    		res = placesRepository.findByParent(res).get(0);
+    	}
+    	
+    	return res;
+    	
+    	
+    }
+    
+    //returns deepest non single children nodes (next level may contain nuts and lau if parent nuts has single child).
+    public List<PlaceDB> getNextDeepestListDb(Code parent, boolean lau) {
+    	List<PlaceDB> places = new ArrayList<>();
+    	
+    	PlaceDB parentPlace = null;
+    	if (parent != null) {
+    		parentPlace = (new PlaceDB(parent));
+    	} else {
+    		return places;
+    	}
+    	
+    	if (!lau && parent.getNutsLevel() == 3) {
+    		return places;
+    	}
+
+		places = placesRepository.findByParent(parentPlace);
+		
+		if (places.size() == 1) {
+			PlaceDB next = getNextDeepestSingle(places.get(0), lau);
+			if (next.getNumberOfChildren() > 0 && (lau || !lau && next.getCode().getNutsLevel() !=3 )) {
+				places = placesRepository.findByParent(next);
+			} else {
+				places.set(0, next);
+			}
+		}
+		
+		if (places.size() > 1) {
+	    	for (int i = 0; i < places.size(); i++) {
+	    		places.set(i, getNextDeepestSingle(places.get(i), lau));
+	    	}
+		}
+		
+        return places;
     }
     
     public List<PlaceDB> getNextNutsLauLevelListDb(Code parent) {
@@ -302,22 +365,20 @@ public class NutsService {
     	PlaceDB parentPlace = null;
     	if (parent != null) {
     		parentPlace = (new PlaceDB(parent));
+    	} else {
+    		return places;
     	}
 
     	while (true) {
     		places = placesRepository.findByParent(parentPlace);
 
     		// inefficient!
-        	for (int i = 0; i < places.size(); ) {
+        	for (int i = 0; i < places.size();) {
         		if (!places.get(i).isNuts()) { // we are in lau
         			break;
         		}
         		
-        		if (places.get(i).getCode().isNutsZ()) {
-        			places.remove(i);
-        		} else {
-        			i++;
-        		}
+       			i++;
         	}
         	
             if (places.size() == 1) {

@@ -188,4 +188,8 @@ public class ActivityDB {
 		return null;
 	}
 
+	public String toString() {
+		return code.toString();
+	}
+
 }

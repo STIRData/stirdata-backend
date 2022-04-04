@@ -2,12 +2,15 @@ package com.ails.stirdatabackend.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import com.ails.stirdatabackend.model.PlaceDB;
 
 public class PlaceNode {
 	private PlaceDB node;
 	private List<PlaceNode> next;
+	
+	private int count;
 	
 	public PlaceNode() {
 		
@@ -39,7 +42,7 @@ public class PlaceNode {
 			s += "  ";
 		}
 		if (node != null) {
-			s = s + node.getCode() + "\n";
+			s = s + node.getCode() + " : " + count + "\n";
 		}
 		
 		if (next != null) {
@@ -51,8 +54,45 @@ public class PlaceNode {
 		return s;
 	}
 	
+	public void zero() {
+		count = 0;
+		if (next != null) {
+			for (PlaceNode pn : next) {
+				pn.zero();
+			}
+		}
+	}
+	
+	public void sum() {
+		if (next != null) {
+			for (PlaceNode pn : next) {
+				pn.sum();
+				
+				count += pn.count;
+			}
+		}
+	}	
+	
+	public void leaves(Set<PlaceNode> set) {
+		if (next == null) {
+			set.add(this);
+		} else {
+			for (PlaceNode pn : next) {
+				pn.leaves(set);
+			}
+		}
+	}		
+	
 	public String toString() {
 		return toString(0);
+	}
+
+	public int getCount() {
+		return count;
+	}
+
+	public void setCount(int count) {
+		this.count = count;
 	}
 
 }

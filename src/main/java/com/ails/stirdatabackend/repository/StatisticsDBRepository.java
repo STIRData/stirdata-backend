@@ -27,7 +27,7 @@ public interface StatisticsDBRepository extends JpaRepository<StatisticDB, Integ
 	  public void deleteAllByCountryAndDimensionAndPlace(String country, String dimension, String place);
 
 	  @Transactional
-	  public void deleteAllByCountryAndReferenceDateNot(String country, Date referenceDate);
+	  public void deleteAllByCountryAndDimensionAndReferenceDateNot(String country, String dimension, Date referenceDate);
 	  
 	  @Transactional
 	  public void deleteAllByDimension(String dimension);
