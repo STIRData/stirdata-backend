@@ -15,7 +15,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -25,13 +24,14 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
-    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    @Autowired
+    private AuthenticationManager authenticationManager;
 
     @Autowired
-    AuthenticationManager authenticationManager;
+    private JwtTokenProvider tokenProvider;
 
-    @Autowired
-    JwtTokenProvider tokenProvider;
+    @Autowired 
+    private PasswordEncoder passwordEncoder;
 
 
     public User checkAndCreateNewUser(GoogleAccountUserInfoDTO request) {
@@ -63,6 +63,7 @@ public class UserService {
 
     public Optional<String> loginUser(LoginRequestDTO loginRequest) {
         try {
+            System.out.println(loginRequest.getPassword());
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getEmail(),
@@ -73,6 +74,7 @@ public class UserService {
             return Optional.of(jwt);
         }
         catch (BadCredentialsException e) {
+            System.out.println("bad creds");
             return Optional.empty();
         }
     }
