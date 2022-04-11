@@ -17,7 +17,5 @@ public class UserRegistrationDTO {
     private String email;
     @NotNull
     private String password;
-    @NotNull
-    private String repeatPassword;
     
 }
