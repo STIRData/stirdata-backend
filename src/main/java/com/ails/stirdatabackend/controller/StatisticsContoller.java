@@ -247,7 +247,7 @@ public class StatisticsContoller {
 				placeParent = null;
 			}
 			
-			System.out.println("P3 " + placeParent);
+//			System.out.println("P3 " + placeParent);
 			
 		} else if (placedb.size() == 1) {
 			placeParent = placedb.get(0).getCode();
@@ -274,7 +274,7 @@ public class StatisticsContoller {
 			if (parents.size() > 0) {
 				activityParent = parents.get(parents.size() - 1).getCode();	
 			}
-			System.out.println("A3 " + activityParent);
+//			System.out.println("A3 " + activityParent);
 			
 		} else if (activitydb.size() == 1) {
 			activityParent = activitydb.get(0).getCode();
@@ -297,11 +297,13 @@ public class StatisticsContoller {
 			activitydbCodes.add(ac.getCode());
 		}
 
-		System.out.println("PLACE " + placedbCodes);
-		System.out.println("PARENT PLACE " + placeParent);
-
-		System.out.println("ACTIVITY " + activitydbCodes);
-		System.out.println("PARENT ACTIVITY " + activityParent);
+//		System.out.println("COUNTRY " + country);
+//		
+//		System.out.println("PLACE " + placedbCodes);
+//		System.out.println("PARENT PLACE " + placeParent);
+//
+//		System.out.println("ACTIVITY " + activitydbCodes);
+//		System.out.println("PARENT ACTIVITY " + activityParent);
 
 		if (country == null) {
 			if (placedb.isEmpty() && activitydb.isEmpty() && founding == null && dissolution == null) {
@@ -349,7 +351,7 @@ public class StatisticsContoller {
 			if (!placedb.isEmpty() && !(cc.isNuts() || cc.isLau())) {
 				return ResponseEntity.ok(sr);
 			}
-			if (activitydb != null && !cc.isNace()) {
+			if (!activitydb.isEmpty() && !cc.isNace()) {
 				return ResponseEntity.ok(sr);
 			}
 			if (founding != null && !cc.isFoundingDate()) {
