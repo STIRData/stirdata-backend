@@ -50,7 +50,7 @@ public class NutsController {
     @GetMapping(produces = "application/json")
     public ResponseEntity<?> getNutsDb(@RequestParam(required = false) Code top, 
     		                           @RequestParam(defaultValue = "true") boolean lau,
-    		                           @RequestParam(required = false) String geometry) {
+    		                           @RequestParam(required = false) List<String> geometry) {
         
     	PlaceDB parent = null;
     	List<PlaceDB> places = new ArrayList<>();

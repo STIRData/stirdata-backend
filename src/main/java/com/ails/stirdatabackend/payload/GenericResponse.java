@@ -250,10 +250,23 @@ public class GenericResponse {
 
 	}
 
-	public static GenericResponse createFromPlace(PlaceDB place, String resolution) {
+	public static GenericResponse createFromPlace(PlaceDB place, List<String> resolution) {
 		GenericResponse sr = new GenericResponse();
-		sr.addPlace(place.getCode().toString(), place.getNationalName(), place.getGeometry(resolution));
 
+		if (resolution != null) { 
+			for (int i = 0; i < resolution.size(); i++) {
+				String geometry = place.getGeometry(resolution.get(i));
+				if (geometry != null) {
+					sr.addPlace(place.getCode().toString(), place.getNationalName(), geometry);
+					break;
+				}
+			}
+		}
+		
+		if (sr.getPlace() == null) {
+			sr.addPlace(place.getCode().toString(), place.getNationalName());
+		}
+		
 		return sr;
 	}
 }

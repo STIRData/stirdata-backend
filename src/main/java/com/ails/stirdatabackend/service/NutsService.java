@@ -360,6 +360,10 @@ public class NutsService {
     }
     
     public List<PlaceDB> getNextNutsLauLevelListDb(Code parent) {
+    	return getNextDeepestListDb(parent, true);
+    }
+    
+    public List<PlaceDB> getNextNutsLauLevelListDbSameLevel(Code parent) {
     	List<PlaceDB> places = new ArrayList<>();
     	
     	PlaceDB parentPlace = null;
@@ -373,13 +377,13 @@ public class NutsService {
     		places = placesRepository.findByParent(parentPlace);
 
     		// inefficient!
-        	for (int i = 0; i < places.size();) {
-        		if (!places.get(i).isNuts()) { // we are in lau
-        			break;
-        		}
-        		
-       			i++;
-        	}
+//        	for (int i = 0; i < places.size();) {
+//        		if (!places.get(i).isNuts()) { // we are in lau
+//        			break;
+//        		}
+//        		
+//       			i++;
+//        	}
         	
             if (places.size() == 1) {
             	PlaceDB place = places.get(0); 
