@@ -46,6 +46,9 @@ import com.ails.stirdatabackend.repository.CountriesDBRepository;
 import com.ails.stirdatabackend.repository.StatisticsRepository;
 import com.ails.stirdatabackend.vocs.DCATVocabulary;
 import com.ails.stirdatabackend.vocs.DCTVocabulary;
+import com.ails.stirdatabackend.vocs.SDVocabulary;
+
+import antlr.CSharpCodeGenerator;
 
 @Transactional
 @Service
@@ -53,8 +56,8 @@ public class CountriesService {
 	
 	Logger logger = LoggerFactory.getLogger(CountriesService.class);
 
-	@Value("${endpoint.nace.00}")
-	String defaultNaceEndpoint;
+//	@Value("${endpoint.nace.00}")
+//	String defaultNaceEndpoint;
 	
 	@Value("${endpoint.nuts.00}")
 	String defaultNutsEndpoint;
@@ -153,32 +156,41 @@ public class CountriesService {
     	cc.setEntitySparql(country.getEntitySparql());
     	cc.setLegalNameSparql(country.getLegalNameSparql());
     	cc.setActiveSparql(country.getActiveSparql());
+    	cc.setAddressSparql(country.getAddressSparql());
     	cc.setNuts3Sparql(country.getNuts3Sparql());
     	cc.setLauSparql(country.getLauSparql());
     	cc.setNaceSparql(country.getNaceSparql());
     	cc.setFoundingDateSparql(country.getFoundingDateSparql());
     	cc.setDissolutionDateSparql(country.getDissolutionDateSparql());
 
-		cc.setNaceEndpoint(country.getNaceEnpoint() != null ? country.getNaceEnpoint() : defaultNaceEndpoint); 
+//		cc.setNaceEndpoint(country.getNaceEnpoint() != null ? country.getNaceEnpoint() : defaultNaceEndpoint); 
+    	cc.setNaceEndpoint(country.getNaceEnpoint());
+		
+		if (cc.getNaceEndpoint() != null) {
+		    cc.setNacePath1(country.getNacePath1() != null || country.getNacePathSparql() != null ? country.getNacePath1() : defaultNacePath1);
+		    cc.setNacePath2(country.getNacePath2() != null || country.getNacePathSparql() != null  ? country.getNacePath2() : defaultNacePath2);
+		    cc.setNacePath3(country.getNacePath3() != null || country.getNacePathSparql() != null ? country.getNacePath3() : defaultNacePath3);
+		    cc.setNacePath4(country.getNacePath4() != null || country.getNacePathSparql() != null ? country.getNacePath4() : defaultNacePath4);
+	
+	//	    cc.setNaceFixedLevel(country.getNaceFixedLevel() != null || country.getNacePathSparql() != null  ? country.getNaceFixedLevel() : Integer.parseInt(defaultNaceFixedLevel));
+	//		why the above gives exception????
+		    if (country.getNaceFixedLevel() != null || country.getNacePathSparql() != null) { 
+		    	if ( country.getNaceFixedLevel() != null) {
+		    		cc.setNaceFixedLevel(country.getNaceFixedLevel());
+		    	}
+		    } else {
+		    	cc.setNaceFixedLevel(Integer.parseInt(defaultNaceFixedLevel));
+		    }
+		} else {
+			cc.setNacePath1(null);
+			cc.setNacePath2(null);
+			cc.setNacePath3(null);
+			cc.setNacePath4(null);
+			cc.setNaceFixedLevel(null);
+		}
+		
 		cc.setNutsEndpoint(country.getNutsEndpoint() != null ? country.getNutsEndpoint() : defaultNutsEndpoint); 
 
-		
-	    cc.setNacePath1(country.getNacePath1() != null || country.getNacePathSparql() != null ? country.getNacePath1() : defaultNacePath1);
-	    cc.setNacePath2(country.getNacePath2() != null || country.getNacePathSparql() != null  ? country.getNacePath2() : defaultNacePath2);
-	    cc.setNacePath3(country.getNacePath3() != null || country.getNacePathSparql() != null ? country.getNacePath3() : defaultNacePath3);
-	    cc.setNacePath4(country.getNacePath4() != null || country.getNacePathSparql() != null ? country.getNacePath4() : defaultNacePath4);
-	    
-
-//	    cc.setNaceFixedLevel(country.getNaceFixedLevel() != null || country.getNacePathSparql() != null  ? country.getNaceFixedLevel() : Integer.parseInt(defaultNaceFixedLevel));
-//		why the above gives exception????
-	    if (country.getNaceFixedLevel() != null || country.getNacePathSparql() != null) { 
-	    	if ( country.getNaceFixedLevel() != null) {
-	    		cc.setNaceFixedLevel(country.getNaceFixedLevel());
-	    	}
-	    } else {
-	    	cc.setNaceFixedLevel(Integer.parseInt(defaultNaceFixedLevel));
-	    }
-	    
 	    cc.setNutsPrefix(country.getNutsPrefix() != null ? country.getNutsPrefix() : defaultNutsPrefix);	
 	    cc.setLauPrefix(country.getLauPrefix() != null ? country.getLauPrefix() : defaultLauPrefix);	
 
@@ -208,6 +220,8 @@ public class CountriesService {
     	if (mc == null) {
     		return false;
     	}
+    	
+    	cc.setLastAccessedStart(new Date());
     	
     	loadCountry(cc);
     	
@@ -318,7 +332,7 @@ public class CountriesService {
         }
         
         if (cc.isNace() && cc.getNaceEndpoint() != null) {
-        	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), "SELECT (MAX(?level) AS ?maxLevel) WHERE { ?nace <http://www.w3.org/2004/02/skos/core#inScheme> <" +  cc.getNaceScheme() + "> . ?nace <https://lod.stirdata.eu/nace/ont/level> ?level }")) {
+        	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), "SELECT (MAX(?level) AS ?maxLevel) WHERE { ?nace <http://www.w3.org/2004/02/skos/core#inScheme> <" +  cc.getNaceScheme() + "> . ?nace <" + SDVocabulary.level + "> ?level }")) {
         		
            		ResultSet rs = qe.execSelect();
            		while (rs.hasNext()) {
@@ -393,8 +407,11 @@ public class CountriesService {
        			QuerySolution qs = rs.next();
        			entityUris.add(qs.get("entity").toString());
             }
-       		
         }
+
+       	
+//       	System.out.println(cc.getDataEndpoint());
+//       	System.out.println("SELECT ?entity WHERE { " +  cc.getEntitySparql()  + " } LIMIT 50");
 
        	if (cc.getTotalLegalEntityCount() - 50 > 0 ) {
 	       	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), "SELECT ?entity WHERE { " +  cc.getEntitySparql()  + " } LIMIT 50 OFFSET " + (cc.getTotalLegalEntityCount() - 50) )) {
@@ -407,6 +424,8 @@ public class CountriesService {
 	       		
 	        }
        	}
+       	
+//       	System.out.println(entityUris);
        	
    		String entityPrefix = StringUtils.getCommonPrefix(entityUris.toArray(new String[] {}));
    		

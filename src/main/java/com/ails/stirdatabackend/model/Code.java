@@ -21,11 +21,15 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Code implements Serializable {
 
-    public final static String nutsPrefix = "https://lod.stirdata.eu/nuts/code/";
-    public final static String lauPrefix = "https://lod.stirdata.eu/lau/code/";
+//    public final static String nutsPrefix = "https://lod.stirdata.eu/nuts/code/";
+//    public final static String lauPrefix = "https://lod.stirdata.eu/lau/code/";
+	public final static String nutsPrefix = "https://w3id.org/stirdata/resource/nuts/item/";
+	public final static String lauPrefix = "https://w3id.org/stirdata/resource/lau/item/";
+	
 //    public final static String lau2021Prefix = "https://lod.stirdata.eu/lau/code/2021/";
     
-    public final static String naceRev2Prefix = "https://lod.stirdata.eu/nace/nace-rev2/code/";
+//    public final static String naceRev2Prefix = "https://lod.stirdata.eu/nace/nace-rev2/code/";
+	public final static String naceRev2Prefix = "https://w3id.org/stirdata/resource/nace/nace-rev2/item/";
     public final static String naceRev2Namespace = "nace-rev2";
 
     public final static String nutsNamespace = "nuts";

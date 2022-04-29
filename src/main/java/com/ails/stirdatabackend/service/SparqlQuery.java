@@ -59,6 +59,8 @@ public class SparqlQuery {
     public Calendar[] minMaxFoundingDate(CountryDB cc) {
    		Calendar[] date = new Calendar[2];
    		try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), minMaxFoundingDateQuery(cc))) {
+   			System.out.println("A " + cc.getDataEndpoint());
+   			System.out.println("B " + minMaxFoundingDateQuery(cc));
 	    	ResultSet rs = qe.execSelect();
 		    	
 	    	while (rs.hasNext()) {
@@ -79,15 +81,21 @@ public class SparqlQuery {
     public Calendar[] minMaxDissolutionDate(CountryDB cc) {
     	Calendar[] date = new Calendar[2];
     	
+//    	System.out.println(minMaxDissolutionDateQuery(cc));
+    	
    		try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), minMaxDissolutionDateQuery(cc))) {
 	    	ResultSet rs = qe.execSelect();
 		    	
 	    	while (rs.hasNext()) {
 	    		QuerySolution sol = rs.next();
-		
-	    		date[0] = ((XSDDateTime)sol.get("minDate").asLiteral().getValue()).asCalendar();
-	    		date[1] = ((XSDDateTime)sol.get("maxDate").asLiteral().getValue()).asCalendar();
-
+	    		
+	    		if (sol.get("minDate") != null) {
+		    		date[0] = ((XSDDateTime)sol.get("minDate").asLiteral().getValue()).asCalendar();
+		    		date[1] = ((XSDDateTime)sol.get("maxDate").asLiteral().getValue()).asCalendar();
+	    		} else {
+	    			date[0] = null;
+	    			date[1] = null;
+	    		}
 	    	}
 	    }
    		

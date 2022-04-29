@@ -55,6 +55,12 @@ public class CountryDB {
 	@Column(name = "last_updated")
 	private Date lastUpdated;
 
+	@Column(name = "last_accessed_start")
+	private Date lastAccessedStart;
+
+	@Column(name = "last_accessed_end")
+	private Date lastAccessedEnd;
+
 	@Column(name = "accrual_periodicity", columnDefinition="TEXT")
 	private String accrualPeriodicity;
 
@@ -164,15 +170,18 @@ public class CountryDB {
     @Column(name = "active_sparql")
     private String activeSparql;
     
-    @Column(name = "nuts3_sparql")
-    private String nuts3Sparql;
-    
     @Column(name = "nace_sparql")
     private String naceSparql;
     
 	@Column(name = "nace_path_sparql")
 	private String nacePathSparql;
-    
+
+    @Column(name = "address_sparql")
+    private String addressSparql;
+
+    @Column(name = "nuts3_sparql")
+    private String nuts3Sparql;
+
     @Column(name = "lau_sparql")
     private String lauSparql;
     
@@ -240,12 +249,16 @@ public class CountryDB {
     	return activeSparql != null ? activeSparql : modelConfiguration.getActiveSparql();
     }
 
-    public String getNuts3Sparql() {
-    	return nuts3Sparql != null ? nuts3Sparql : modelConfiguration.getNuts3Sparql();
-    }
-
     public String getNaceSparql() {
     	return naceSparql != null ? naceSparql : modelConfiguration.getNaceSparql();
+    }
+
+    public String getAddressSparql() {
+    	return addressSparql != null ? addressSparql : modelConfiguration.getAddressSparql();
+    }
+
+    public String getNuts3Sparql() {
+    	return nuts3Sparql != null ? nuts3Sparql : modelConfiguration.getNuts3Sparql();
     }
 
     public String getLauSparql() {

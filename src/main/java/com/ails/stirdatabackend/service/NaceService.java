@@ -16,6 +16,7 @@ import com.ails.stirdatabackend.model.Code;
 import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.PlaceDB;
 import com.ails.stirdatabackend.repository.ActivitiesDBRepository;
+import com.ails.stirdatabackend.vocs.SDVocabulary;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
@@ -111,10 +112,10 @@ public class NaceService {
     	
     	sparql += " WHERE { ";
 
-    	sparql += "?code <http://www.w3.org/2004/02/skos/core#inScheme> <https://lod.stirdata.eu/nace/scheme/NACERev2> . ";
+    	sparql += "?code <http://www.w3.org/2004/02/skos/core#inScheme> <https://w3id.org/stirdata/resource/nace/scheme/NACERev2> . ";
     	
 		if (parent == null) {
-		    sparql += "?code <https://lod.stirdata.eu/nace/ont/level> 1 . ";
+		    sparql += "?code <" + SDVocabulary.level + "> 1 . ";
 		} else {
 		    sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parent + "> " +  ". ";
 		}
@@ -141,10 +142,12 @@ public class NaceService {
     		naceLeafUris = new ArrayList<>();
 
 			for (Code code : naceCodes) {
+				System.out.println(code);
 				if (cc.getNacePathSparql() != null) {
-					naceLeafUris.add(Code.naceRev2Prefix + code.getCode());	
+					naceLeafUris.add(Code.naceRev2Prefix + code.getCode()); // triples store contains local naces 	
 				} else {
-					naceLeafUris.addAll(getNaceLeafUris(cc, code));
+					naceLeafUris.addAll(getNaceLeafUrisTS(cc, code));
+//					naceLeafUris.addAll(getNaceLeafUrisDB(cc, code)); // much slower
 				}
             }
     	}
@@ -152,7 +155,7 @@ public class NaceService {
     	return naceLeafUris;
     }    
     
-    private Set<String> getNaceLeafUris(CountryDB cc, Code code) {
+    private Set<String> getNaceLeafUrisTS(CountryDB cc, Code code) {
     	Set<String> res = new HashSet<>();
 
     	int level = code.getNaceRev2Level();
@@ -175,7 +178,7 @@ public class NaceService {
     	}
     	
     	if (cc.getNaceFixedLevel() >= 0) {
-    		sparql += " ?activity <https://lod.stirdata.eu/nace/ont/level> " + cc.getNaceFixedLevel() + " . ";
+    		sparql += " ?activity <" + SDVocabulary.level + "> " + cc.getNaceFixedLevel() + " . ";
     	}
     	
 		sparql += " ?activity skos:inScheme <" + cc.getNaceScheme() + "> } ";
@@ -192,5 +195,55 @@ public class NaceService {
 
     }    
     
+    private Set<String> getNaceLeafUrisDB(CountryDB cc, Code code) {
+    	Set<String> res = new HashSet<>();
+
+    	int level = code.getNaceRev2Level();
+    	if (level < 0) {
+    		return res;
+    	}
+
+    	List<ActivityDB> activities = new ArrayList<>();  
+    	
+    	if (cc.getNaceFixedLevel() == 5) {
+    		if (level == 1) {
+    			activities.addAll(activitiesRepository.findLevel4AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    		} else if (level == 2) {
+    			activities.addAll(activitiesRepository.findLevel3AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    		} else if (level == 3) {
+    			activities.addAll(activitiesRepository.findLevel2AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    		} else if (level == 4) {
+    			activities.addAll(activitiesRepository.findLevel1AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    		} 
+    	} else if (cc.getNaceFixedLevel() == -5) {
+    		if (level == 1) {
+    			activities.addAll(activitiesRepository.findLevel4AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    			activities.addAll(activitiesRepository.findLevel3AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    			activities.addAll(activitiesRepository.findLevel2AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    			activities.addAll(activitiesRepository.findLevel1AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    			activities.addAll(activitiesRepository.findLevel0AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    		} else if (level == 2) {
+    			activities.addAll(activitiesRepository.findLevel3AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    			activities.addAll(activitiesRepository.findLevel2AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    			activities.addAll(activitiesRepository.findLevel1AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    			activities.addAll(activitiesRepository.findLevel0AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    		} else if (level == 3) {
+    			activities.addAll(activitiesRepository.findLevel2AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    			activities.addAll(activitiesRepository.findLevel1AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    			activities.addAll(activitiesRepository.findLevel0AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    		} else if (level == 4) {
+    			activities.addAll(activitiesRepository.findLevel1AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    			activities.addAll(activitiesRepository.findLevel0AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    		} 
+    	}
+
+    	
+		for (ActivityDB ac : activities) {
+			res.add(cc.getNacePrefix() + "" + ac.getCode().getCode());
+		}
+    	
+    	return res;
+
+    }        
 
 }

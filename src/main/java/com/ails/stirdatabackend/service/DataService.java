@@ -60,9 +60,6 @@ import com.github.jsonldjava.core.JsonLdError;
 public class DataService {
 
 	@Autowired
-	private Environment env;
-	
-	@Autowired
 	ResourceLoader resourceLoader;
 	
 	@Autowired
@@ -111,8 +108,8 @@ public class DataService {
         		" WHERE { " +
                 cc.getEntitySparql() + " " +
                 cc.getLegalNameSparql() + " " + 
-                cc.getActiveSparql() + " " +
-                "OPTIONAL { " + cc.getNuts3Sparql() + " ?address ?ap ?ao . } " + 
+                (cc.isDissolutionDate() ? cc.getActiveSparql() : "") + " " +
+                "OPTIONAL { " + cc.getAddressSparql() + " ?address ?ap ?ao . } " + 
 	            "OPTIONAL { " + cc.getNaceSparql() + " } " +
                 "OPTIONAL { " + cc.getFoundingDateSparql() + " } " +
                 "VALUES ?entity { <" + uri + "> } } ";

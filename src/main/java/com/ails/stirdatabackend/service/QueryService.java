@@ -77,8 +77,8 @@ public class QueryService {
         		" WHERE { " +
                 cc.getEntitySparql() + " " +
                 cc.getLegalNameSparql() + " " + 
-                cc.getActiveSparql() + " " +
-                "OPTIONAL { " + cc.getNuts3Sparql() + " ?address ?ap ?ao . } " + 
+                (cc.isDissolutionDate() ? cc.getActiveSparql() : "") + " " +
+                "OPTIONAL { " + cc.getAddressSparql() + " ?address ?ap ?ao . } " + 
 	            "OPTIONAL { " + cc.getNaceSparql() + " } " +
                 "OPTIONAL { " + cc.getFoundingDateSparql() + " } " +
                 "VALUES ?entity { <" + uri + "> } } ";
@@ -135,7 +135,7 @@ public class QueryService {
         	CountryDB cc = ccEntry.getKey();
         	PlaceSelection places = ccEntry.getValue();
         	
-        	List<String> naceLeafUris = naceService.getLocalNaceLeafUris(cc, naceCodes);
+        	List<String> naceLeafUris = cc.getNaceEndpoint() == null ? null : naceService.getLocalNaceLeafUris(cc, naceCodes);
         	List<String> nutsLeafUris = places == null ? null : nutsService.getLocalNutsLeafUrisDB(cc, places.getNuts3()); 
         	List<String> lauUris = places == null ? null : nutsService.getLocalLauUris(cc, places.getLau());
         	
@@ -154,13 +154,17 @@ public class QueryService {
         		responseList.add(qr);
         	}
         	
+
+        	
         	//could use statistics table instead of this if available
+        	
+//        	System.out.println(countQuery);
         	SparqlQuery sparql = SparqlQuery.buildCoreQuery(cc, true, true, nutsLeafUris, lauUris, naceLeafUris, founding, dissolution); 
 
             if (page == 1) {
             	String countQuery = sparql.countSelectQuery();
             	
-//            	System.out.println(countQuery);
+//            	System.out.println(QueryFactory.create(countQuery));
 //              System.out.println(cc.getDataEndpoint());
              
                 try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), QueryFactory.create(countQuery, Syntax.syntaxARQ))) {
@@ -179,7 +183,7 @@ public class QueryService {
             
             String query = sparql.allSelectQuery(offset, pageSize);
             
-//           System.out.println(query);
+//           System.out.println(QueryFactory.create(query));
 
             Map<String, LegalEntity> companies = new LinkedHashMap<>();
 
@@ -193,7 +197,7 @@ public class QueryService {
                 }
             }
             
-//            System.out.println(companyUris.size() + " "+ companyUris);
+//            System.out.println(companies);
 
             if (!companies.isEmpty()) {
             	
@@ -215,8 +219,8 @@ public class QueryService {
 	            		" WHERE { " +
                         cc.getEntitySparql() + " " +
                         cc.getLegalNameSparql() + " " + 
-                        cc.getActiveSparql() + " " +
-                        "OPTIONAL { " + cc.getNuts3Sparql() + " ?address ?ap ?ao . } " + 
+                        (cc.isDissolutionDate() ? cc.getActiveSparql() : "") + " " +
+                        "OPTIONAL { " + cc.getAddressSparql() + " ?address ?ap ?ao . } " + 
         	            "OPTIONAL { " + cc.getNaceSparql() + " } " +
 	                    "OPTIONAL { " + cc.getFoundingDateSparql() + " } " +
 	                    "VALUES ?entity { " + values + "} } ";
@@ -233,7 +237,7 @@ public class QueryService {
 	                    "VALUES ?entity { " + values + "} } ";
             	}
 	
-//                System.out.println(sparqlConstruct);
+//                System.out.println(QueryFactory.create(sparqlConstruct));
 	            try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), QueryFactory.create(sparqlConstruct, Syntax.syntaxARQ))) {
 	                Model model = qe.execConstruct();
 	                
@@ -305,7 +309,7 @@ public class QueryService {
             boolean nuts3 = gnuts3;
 //	        boolean lau = glau;
             
-        	List<String> naceLeafUris = naceService.getLocalNaceLeafUris(cc, naceCodes);
+        	List<String> naceLeafUris = cc.getNaceEndpoint() == null ? null : naceService.getLocalNaceLeafUris(cc, naceCodes);
         	List<String> nutsLeafUris = places == null ? null : nutsService.getLocalNutsLeafUris(cc, places.getNuts3()); 
         	List<String> lauUris = places == null ? null : nutsService.getLocalLauUris(cc, places.getLau());
         	
@@ -388,7 +392,7 @@ public class QueryService {
 				
 				ActivityDB activity = naceService.getByCode(Code.fromNaceUri((String)companyActivityObj, cc));
 				if (activity != null) {
-					lg.addCompanyActivity(new CodeLabel(activity.getCode().toString(), activity.getLabel(cc.getPreferredNaceLanguage())));
+					lg.addCompanyActivity(new CodeLabel(activity.getCode().toString(), activity.getLabel(cc.getPreferredNaceLanguage()), (String)companyActivityObj));
 				}
 				
 			} else if (companyActivityObj instanceof List) {
@@ -396,7 +400,7 @@ public class QueryService {
 					ActivityDB activity = naceService.getByCode(Code.fromNaceUri((String)s, cc));
 
 					if (activity != null) {
-						lg.addCompanyActivity(new CodeLabel(activity.getCode().toString(), activity.getLabel(cc.getPreferredNaceLanguage())));
+						lg.addCompanyActivity(new CodeLabel(activity.getCode().toString(), activity.getLabel(cc.getPreferredNaceLanguage()), (String)s));
 					}
 
 				}
@@ -418,6 +422,7 @@ public class QueryService {
 	
 	public Address createAddressFromJsonld(Map<String, Object> map, CountryDB cc) {
 		
+//		System.out.println(map);
 		Address address = new Address();
 		
 		Object adminUnitL1Obj = map.get("adminUnitL1");
@@ -508,25 +513,32 @@ public class QueryService {
 			}		
 		}
 		
-		Object nuts3Obj = map.get("nuts3");
-		if (nuts3Obj != null) {
-			if (nuts3Obj instanceof String) {
-				PlaceDB place = nutsService.getByCode(Code.fromNutsUri((String)nuts3Obj));
-				if (place != null) {
-					address.setNuts3(new CodeLabel(place.getCode().toString(), place.getLatinName() != null ? place.getLatinName() : place.getNationalName()));
+		Object adminUnitObj = map.get("adminUnit");
+		if (adminUnitObj != null) {
+			List adminUnitList = null;
+			if (adminUnitObj instanceof String) {
+				adminUnitList = new ArrayList<>();
+				adminUnitList.add(adminUnitObj);
+			} else if (adminUnitObj instanceof List) {
+				adminUnitList = (List)adminUnitObj;
+			}
+			
+			if (adminUnitList != null) {
+				for (Object s : (List)adminUnitList) {
+					PlaceDB nuts3 = nutsService.getByCode(Code.fromNutsUri((String)s));
+					if (nuts3 != null) {
+						address.setNuts3(new CodeLabel(nuts3.getCode().toString(), nuts3.getLatinName() != null ? nuts3.getLatinName() : nuts3.getNationalName(), (String)s));
+						continue;
+					}	
+					
+					PlaceDB lau = nutsService.getByCode(Code.fromLauUri((String)s, cc));
+					if (lau != null) {
+						address.setLau(new CodeLabel(lau.getCode().toString(), lau.getLatinName() != null ? lau.getLatinName() : lau.getNationalName(), (String)s));
+						continue;
+					}
 				}
 			}
 		}	
-		
-		Object lauObj = map.get("lau");
-		if (lauObj != null) {
-			if (lauObj instanceof String) {
-				PlaceDB place = nutsService.getByCode(Code.fromLauUri((String)lauObj, cc));
-				if (place != null) {
-					address.setLau(new CodeLabel(place.getCode().toString(), place.getLatinName() != null ? place.getLatinName() : place.getNationalName()));
-				}
-			}	
-		}
 		
 		return address;
 	}

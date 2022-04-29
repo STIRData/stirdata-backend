@@ -15,6 +15,7 @@ public class CodeLabel {
 
 	public String code;
 	public String label;
+	public String uri;
 	
 	public String geometry;
 	
@@ -22,5 +23,11 @@ public class CodeLabel {
 		this.code = code;
 		this.label = label;
 	}
-	
+
+	public CodeLabel(String code, String label, String uri) {
+		this.code = code;
+		this.label = label;
+		this.uri = uri;
+	}
+
 }

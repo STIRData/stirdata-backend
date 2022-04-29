@@ -91,14 +91,14 @@ public class DataStoring  {
 //    private String lauNamedgraphEU;
 
 	
-	public void copyStatisticsFromMongoToRDBMS() {
-		copyStatisticsFromMongoToRDBMS(statisticsRepository.findAll());
-	}
+//	public void copyStatisticsFromMongoToRDBMS() {
+//		copyStatisticsFromMongoToRDBMS(statisticsRepository.findAll());
+//	}
 	
-	public void copyStatisticsFromMongoToRDBMS(String country, Dimension dimension) {
-//		statisticsDBRepository.deleteAllByCountryAndDimension(country, dimension.toString());
-		copyStatisticsFromMongoToRDBMS(statisticsRepository.findByCountryAndDimension(country, dimension));
-	}
+//	public void copyStatisticsFromMongoToRDBMS(String country, Dimension dimension) {
+////		statisticsDBRepository.deleteAllByCountryAndDimension(country, dimension.toString());
+//		copyStatisticsFromMongoToRDBMS(statisticsRepository.findByCountryAndDimension(country, dimension));
+//	}
 
 	public void copyStatisticsFromMongoToRDBMS(CountryDB cc) {
 		for (Statistic s : statisticsRepository.groupCountDimensionsByCountry(cc.getCode()) ) {
@@ -146,18 +146,25 @@ public class DataStoring  {
 	
 			if (ccDate.getTime().equals(mongoStatistic.getReferenceDate())) {
 				logger.info("DB statistics for " + cc.getCode() + " / " + d + " already up to date.");
-		//		return;
+//				return;
 			}
 		}
 		
 		Date newReferenceDate = mongoStatistic.getReferenceDate();
 		
-		List<Statistic> stats = statisticsRepository.findByCountryAndDimensionAndReferenceDate(cc.getCode(), d, newReferenceDate);
-
-		logger.info("Updating " + stats.size() + " DB statistics for " + cc.getCode() + " / " + d + " / " + newReferenceDate + ".");
+		List<Statistic> stats = null;
 		
-		copyStatisticsFromMongoToRDBMS(stats);
-//		
+		if (newReferenceDate != null) {
+			stats = statisticsRepository.findByCountryAndDimensionAndReferenceDate(cc.getCode(), d, newReferenceDate);
+		} else {
+			stats = statisticsRepository.findByCountryAndDimension(cc.getCode(), d);
+			newReferenceDate = cc.getLastAccessedStart();
+		}
+			
+		logger.info("Updating " + stats.size() + " DB statistics for " + cc.getCode() + " / " + d + " / " + newReferenceDate  + ".");
+			
+		copyStatisticsFromMongoToRDBMS(stats, newReferenceDate);
+	//		
 		if (stats.size() > 0) {
 			System.out.println(stats.size() + ".");
 		}
@@ -199,10 +206,10 @@ public class DataStoring  {
 		logger.info("Updating DB statistics for " + cc.getCode() + " / " + d + " completed.");
 	}
 
-	public void copyStatisticsFromMongoToRDBMS(Dimension dimension) {
-//		statisticsDBRepository.deleteAllByDimension(dimension.toString());
-		copyStatisticsFromMongoToRDBMS(statisticsRepository.findByDimension(dimension));
-	}
+//	public void copyStatisticsFromMongoToRDBMS(Dimension dimension) {
+////		statisticsDBRepository.deleteAllByDimension(dimension.toString());
+//		copyStatisticsFromMongoToRDBMS(statisticsRepository.findByDimension(dimension));
+//	}
 	
 //	private void copyStatisticsFromMongoToRDBMS(List<Statistic> stats) {
 //		System.out.println(">>> " + stats.size());
@@ -252,7 +259,7 @@ public class DataStoring  {
 //		statisticsDBRepository.flush();
 //	}
 	
-	private Set<Dimension> copyStatisticsFromMongoToRDBMS(List<Statistic> stats) {
+	private Set<Dimension> copyStatisticsFromMongoToRDBMS(List<Statistic> stats, Date referenceDate) {
 		logger.info("Copying to DB " + stats.size());
 		Set<Dimension> dimensions = new HashSet<>();
 		
@@ -399,7 +406,8 @@ public class DataStoring  {
 				}
 
 				sdb.setUpdated(s.getUpdated());
-				sdb.setReferenceDate(s.getReferenceDate());
+//				sdb.setReferenceDate(s.getReferenceDate());
+				sdb.setReferenceDate(referenceDate);
 				
 				list.add(sdb);
 				
@@ -746,7 +754,8 @@ public class DataStoring  {
 			String naceSparql = "SELECT * " + 
 //		       (naceNamedgraphEU != null ? "FROM <" + naceNamedgraphEU + "> " : "") + 
 		       " WHERE {" +
-			   "?nace a <https://lod.stirdata.eu/nace/ont/Activity> . " +
+//			   "?nace a <https://lod.stirdata.eu/nace/ont/Activity> . " +
+               "?nace a <http://www.w3.org/2004/02/skos/core#Concept> . " +
 			   "?nace <http://www.w3.org/2004/02/skos/core#inScheme> <" + cc.getNaceScheme() + "> ." +
 			   "?nace <https://lod.stirdata.eu/nace/ont/level> " + i + " . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?bgLabel . FILTER (lang(?bgLabel) = 'bg') } . " +
@@ -779,7 +788,7 @@ public class DataStoring  {
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#exactMatch> ?exactMatch } " +
 		       "}";
 			
-//			System.out.println(naceSparql);
+			System.out.println(naceSparql);
 			
 	    	try (VirtuosoSelectIterator qe = new VirtuosoSelectIterator(cc.getNaceEndpoint(), naceSparql)) {
 	            while (qe.hasNext()) {

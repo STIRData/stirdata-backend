@@ -8,26 +8,18 @@
     "postCode" : {
       "@id" : "http://www.w3.org/ns/locn#postCode"
     },
-    "nuts3" : {
-      "@id" : "https://lod.stirdata.eu/model/nuts3",
+    "adminUnit" : {
+      "@id" : "http://data.europa.eu/m8g/adminUnit",
       "@type" : "@id"
     },
     "adminUnitL1" : {
       "@id" : "http://www.w3.org/ns/locn#adminUnitL1"
-    },
-    "country" : {
-      "@id" : "https://lod.stirdata.eu/model/country",
-      "@type" : "@id"
     },
     "fullAddress" : {
       "@id" : "http://www.w3.org/ns/locn#fullAddress"
     },
     "postName" : {
       "@id" : "http://www.w3.org/ns/locn#postName"
-    },
-    "lau" : {
-      "@id" : "https://lod.stirdata.eu/model/lau",
-      "@type" : "@id"
     },
     "thoroughfare" : {
       "@id" : "http://www.w3.org/ns/locn#thoroughfare"
