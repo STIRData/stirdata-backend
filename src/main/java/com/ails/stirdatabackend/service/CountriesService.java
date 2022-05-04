@@ -142,6 +142,37 @@ public class CountriesService {
     	return makeCountry(cc, country);
 	}
 	
+    public boolean reloadDCAT(CountryDB cc)  {
+		logger.info("DCAT reloading for " + cc.getCode() + ".");
+		
+		
+		boolean changed = processDcat(cc, modelConfigurations);
+    	
+    	ModelConfiguration mc = cc.getModelConfiguration();
+    	if (mc == null) {
+    		return false;
+    	}
+    	
+    	if (changed) {
+	//    	cd.setLastAccessedStart(new Date());
+	    	
+	    	loadCountry(cc);
+	    	
+	//    	System.out.println(cc.getNaceNamespace());
+	    	
+	    	countriesRepository.save(cc);
+	    	
+	    	countryConfigurations.put(cc.getCode(), cc);
+	    	
+	    	logger.info("Country " + cc.getCode() + " reloaded.");
+    	} else {
+    		logger.info("Country " + cc.getCode() + " has not changed.");
+    	}
+    	
+        return changed;
+    }
+
+	
     private boolean makeCountry(CountryDB cc, Country country)  {    	
     	
     	cc.setCode(country.getCode());
@@ -231,12 +262,12 @@ public class CountriesService {
     	
     	countryConfigurations.put(cc.getCode(), cc);
     	
-    	logger.info("Country " + country.getCode() + " added.");
+    	logger.info("Country " + country.getCode() + " added/replaced.");
     	
         return true;
     }
 	
-	private void processDcat(CountryDB cc, Map<String, ModelConfiguration> modelConfigurations) {
+	private boolean processDcat(CountryDB cc, Map<String, ModelConfiguration> modelConfigurations) {
 
 		Model model = RDFDataMgr.loadModel(cc.getDcat());
 
@@ -253,6 +284,8 @@ public class CountriesService {
 		        "} ";
 
 
+		boolean changed = false;
+		
 		String conformsTo;
         try (QueryExecution qe = QueryExecutionFactory.create(sparql, model)) {
         	ResultSet rs = qe.execSelect();
@@ -262,17 +295,31 @@ public class CountriesService {
         		conformsTo = sol.get("conformsTo").toString();
         		
         		ModelConfiguration mc = modelConfigurations.get(conformsTo);
-        		cc.setConformsTo(conformsTo);
-       			cc.setModelConfiguration(mc);
+        		
+//        		System.out.println(conformsTo  + " " + cc.getConformsTo() + " " + changed(conformsTo, cc.getConformsTo()));
+        		if (changed(conformsTo, cc.getConformsTo())) {
+        			changed = true;
+        			
+            		cc.setConformsTo(conformsTo);
+           			cc.setModelConfiguration(mc);
+        		}
+        		
 
         		String lastUpdated = null;
         		
         		if (sol.get("source") != null && sol.get("source").isResource()) {
         			String uri = sol.get("source").asResource().toString();
-        			String label = getPageTitle(uri);
-        			
-        			cc.setSourceUri(uri);
-        			cc.setSourceLabel(label);
+
+//            		System.out.println(uri  + " " + cc.getSourceUri() + " " + changed(uri, cc.getSourceUri()));
+
+        			if (changed(uri, cc.getSourceUri())) {
+            			changed = true;
+
+        				String label = getPageTitle(uri);
+
+        				cc.setSourceUri(uri);
+        				cc.setSourceLabel(label);
+        			}
         		}
         		
         		if (sol.get("issued") != null) {
@@ -283,15 +330,26 @@ public class CountriesService {
         			lastUpdated = sol.get("modified").asLiteral().getLexicalForm();
         		}
         		
+        		
+        		Date lastUpdatedDate = null;
+        		
         		if (lastUpdated != null) {
         			try {
         				SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-        				cc.setLastUpdated(format.parse(lastUpdated));
+        				lastUpdatedDate = format.parse(lastUpdated);
         			} catch (ParseException ex) {
         				ex.printStackTrace();
         			}
         		}
         		
+//        		System.out.println(lastUpdatedDate  + " " + cc.getLastUpdated() + " " + changed(lastUpdatedDate, cc.getLastUpdated()));
+        		
+        		if (changed(lastUpdatedDate, cc.getLastUpdated())) {
+        			changed = true;
+        			cc.setLastUpdated(lastUpdatedDate);
+        		}        		
+				
+
         		if (sol.get("accrualPeriodicity") != null) {
         			cc.setAccrualPeriodicity(sol.get("accrualPeriodicity").asResource().toString());
         		}
@@ -317,12 +375,36 @@ public class CountriesService {
         		QuerySolution sol = rs.next(); 
         		String endpoint = sol.get("endpoint").toString();
         		String[] parts = endpoint.split("://");
-        		cc.setDataEndpoint(parts[0] + "://" + IDN.toASCII(parts[1]));
+        		
+        		String idn = parts[0] + "://" + IDN.toASCII(parts[1]);
+        		
+//        		System.out.println(idn  + " " + cc.getDataEndpoint() + " " + changed(idn, cc.getDataEndpoint()));
+        		
+        		if (changed(idn, cc.getDataEndpoint())) {
+        			changed = true;
+        		
+        			cc.setDataEndpoint(idn);
+        		}
+        		
         		break;
         	}
         }
+        
+        return changed;
 	}
 
+	boolean changed(Object o1, Object o2) {
+		if (o1 == null && o2 == null) {
+			return false;
+		}
+		
+		if (o1 == null && o2 != null || o1 != null && o2 == null || !o1.equals(o2)) {
+			return true; 
+		}
+		
+		return false;
+	}
+	
 	
 	public void loadCountry(CountryDB cc) {
 //		System.out.println("Loading " + c);
