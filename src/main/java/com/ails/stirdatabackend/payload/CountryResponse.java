@@ -32,6 +32,7 @@ public class CountryResponse {
 	private Interval dissolutionDate;
 
 	private Date lastUpdated;
+	private Date lastStatisticsUpdated;
 	
 	private Resource source;
 	private Resource license;

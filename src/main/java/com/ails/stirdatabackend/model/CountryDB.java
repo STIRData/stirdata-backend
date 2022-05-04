@@ -313,4 +313,84 @@ public class CountryDB {
     	return code;
     }
     
+    public Date getMinStatsDate() {
+    	
+        Date date = statsDataDate;
+
+        if (date == null) {
+        	date = statsNutsLauDate;
+        }
+        if (date == null) {
+        	date = statsNaceDate;
+        }
+        if (date == null) {
+        	date = statsFoundingDate;
+        }
+        if (date == null) {
+        	date = statsDissolutionDate;
+        }
+        if (date == null) {        
+        	date = statsNutsLauNaceDate;
+        }
+        if (date == null) {
+        	date = statsNutsLauFoundingDate;
+        }
+        if (date == null) {
+        	date = statsNutsLauDissolutionDate;
+        }
+        if (date == null) {
+        	date = statsNaceFoundingDate;
+        }
+        if (date == null) {
+        	date = statsNaceDissolutionDate;
+        }
+        
+        if (date == null) {
+        	return null;
+        }
+
+        if (statsDataDate != null && statsDataDate.before(date)) {
+        	date = statsDataDate;
+        }
+        
+        if (statsNutsLauDate != null && statsNutsLauDate.before(date)) {
+        	date = statsNutsLauDate;
+        }
+
+        if (statsNaceDate != null && statsNaceDate.before(date)) {
+        	date = statsNaceDate;
+        }
+
+        if (statsFoundingDate != null && statsFoundingDate.before(date)) {
+        	date = statsFoundingDate;
+        }
+
+        if (statsDissolutionDate != null && statsDissolutionDate.before(date)) {
+        	date = statsDissolutionDate;
+        }
+
+        if (statsNutsLauNaceDate != null && statsNutsLauNaceDate.before(date)) {
+        	date = statsNutsLauNaceDate;
+        }
+
+        if (statsNutsLauFoundingDate != null && statsNutsLauFoundingDate.before(date)) {
+        	date = statsNutsLauFoundingDate;
+        }
+
+        if (statsNutsLauDissolutionDate != null && statsNutsLauDissolutionDate.before(date)) {
+        	date = statsNutsLauDissolutionDate;
+        }
+
+        if (statsNaceFoundingDate != null && statsNaceFoundingDate.before(date)) {
+        	date = statsNaceFoundingDate;
+        }
+
+        if (statsNaceDissolutionDate != null && statsNaceDissolutionDate.before(date)) {
+        	date = statsNaceDissolutionDate;
+        }
+        
+        return date ;
+    	
+    }
+    
 }

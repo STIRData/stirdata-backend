@@ -93,7 +93,9 @@ public class DatasetController {
 			
 			ci.setSparqlEndpoint(cc.getDataEndpoint());
 			ci.setLastUpdated(cc.getLastUpdated());
+			ci.setLastStatisticsUpdated(cc.getMinStatsDate());
 			
+		
 			if (cc.getSourceUri() != null) {
 				ci.setSource(new Resource(cc.getSourceUri(), cc.getSourceLabel()));
 			}
