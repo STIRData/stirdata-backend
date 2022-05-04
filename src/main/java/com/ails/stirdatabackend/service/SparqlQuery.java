@@ -59,8 +59,8 @@ public class SparqlQuery {
     public Calendar[] minMaxFoundingDate(CountryDB cc) {
    		Calendar[] date = new Calendar[2];
    		try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), minMaxFoundingDateQuery(cc))) {
-   			System.out.println("A " + cc.getDataEndpoint());
-   			System.out.println("B " + minMaxFoundingDateQuery(cc));
+//   			System.out.println("A " + cc.getDataEndpoint());
+//   			System.out.println("B " + minMaxFoundingDateQuery(cc));
 	    	ResultSet rs = qe.execSelect();
 		    	
 	    	while (rs.hasNext()) {

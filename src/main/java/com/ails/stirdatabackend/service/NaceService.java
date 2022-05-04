@@ -142,7 +142,7 @@ public class NaceService {
     		naceLeafUris = new ArrayList<>();
 
 			for (Code code : naceCodes) {
-				System.out.println(code);
+//				System.out.println(code);
 				if (cc.getNacePathSparql() != null) {
 					naceLeafUris.add(Code.naceRev2Prefix + code.getCode()); // triples store contains local naces 	
 				} else {
