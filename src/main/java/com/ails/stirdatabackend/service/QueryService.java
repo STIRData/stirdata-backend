@@ -175,8 +175,8 @@ public class QueryService {
             if (page == 1) {
             	String countQuery = sparql.countSelectQuery();
             	
-//            	System.out.println(QueryFactory.create(countQuery));
-//              System.out.println(cc.getDataEndpoint());
+            	System.out.println(QueryFactory.create(countQuery));
+              System.out.println(cc.getDataEndpoint());
              
                 try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), QueryFactory.create(countQuery, Syntax.syntaxARQ))) {
                     ResultSet rs = qe.execSelect();
@@ -194,7 +194,7 @@ public class QueryService {
             
             String query = sparql.allSelectQuery(offset, pageSize);
             
-//           System.out.println(QueryFactory.create(query));
+           System.out.println(QueryFactory.create(query));
 
             Map<String, LegalEntity> companies = new LinkedHashMap<>();
 
@@ -208,7 +208,7 @@ public class QueryService {
                 }
             }
             
-//            System.out.println(companies);
+            System.out.println(companies);
 
             if (!companies.isEmpty()) {
             	
@@ -250,7 +250,7 @@ public class QueryService {
 	                    "VALUES ?entity { " + values + "} } ";
             	}
 	
-//                System.out.println(QueryFactory.create(sparqlConstruct));
+                System.out.println(QueryFactory.create(sparqlConstruct));
 	            try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), QueryFactory.create(sparqlConstruct, Syntax.syntaxARQ))) {
 	                Model model = qe.execConstruct();
 	                
@@ -468,11 +468,15 @@ public class QueryService {
 			} else if (adminUnitL1Obj instanceof Map) {
 				address.setAdminUnitL1((String)((Map)adminUnitL1Obj).get("@value"));
 			} else if (adminUnitL1Obj instanceof List) {
-//				address.setAdminUnitL1((String)((Map)((List)adminUnitL1Obj).get(0)).get("@value")); // choose first -- should fix
-				address.setAdminUnitL1((String)((List)adminUnitL1Obj).get(0)); // choose first -- should fix
+				Object element = ((List)adminUnitL1Obj).get(0); // choose first -- should fix
+				if (element instanceof Map) {
+					address.setAdminUnitL1((String)((Map)element).get("@value")); 
+				} else if (element instanceof String) {
+					address.setAdminUnitL1((String)element);
+				}
 			}
 		}
-		
+
 		Object adminUnitL2Obj = map.get("adminUnitL2");
 		if (adminUnitL2Obj != null) { 
 			if (adminUnitL2Obj instanceof String) {
@@ -480,11 +484,15 @@ public class QueryService {
 			} else if (adminUnitL2Obj instanceof Map) {
 				address.setAdminUnitL2((String)((Map)adminUnitL2Obj).get("@value"));
 			} else if (adminUnitL2Obj instanceof List) {
-//				address.setAdminUnitL2((String)((Map)((List)adminUnitL2Obj).get(0)).get("@value")); // choose first -- should fix
-				address.setAdminUnitL2((String)((List)adminUnitL2Obj).get(0)); // choose first -- should fix
+				Object element = ((List)adminUnitL2Obj).get(0); // choose first -- should fix
+				if (element instanceof Map) {
+					address.setAdminUnitL2((String)((Map)element).get("@value")); 
+				} else if (element instanceof String) {
+					address.setAdminUnitL2((String)element);
+				}
 			}
 		}
-		
+
 		Object fullAddressObj = map.get("fullAddress");
 		if (fullAddressObj != null) {
 			if (fullAddressObj instanceof String) {
@@ -492,8 +500,12 @@ public class QueryService {
 			} else if (fullAddressObj instanceof Map) {
 				address.setFullAddress((String)((Map)fullAddressObj).get("@value"));
 			} else if (fullAddressObj instanceof List) {
-//				address.setFullAddress((String)((Map)((List)fullAddressObj).get(0)).get("@value")); // choose first -- should fix
-				address.setFullAddress((String)((List)fullAddressObj).get(0)); // choose first -- should fix
+				Object element = ((List)fullAddressObj).get(0); // choose first -- should fix
+				if (element instanceof Map) {
+					address.setFullAddress((String)((Map)element).get("@value")); 
+				} else if (element instanceof String) {
+					address.setFullAddress((String)element);
+				}
 			}
 		}
 		
@@ -504,8 +516,12 @@ public class QueryService {
 			} else if (postCodeObj instanceof Map) {
 				address.setPostCode((String)((Map)postCodeObj).get("@value"));
 			} else if (postCodeObj instanceof List) {
-//				address.setPostCode((String)((Map)((List)postCodeObj).get(0)).get("@value")); // choose first -- should fix
-				address.setPostCode((String)((List)postCodeObj).get(0)); // choose first -- should fix
+				Object element = ((List)postCodeObj).get(0); // choose first -- should fix
+				if (element instanceof Map) {
+					address.setPostCode((String)((Map)element).get("@value")); 
+				} else if (element instanceof String) {
+					address.setPostCode((String)element);
+				}
 			}			
 		}
 		
@@ -516,8 +532,12 @@ public class QueryService {
 			} else if (postNameObj instanceof Map) {
 				address.setPostName((String)((Map)postNameObj).get("@value"));
 			} else if (postNameObj instanceof List) {
-//				address.setPostName((String)((Map)((List)postNameObj).get(0)).get("@value")); // choose first -- should fix
-				address.setPostName((String)((List)postNameObj).get(0)); // choose first -- should fix
+				Object element = ((List)postNameObj).get(0); // choose first -- should fix
+				if (element instanceof Map) {
+					address.setPostName((String)((Map)element).get("@value")); 
+				} else if (element instanceof String) {
+					address.setPostName((String)element);
+				}
 			}						
 		}
 		
@@ -528,8 +548,12 @@ public class QueryService {
 			} else if (thoroughfareObj instanceof Map) {
 				address.setThoroughfare((String)((Map)thoroughfareObj).get("@value"));
 			} else if (thoroughfareObj instanceof List) {
-//				address.setThoroughfare((String)((Map)((List)thoroughfareObj).get(0)).get("@value")); // choose first -- should fix
-				address.setThoroughfare((String)((List)thoroughfareObj).get(0)); // choose first -- should fix
+				Object element = ((List)thoroughfareObj).get(0); // choose first -- should fix
+				if (element instanceof Map) {
+					address.setThoroughfare((String)((Map)element).get("@value")); 
+				} else if (element instanceof String) {
+					address.setThoroughfare((String)element);
+				}
 			}
 		}
 		
@@ -540,8 +564,12 @@ public class QueryService {
 			} else if (locatorNameObj instanceof Map) {
 				address.setLocatorName((String)((Map)locatorNameObj).get("@value"));
 			} else if (locatorNameObj instanceof List) {
-//				address.setLocatorName((String)((Map)((List)locatorNameObj).get(0)).get("@value")); // choose first -- should fix
-				address.setLocatorName((String)((List)locatorNameObj).get(0)); // choose first -- should fix
+				Object element = ((List)locatorNameObj).get(0); // choose first -- should fix
+				if (element instanceof Map) {
+					address.setLocatorName((String)((Map)element).get("@value")); 
+				} else if (element instanceof String) {
+					address.setLocatorName((String)element);
+				}
 			}		
 		}
 		
@@ -552,8 +580,12 @@ public class QueryService {
 			} else if (locatorDesignatorObj instanceof Map) {
 				address.setLocatorDesignator((String)((Map)locatorDesignatorObj).get("@value"));
 			} else if (locatorDesignatorObj instanceof List) {
-//				address.setLocatorDesignator((String)((Map)((List)locatorDesignatorObj).get(0)).get("@value")); // choose first -- should fix
-				address.setLocatorDesignator((String)((List)locatorDesignatorObj).get(0)); // choose first -- should fix
+				Object element = ((List)locatorDesignatorObj).get(0); // choose first -- should fix
+				if (element instanceof Map) {
+					address.setLocatorDesignator((String)((Map)element).get("@value")); 
+				} else if (element instanceof String) {
+					address.setLocatorDesignator((String)element);
+				}				
 			}		
 		}
 		
