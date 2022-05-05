@@ -8,6 +8,7 @@ import com.ails.stirdatabackend.model.StatisticDB;
 import com.ails.stirdatabackend.repository.CountriesDBRepository;
 import com.ails.stirdatabackend.repository.CountriesRepository;
 import com.ails.stirdatabackend.repository.StatisticsDBRepository;
+import com.ails.stirdatabackend.service.CountriesService;
 import com.ails.stirdatabackend.vocs.DCATVocabulary;
 import com.ails.stirdatabackend.vocs.DCTVocabulary;
 
@@ -34,6 +35,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.FileCopyUtils;
 
 import java.io.IOException;
@@ -48,6 +51,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Configuration
+//@EnableScheduling
 public class ApplicationConfiguration {
 
 	private final static Logger logger = LoggerFactory.getLogger(ApplicationConfiguration.class);
@@ -69,7 +73,7 @@ public class ApplicationConfiguration {
 
 	@Autowired
 	ResourceLoader resourceLoader;
-	
+
 	@Bean(name = "labels-cache")
 	public Cache getLabelsCache() {
 	    CacheManager singletonManager = CacheManager.create();
@@ -161,6 +165,7 @@ public class ApplicationConfiguration {
 		    String nuts3Sparql = env.getProperty("sparql.nuts3." + m);
 		    String lauSparql = env.getProperty("sparql.lau." + m);
 		    String naceSparql = env.getProperty("sparql.nace." + m);
+		    String companyTypeSparql = env.getProperty("sparql.companyType." + m);
 		    String foundingDateSparql = env.getProperty("sparql.foundingDate." + m); 
 		    String dissolutionDateSparql = env.getProperty("sparql.dissolutionDate." + m);
 
@@ -172,6 +177,7 @@ public class ApplicationConfiguration {
 	    	mc.setNuts3Sparql(nuts3Sparql);	
 	    	mc.setLauSparql(lauSparql);	
 	    	mc.setNaceSparql(naceSparql);	
+	    	mc.setCompanyTypeSparql(companyTypeSparql);
 	    	mc.setFoundingDateSparql(foundingDateSparql);
 	    	mc.setDissolutionDateSparql(dissolutionDateSparql);
 

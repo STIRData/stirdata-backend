@@ -88,6 +88,9 @@ public class CountryDB {
 	@Column(name = "nace_fixed_level")
 	private Integer naceFixedLevel;
 
+	@Column(name = "nace_fixed_levels")
+	private String naceFixedLevels;
+
 	@Column(name = "nace_levels")
 	private Integer naceLevels;
 
@@ -129,10 +132,31 @@ public class CountryDB {
 
 	@Column(name = "data_named_graph", columnDefinition="TEXT")
     private String dataNamedGraph;
+	
+	@Column(name = "company_type_scheme", columnDefinition="TEXT")
+	private String companyTypeScheme;
+	
+	@Column(name = "company_type_prefix", columnDefinition="TEXT")
+    private String companyTypePrefix;
+	
+	@Column(name = "company_type_namespace")
+	private String companyTypeNamespace;
+
+	@Column(name = "company_type_endpoint", columnDefinition="TEXT")
+    private String companyTypeEndpoint;
+	
+	@Column(name = "company_type_languages")
+	private String companyTypeLanguages;
+
+	@Transient
+	private String[] companyTypeLanguagesArray;
     
     private boolean lau;
     private boolean nuts;
     private boolean nace;
+    
+    @Column(name = "company_type")
+    private Boolean companyType;
     
     @Column(name = "legal_name")
     private boolean legalName;
@@ -184,7 +208,10 @@ public class CountryDB {
 
     @Column(name = "lau_sparql")
     private String lauSparql;
-    
+
+    @Column(name = "company_type_sparql")
+    private String companyTypeSparql;
+
     @Column(name = "founding_date_sparql")
     private String foundingDateSparql;
     
@@ -230,6 +257,12 @@ public class CountryDB {
 	@Transient
     private ModelConfiguration modelConfiguration;
 	
+    @Transient
+    private boolean naceEffectiveLevelsComputed;
+    
+    @Transient
+    private int[] naceEffectiveLevels;
+    
 //    @Transient
 //    private Set<Dimension> statistics;
 
@@ -251,6 +284,10 @@ public class CountryDB {
 
     public String getNaceSparql() {
     	return naceSparql != null ? naceSparql : modelConfiguration.getNaceSparql();
+    }
+
+    public String getCompanyTypeSparql() {
+    	return companyTypeSparql != null ? companyTypeSparql : modelConfiguration.getCompanyTypeSparql();
     }
 
     public String getAddressSparql() {
@@ -305,6 +342,16 @@ public class CountryDB {
     			naceLanguagesArray = naceLanguages.split(",");
     		}
    	    	return naceLanguagesArray[0]; 
+    	}
+    	return null;
+    }
+    
+    public String getPreferredCompanyTypeLanguage() {
+    	if (companyTypeLanguages != null) {
+    		if (companyTypeLanguagesArray == null) { 
+    			companyTypeLanguagesArray = companyTypeLanguages.split(",");
+    		}
+   	    	return companyTypeLanguagesArray[0]; 
     	}
     	return null;
     }
@@ -390,6 +437,25 @@ public class CountryDB {
         }
         
         return date ;
+    	
+    }
+    
+    
+    public int[] getEffectiveNaceLevels() {
+    	if (!naceEffectiveLevelsComputed) {
+    		if (naceFixedLevel != null) {
+    			String[] levels = naceFixedLevels.split(",");
+    			
+    			naceEffectiveLevels = new int[levels.length];
+    			for (int i = 0; i < levels.length; i++) {
+    				naceEffectiveLevels[i] = Integer.parseInt(levels[i]);
+    			}
+    		}
+    		naceEffectiveLevelsComputed = true;
+    	}
+    	
+    	return naceEffectiveLevels;
+    		
     	
     }
     

@@ -159,7 +159,9 @@ public class SparqlQuery {
 	            sparql += "} ";
 	            
 //	            cq.setNuts3(true);
-        	}            
+        	} else {
+        		return null;
+        	}
         } else if ((nuts3 == null || nuts3.size() == 0) && lau != null) {            
         	if (lau.size() > 0) {
 	        	sparql += cc.getLauSparql() + " ";
@@ -171,7 +173,9 @@ public class SparqlQuery {
 	            sparql += "} ";
 	        	
 //	            cq.setLau(true);
-        	}            
+        	} else {
+        		return null;
+        	}
         } else if (nuts3 != null && lau != null) { // should be avoided
         	sparql += "{ ";
             
@@ -201,24 +205,28 @@ public class SparqlQuery {
 
         
         if (nace != null) {
-        	sparql += cc.getNaceSparql() + " ";
-        	
-        	if (cc.getNacePathSparql() != null) {
-        	
-        		sparql += " ?nace " + cc.getNacePathSparql() + " ?naceroot .";
-        		
-	            sparql += " VALUES ?naceroot { ";
-	            for (String uri : nace) {
-	                sparql += "<" + uri + "> ";
-	            }
-	            sparql += "} ";
-        		
+        	if (nace.size() > 0) {
+	        	sparql += cc.getNaceSparql() + " ";
+	        	
+	        	if (cc.getNacePathSparql() != null) {
+	        	
+	        		sparql += " ?nace " + cc.getNacePathSparql() + " ?naceroot .";
+	        		
+		            sparql += " VALUES ?naceroot { ";
+		            for (String uri : nace) {
+		                sparql += "<" + uri + "> ";
+		            }
+		            sparql += "} ";
+	        		
+	        	} else {
+		            sparql += " VALUES ?nace { ";
+		            for (String uri : nace) {
+		                sparql += "<" + uri + "> ";
+		            }
+		            sparql += "} ";
+	        	}
         	} else {
-	            sparql += " VALUES ?nace { ";
-	            for (String uri : nace) {
-	                sparql += "<" + uri + "> ";
-	            }
-	            sparql += "} ";
+        		return null;
         	}
             
 //            cq.setNace(true);

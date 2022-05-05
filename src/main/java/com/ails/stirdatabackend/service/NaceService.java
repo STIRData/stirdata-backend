@@ -147,7 +147,7 @@ public class NaceService {
 					naceLeafUris.add(Code.naceRev2Prefix + code.getCode()); // triples store contains local naces 	
 				} else {
 					naceLeafUris.addAll(getNaceLeafUrisTS(cc, code));
-//					naceLeafUris.addAll(getNaceLeafUrisDB(cc, code)); // much slower
+//					naceLeafUris.addAll(getNaceLeafUrisDB(cc, code)); // much slower, not supporting multiples levels
 				}
             }
     	}
@@ -167,22 +167,43 @@ public class NaceService {
     			"PREFIX skos: <http://www.w3.org/2004/02/skos/core#> " +
                 "SELECT ?activity WHERE { ";
 		
-    	if (level == 1) {
-			sparql += "?activity " + cc.getNacePath1() + " <" + code.toUri() + "> . "; 
-		} else if (level == 2) {
-			sparql += "?activity " + cc.getNacePath2() + " <" + code.toUri() + "> . "; 
-		} else if (level == 3) {
-			sparql += "?activity " + cc.getNacePath3() + " <" + code.toUri() + "> . "; 
-		} else if (level == 4) {
-			sparql += "?activity " + cc.getNacePath4() + " <" + code.toUri() + "> . "; 
+//    	if (level == 1) {
+//			sparql += "?activity " + cc.getNacePath1() + " <" + code.toUri() + "> . "; 
+//		} else if (level == 2) {
+//			sparql += "?activity " + cc.getNacePath2() + " <" + code.toUri() + "> . "; 
+//		} else if (level == 3) {
+//			sparql += "?activity " + cc.getNacePath3() + " <" + code.toUri() + "> . "; 
+//		} else if (level == 4) {
+//			sparql += "?activity " + cc.getNacePath4() + " <" + code.toUri() + "> . "; 
+//    	}
+//    	
+//    	if (cc.getNaceFixedLevel() >= 0) {
+//    		sparql += " ?activity <" + SDVocabulary.level + "> " + cc.getNaceFixedLevel() + " . ";
+//    	}
+    	
+    	String s = "";
+    	for (int k : cc.getEffectiveNaceLevels()) {
+        	String ls = "(";
+    		for (int i = 0; i < k - level; i++) {
+    			if (i > 0) {
+    				ls += "/";
+    			}
+    			ls += "skos:broader" ;
+    		}
+    		ls += ")" ;
+    		
+    		if (s.length() > 0) {
+    			s += "|" ;
+    		}
+    		
+    		s += ls;
     	}
     	
-    	if (cc.getNaceFixedLevel() >= 0) {
-    		sparql += " ?activity <" + SDVocabulary.level + "> " + cc.getNaceFixedLevel() + " . ";
-    	}
+    	sparql += " ?activity (" + s + ")/skos:exactMatch" + " <" + code.toUri() + "> . "; 
     	
 		sparql += " ?activity skos:inScheme <" + cc.getNaceScheme() + "> } ";
     	
+//		System.out.println(sparql);
     	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), sparql)) {
             ResultSet rs = qe.execSelect();
             while (rs.hasNext()) {

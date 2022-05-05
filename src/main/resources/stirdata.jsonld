@@ -38,6 +38,10 @@
       "@id" : "http://www.w3.org/ns/legal#companyActivity",
       "@type" : "@id"
     },
+    "companyType" : {
+      "@id" : "http://www.w3.org/ns/legal#companyType",
+      "@type" : "@id"
+    },
     "foundingDate" : {
       "@id" : "https://schema.org/foundingDate",
       "@type" : "http://www.w3.org/2001/XMLSchema#date"

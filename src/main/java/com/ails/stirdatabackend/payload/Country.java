@@ -1,13 +1,7 @@
 package com.ails.stirdatabackend.payload;
 
 
-import java.util.Date;
-
-import javax.persistence.Column;
-
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 
@@ -37,6 +31,8 @@ public class Country {
 	
 	private Integer naceFixedLevel;
 	
+	private int[] naceFixedLevels;
+	
     private String naceNamedGraph;
 
     private String nutsEndpoint;
@@ -65,6 +61,8 @@ public class Country {
     
     private String nacePathSparql;
     
+    private String companyTypeSparql;
+    
     private String lauSparql;
     
     private String foundingDateSparql;
@@ -74,6 +72,13 @@ public class Country {
     private String licenceLabel;
     
     private String licenceUri;
+    
+    private String companyTypeScheme;
+
+    private String companyTypeNamespace;
+    
+    private String companyTypeEndpoint;
+
     
 		
 	public Country(String code) {
@@ -85,9 +90,18 @@ public class Country {
 		this.naceNamespace = namespace;
 	}
 	
+	public void setCompanyTypeScheme(String scheme, String namespace) {
+		this.companyTypeScheme = scheme;
+		this.companyTypeNamespace = namespace;
+	}
+	
 	public void setLicense(String label, String uri) {
 		this.licenceLabel = label;
 		this.licenceUri = uri;
+	}
+	
+	public void setNaceFixedLevels(int... l) {
+		this.naceFixedLevels = l;
 	}
 	
 }

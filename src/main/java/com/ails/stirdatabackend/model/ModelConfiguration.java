@@ -16,6 +16,7 @@ public class ModelConfiguration {
     private String tradingNameSparql;
     private String activeSparql;
     private String naceSparql;
+    private String companyTypeSparql;
     private String addressSparql;
     private String nuts3Sparql;
     private String lauSparql;

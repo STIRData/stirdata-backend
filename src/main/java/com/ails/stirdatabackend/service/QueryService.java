@@ -2,6 +2,7 @@ package com.ails.stirdatabackend.service;
 
 import com.ails.stirdatabackend.model.ActivityDB;
 import com.ails.stirdatabackend.model.Code;
+import com.ails.stirdatabackend.model.CompanyTypeDB;
 import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.PlaceDB;
 import com.ails.stirdatabackend.payload.Address;
@@ -51,6 +52,9 @@ public class QueryService {
     private NaceService naceService;
 
     @Autowired
+    private CompanyTypeService companyTypeService;
+
+    @Autowired
     private DataService dataService;
 
 	@Autowired
@@ -71,6 +75,7 @@ public class QueryService {
         		"CONSTRUCT { " + 
                         "  ?entity a <http://www.w3.org/ns/legal#LegalEntity> . " + 
                         "  ?entity <http://www.w3.org/ns/legal#legalName> ?entityName . " +
+                        "  ?entity <http://www.w3.org/ns/legal#companyType> ?companyType . " +
                         "  ?entity <http://www.w3.org/ns/legal#companyActivity> ?nace . " +
                 		"  ?entity <http://www.w3.org/ns/legal#registeredAddress> ?address . ?address ?ap ?ao . " + 
                         "  ?entity <https://schema.org/foundingDate> ?foundingDate . }" +	           		
@@ -78,12 +83,15 @@ public class QueryService {
                 cc.getEntitySparql() + " " +
                 cc.getLegalNameSparql() + " " + 
                 (cc.isDissolutionDate() ? cc.getActiveSparql() : "") + " " +
-                "OPTIONAL { " + cc.getAddressSparql() + " ?address ?ap ?ao . } " + 
+                "OPTIONAL { " + cc.getAddressSparql() + " ?address ?ap ?ao . } " +
+	            "OPTIONAL { " + cc.getCompanyTypeSparql() + " } " +
 	            "OPTIONAL { " + cc.getNaceSparql() + " } " +
                 "OPTIONAL { " + cc.getFoundingDateSparql() + " } " +
                 "VALUES ?entity { <" + uri + "> } } ";
 
        	LegalEntity entity = null;
+       	
+//       	System.out.println(QueryFactory.create(sparqlConstruct, Syntax.syntaxARQ));
        	
        	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), QueryFactory.create(sparqlConstruct, Syntax.syntaxARQ))) {
             Model model = qe.execConstruct();
@@ -148,10 +156,13 @@ public class QueryService {
             qr.setCountry(new CodeLabel(cc.getCode(), cc.getLabel()));
             qr.setPage(pg);
 
+//            System.out.println(naceLeafUris);
+            
         	if ((nutsLeafUris != null && nutsLeafUris.size() == 0 && lauUris != null && lauUris.size() == 0) || (naceLeafUris != null && naceLeafUris.size() == 0)) {
         		pg.setPageSize(0);
         		qr.setLegalEntities(new ArrayList<>());
         		responseList.add(qr);
+        		continue;
         	}
         	
 
@@ -213,6 +224,7 @@ public class QueryService {
                 		"CONSTRUCT { " + 
                                 "  ?entity a <http://www.w3.org/ns/legal#LegalEntity> . " + 
                                 "  ?entity <http://www.w3.org/ns/legal#legalName> ?entityName . " +
+                                "  ?entity <http://www.w3.org/ns/legal#companyType> ?companyType . " +
                                 "  ?entity <http://www.w3.org/ns/legal#companyActivity> ?nace . " +
                         		"  ?entity <http://www.w3.org/ns/legal#registeredAddress> ?address . ?address ?ap ?ao . " + 
                                 "  ?entity <https://schema.org/foundingDate> ?foundingDate . }" +	           		
@@ -221,6 +233,7 @@ public class QueryService {
                         cc.getLegalNameSparql() + " " + 
                         (cc.isDissolutionDate() ? cc.getActiveSparql() : "") + " " +
                         "OPTIONAL { " + cc.getAddressSparql() + " ?address ?ap ?ao . } " + 
+        	            "OPTIONAL { " + cc.getCompanyTypeSparql() + " } " +
         	            "OPTIONAL { " + cc.getNaceSparql() + " } " +
 	                    "OPTIONAL { " + cc.getFoundingDateSparql() + " } " +
 	                    "VALUES ?entity { " + values + "} } ";
@@ -329,7 +342,8 @@ public class QueryService {
 
         	if ((nutsLeafUris != null && nutsLeafUris.size() == 0) || (naceLeafUris != null && naceLeafUris.size() == 0)) {
         		responseList.add(new EndpointResponse(cc.getLabel(), mapper.createArrayNode(), 0, null));
-        		return responseList;
+//        		return responseList;
+        		continue;
         	}
         	
             
@@ -349,7 +363,8 @@ public class QueryService {
                 responseList.add(new EndpointResponse(cc.getLabel(), mapper.readTree(json), 0, null));
             } catch (Exception e) {
                 e.printStackTrace();
-                return null;
+//                return null;
+                continue;
             }
         }
         	        
@@ -372,6 +387,27 @@ public class QueryService {
 		    			lg.addLegalName((String)((Map)s).get("@value"), (String)((Map)s).get("@language"));
 		    		}
 				}
+			}
+		}
+		
+		Object companyTypeObj = map.get("companyType");
+		if (companyTypeObj != null) {
+			if (companyTypeObj instanceof String) {
+				
+				CompanyTypeDB companyType = companyTypeService.getByCode(Code.fromCompanyTypeUri((String)companyTypeObj, cc));
+				if (companyType != null) {
+					lg.setCompanyType(new CodeLabel(companyType.getCode().toString(), companyType.getLabel(cc.getPreferredCompanyTypeLanguage()), (String)companyTypeObj));
+				}
+				
+//			} else if (companyTypeObj instanceof List) {
+//				for (Object s : (List)companyTypeObj) {
+//					CompanyTypeDB companyType = companyTypeService.getByCode(Code.fromCompanyTypeUri((String)s, cc));
+//
+//					if (companyType != null) {
+//						lg.setCompanyType(new CodeLabel(companyType.getCode().toString(), companyType.getLabel(cc.getPreferredCompanyTypeLanguage()), (String)s));
+//					}
+//
+//				}
 			}
 		}
 		
@@ -432,7 +468,8 @@ public class QueryService {
 			} else if (adminUnitL1Obj instanceof Map) {
 				address.setAdminUnitL1((String)((Map)adminUnitL1Obj).get("@value"));
 			} else if (adminUnitL1Obj instanceof List) {
-				address.setAdminUnitL1((String)((Map)((List)adminUnitL1Obj).get(0)).get("@value")); // choose first -- should fix
+//				address.setAdminUnitL1((String)((Map)((List)adminUnitL1Obj).get(0)).get("@value")); // choose first -- should fix
+				address.setAdminUnitL1((String)((List)adminUnitL1Obj).get(0)); // choose first -- should fix
 			}
 		}
 		
@@ -443,7 +480,8 @@ public class QueryService {
 			} else if (adminUnitL2Obj instanceof Map) {
 				address.setAdminUnitL2((String)((Map)adminUnitL2Obj).get("@value"));
 			} else if (adminUnitL2Obj instanceof List) {
-				address.setAdminUnitL2((String)((Map)((List)adminUnitL2Obj).get(0)).get("@value")); // choose first -- should fix
+//				address.setAdminUnitL2((String)((Map)((List)adminUnitL2Obj).get(0)).get("@value")); // choose first -- should fix
+				address.setAdminUnitL2((String)((List)adminUnitL2Obj).get(0)); // choose first -- should fix
 			}
 		}
 		
@@ -454,7 +492,8 @@ public class QueryService {
 			} else if (fullAddressObj instanceof Map) {
 				address.setFullAddress((String)((Map)fullAddressObj).get("@value"));
 			} else if (fullAddressObj instanceof List) {
-				address.setFullAddress((String)((Map)((List)fullAddressObj).get(0)).get("@value")); // choose first -- should fix
+//				address.setFullAddress((String)((Map)((List)fullAddressObj).get(0)).get("@value")); // choose first -- should fix
+				address.setFullAddress((String)((List)fullAddressObj).get(0)); // choose first -- should fix
 			}
 		}
 		
@@ -465,7 +504,8 @@ public class QueryService {
 			} else if (postCodeObj instanceof Map) {
 				address.setPostCode((String)((Map)postCodeObj).get("@value"));
 			} else if (postCodeObj instanceof List) {
-				address.setPostCode((String)((Map)((List)postCodeObj).get(0)).get("@value")); // choose first -- should fix
+//				address.setPostCode((String)((Map)((List)postCodeObj).get(0)).get("@value")); // choose first -- should fix
+				address.setPostCode((String)((List)postCodeObj).get(0)); // choose first -- should fix
 			}			
 		}
 		
@@ -476,7 +516,8 @@ public class QueryService {
 			} else if (postNameObj instanceof Map) {
 				address.setPostName((String)((Map)postNameObj).get("@value"));
 			} else if (postNameObj instanceof List) {
-				address.setPostName((String)((Map)((List)postNameObj).get(0)).get("@value")); // choose first -- should fix
+//				address.setPostName((String)((Map)((List)postNameObj).get(0)).get("@value")); // choose first -- should fix
+				address.setPostName((String)((List)postNameObj).get(0)); // choose first -- should fix
 			}						
 		}
 		
@@ -487,7 +528,8 @@ public class QueryService {
 			} else if (thoroughfareObj instanceof Map) {
 				address.setThoroughfare((String)((Map)thoroughfareObj).get("@value"));
 			} else if (thoroughfareObj instanceof List) {
-				address.setThoroughfare((String)((Map)((List)thoroughfareObj).get(0)).get("@value")); // choose first -- should fix
+//				address.setThoroughfare((String)((Map)((List)thoroughfareObj).get(0)).get("@value")); // choose first -- should fix
+				address.setThoroughfare((String)((List)thoroughfareObj).get(0)); // choose first -- should fix
 			}
 		}
 		
@@ -498,7 +540,8 @@ public class QueryService {
 			} else if (locatorNameObj instanceof Map) {
 				address.setLocatorName((String)((Map)locatorNameObj).get("@value"));
 			} else if (locatorNameObj instanceof List) {
-				address.setLocatorName((String)((Map)((List)locatorNameObj).get(0)).get("@value")); // choose first -- should fix
+//				address.setLocatorName((String)((Map)((List)locatorNameObj).get(0)).get("@value")); // choose first -- should fix
+				address.setLocatorName((String)((List)locatorNameObj).get(0)); // choose first -- should fix
 			}		
 		}
 		
@@ -509,7 +552,8 @@ public class QueryService {
 			} else if (locatorDesignatorObj instanceof Map) {
 				address.setLocatorDesignator((String)((Map)locatorDesignatorObj).get("@value"));
 			} else if (locatorDesignatorObj instanceof List) {
-				address.setLocatorDesignator((String)((Map)((List)locatorDesignatorObj).get(0)).get("@value")); // choose first -- should fix
+//				address.setLocatorDesignator((String)((Map)((List)locatorDesignatorObj).get(0)).get("@value")); // choose first -- should fix
+				address.setLocatorDesignator((String)((List)locatorDesignatorObj).get(0)); // choose first -- should fix
 			}		
 		}
 		

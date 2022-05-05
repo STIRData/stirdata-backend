@@ -114,6 +114,14 @@ public class Code implements Serializable {
 		}
 	}
 	
+	public static Code fromCompanyTypeUri(String s, CountryDB cc) {
+		if (s.startsWith(cc.getCompanyTypePrefix())) {
+			return new Code(cc.getCompanyTypeNamespace() + ":" + s.substring(cc.getCompanyTypePrefix().length()));
+		} else {
+			return null;
+		}
+	}
+	
 	// 10Y 1Y 1M 1D
 	public static String nextDateLevel(String level) {
 		if (level.equals(date10Y)) {

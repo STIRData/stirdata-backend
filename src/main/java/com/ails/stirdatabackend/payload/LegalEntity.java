@@ -18,6 +18,7 @@ public class LegalEntity {
 	
 	private String uri;
 	private List<LanguageString> legalNames;
+	private CodeLabel companyType;
 	private List<CodeLabel> companyActivities;
 	private List<Address> registeredAddresses;
 	private Date foundingDate;

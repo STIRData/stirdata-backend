@@ -178,11 +178,16 @@ public class CountriesService {
     	cc.setCode(country.getCode());
     	cc.setLabel(country.getLabel());
     	cc.setDcat(country.getDcat());
+
+    	cc.setNaceEndpoint(country.getNaceEnpoint());
     	cc.setNaceScheme(country.getNaceScheme());
     	cc.setNaceNamespace(country.getNaceNamespace());
+    	cc.setNaceSparql(country.getNaceSparql());
     	cc.setNaceNamedGraph(country.getNaceNamedGraph());
+    	
     	cc.setNutsEndpoint(country.getNutsEndpoint());
     	cc.setNutsNamedGraph(country.getNutsNamedGraph());
+    	
     	cc.setDataNamedGraph(country.getDataNamedGraph());
     	cc.setEntitySparql(country.getEntitySparql());
     	cc.setLegalNameSparql(country.getLegalNameSparql());
@@ -190,12 +195,15 @@ public class CountriesService {
     	cc.setAddressSparql(country.getAddressSparql());
     	cc.setNuts3Sparql(country.getNuts3Sparql());
     	cc.setLauSparql(country.getLauSparql());
-    	cc.setNaceSparql(country.getNaceSparql());
+    	
     	cc.setFoundingDateSparql(country.getFoundingDateSparql());
     	cc.setDissolutionDateSparql(country.getDissolutionDateSparql());
 
-//		cc.setNaceEndpoint(country.getNaceEnpoint() != null ? country.getNaceEnpoint() : defaultNaceEndpoint); 
-    	cc.setNaceEndpoint(country.getNaceEnpoint());
+    	cc.setCompanyTypeEndpoint(country.getCompanyTypeEndpoint());
+    	cc.setCompanyTypeScheme(country.getCompanyTypeScheme());
+    	cc.setCompanyTypeNamespace(country.getCompanyTypeNamespace());
+    	cc.setCompanyTypeSparql(country.getCompanyTypeSparql());
+
 		
 		if (cc.getNaceEndpoint() != null) {
 		    cc.setNacePath1(country.getNacePath1() != null || country.getNacePathSparql() != null ? country.getNacePath1() : defaultNacePath1);
@@ -206,12 +214,28 @@ public class CountriesService {
 	//	    cc.setNaceFixedLevel(country.getNaceFixedLevel() != null || country.getNacePathSparql() != null  ? country.getNaceFixedLevel() : Integer.parseInt(defaultNaceFixedLevel));
 	//		why the above gives exception????
 		    if (country.getNaceFixedLevel() != null || country.getNacePathSparql() != null) { 
-		    	if ( country.getNaceFixedLevel() != null) {
+		    	if (country.getNaceFixedLevel() != null) {
 		    		cc.setNaceFixedLevel(country.getNaceFixedLevel());
 		    	}
+		    	
 		    } else {
 		    	cc.setNaceFixedLevel(Integer.parseInt(defaultNaceFixedLevel));
 		    }
+		    
+		    if (country.getNaceFixedLevels() != null) {
+		    	String s = "";
+		    	for (int i = 0; i < country.getNaceFixedLevels().length; i++) {
+		    		if (s.length() > 0) {
+		    			s += ",";
+		    		}
+		    		s += country.getNaceFixedLevels()[i];
+		    	}
+		    	
+		    	cc.setNaceFixedLevels(s);
+		    } else {
+		    	cc.setNaceFixedLevels(defaultNaceFixedLevel);
+		    }
+
 		} else {
 			cc.setNacePath1(null);
 			cc.setNacePath2(null);
@@ -226,15 +250,15 @@ public class CountriesService {
 	    cc.setLauPrefix(country.getLauPrefix() != null ? country.getLauPrefix() : defaultLauPrefix);	
 
 	    // if null > get from model 
-	    cc.setEntitySparql(country.getEntitySparql());
-    	cc.setLegalNameSparql(country.getLegalNameSparql());	
-    	cc.setActiveSparql(country.getActiveSparql());
-    	cc.setNuts3Sparql(country.getNuts3Sparql());	
-    	cc.setLauSparql(country.getLauSparql());	
-    	cc.setNaceSparql(country.getNaceSparql());	
+//	    cc.setEntitySparql(country.getEntitySparql());
+//    	cc.setLegalNameSparql(country.getLegalNameSparql());	
+//    	cc.setActiveSparql(country.getActiveSparql());
+//    	cc.setNuts3Sparql(country.getNuts3Sparql());	
+//    	cc.setLauSparql(country.getLauSparql());	
+//    	cc.setNaceSparql(country.getNaceSparql());	
     	cc.setNacePathSparql(country.getNacePathSparql());
-    	cc.setFoundingDateSparql(country.getFoundingDateSparql());
-    	cc.setDissolutionDateSparql(country.getDissolutionDateSparql());
+//    	cc.setFoundingDateSparql(country.getFoundingDateSparql());
+//    	cc.setDissolutionDateSparql(country.getDissolutionDateSparql());
 
 //    	cc.setLegalEntityPrefix(country.getLegalEntityPrefix());
     	
@@ -248,6 +272,8 @@ public class CountriesService {
     	processDcat(cc, modelConfigurations);
     	
     	ModelConfiguration mc = cc.getModelConfiguration();
+    	
+    	
     	if (mc == null) {
     		return false;
     	}
@@ -299,10 +325,10 @@ public class CountriesService {
 //        		System.out.println(conformsTo  + " " + cc.getConformsTo() + " " + changed(conformsTo, cc.getConformsTo()));
         		if (changed(conformsTo, cc.getConformsTo())) {
         			changed = true;
-        			
             		cc.setConformsTo(conformsTo);
-           			cc.setModelConfiguration(mc);
         		}
+        		
+       			cc.setModelConfiguration(mc);
         		
 
         		String lastUpdated = null;
@@ -407,10 +433,14 @@ public class CountriesService {
 	
 	
 	public void loadCountry(CountryDB cc) {
-//		System.out.println("Loading " + c);
+//		System.out.println("Loading " + cc.getCode());
 		
         try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), "ASK WHERE { " +  cc.getNaceSparql() + " }")) {
 			cc.setNace(qe.execAsk());
+        }
+
+        try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), "ASK WHERE { " +  cc.getCompanyTypeSparql() + " }")) {
+			cc.setCompanyType(qe.execAsk());
         }
         
         if (cc.isNace() && cc.getNaceEndpoint() != null) {
@@ -431,6 +461,7 @@ public class CountriesService {
         try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), "ASK WHERE { " +  cc.getTradingNameSparql() + " }")) {
 			cc.setTradingName(qe.execAsk());
         }
+
 
         try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), "ASK WHERE { " +  cc.getNuts3Sparql() + " }")) {
 			cc.setNuts(qe.execAsk());
@@ -541,16 +572,18 @@ public class CountriesService {
 	       		
 	        }
 	
-	       	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), "SELECT ?nace WHERE { ?nace <http://www.w3.org/2004/02/skos/core#inScheme> <" +  cc.getNaceScheme() + "> } LIMIT 50 OFFSET " + (totalNace - 50))) {
-	       		
-	       		ResultSet rs = qe.execSelect();
-	       		while (rs.hasNext()) {
-	       			QuerySolution qs = rs.next();
-	       			naceUris.add(qs.get("nace").toString());
-	            }
-	       		
-	        }
-	
+	       	if (totalNace > 50) {
+		       	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), "SELECT ?nace WHERE { ?nace <http://www.w3.org/2004/02/skos/core#inScheme> <" +  cc.getNaceScheme() + "> } LIMIT 50 OFFSET " + (totalNace - 50))) {
+		       		
+		       		ResultSet rs = qe.execSelect();
+		       		while (rs.hasNext()) {
+		       			QuerySolution qs = rs.next();
+		       			naceUris.add(qs.get("nace").toString());
+		            }
+		       		
+		        }
+	       	}
+	       	
 	   		String nacePrefix = StringUtils.getCommonPrefix(naceUris.toArray(new String[] {}));
 	   		
 	   		while (nacePrefix.charAt(nacePrefix.length() - 1) != '/' && nacePrefix.charAt(nacePrefix.length() - 1) != '#') {
@@ -558,6 +591,55 @@ public class CountriesService {
 	   		}
 	   		
 	   		cc.setNacePrefix(nacePrefix);
+   		}   		
+   		
+   		if (cc.getCompanyType() && cc.getCompanyTypeEndpoint() != null) {
+   			int totalCompanyType = 0;
+   		
+//   			System.out.println(cc.getCompanyTypeEndpoint());
+//   			System.out.println("SELECT (count(?ct) AS ?count) WHERE { ?ct <http://www.w3.org/2004/02/skos/core#inScheme> <" +  cc.getCompanyTypeScheme() + "> . }");
+   			
+	        try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getCompanyTypeEndpoint(), "SELECT (count(?ct) AS ?count) WHERE { ?ct <http://www.w3.org/2004/02/skos/core#inScheme> <" +  cc.getCompanyTypeScheme() + "> . }")) {
+	       		ResultSet rs = qe.execSelect();
+	       		while (rs.hasNext()) {
+	       			QuerySolution qs = rs.next();
+	       			totalCompanyType = qs.get("count").asLiteral().getInt();
+	            }
+	        }
+	
+	   		List<String> companyTypeUris = new ArrayList<>();       		
+	
+	       	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getCompanyTypeEndpoint(), "SELECT ?ct WHERE { ?ct <http://www.w3.org/2004/02/skos/core#inScheme> <" +  cc.getCompanyTypeScheme() + "> } LIMIT 50")) {
+	       		
+	       		ResultSet rs = qe.execSelect();
+	       		while (rs.hasNext()) {
+	       			QuerySolution qs = rs.next();
+	       			companyTypeUris.add(qs.get("ct").toString());
+	            }
+	       		
+	        }
+	
+	       	if (totalCompanyType > 50) {
+		       	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getCompanyTypeEndpoint(), "SELECT ?ct WHERE { ?ct <http://www.w3.org/2004/02/skos/core#inScheme> <" +  cc.getCompanyTypeScheme() + "> } LIMIT 50 OFFSET " + (totalCompanyType - 50))) {
+		       		
+		       		ResultSet rs = qe.execSelect();
+		       		while (rs.hasNext()) {
+		       			QuerySolution qs = rs.next();
+		       			companyTypeUris.add(qs.get("ct").toString());
+		            }
+		       		
+		        }
+	       	}
+	
+//	       	System.out.println(companyTypeUris);
+	       	
+	   		String companyTypePrefix = StringUtils.getCommonPrefix(companyTypeUris.toArray(new String[] {}));
+	   		
+	   		while (companyTypePrefix.charAt(companyTypePrefix.length() - 1) != '/' && companyTypePrefix.charAt(companyTypePrefix.length() - 1) != '#') {
+	   			companyTypePrefix = companyTypePrefix.substring(0, companyTypePrefix.length() - 1);
+	   		}
+	   		
+	   		cc.setCompanyTypePrefix(companyTypePrefix);
    		}   		
 	}
 	
