@@ -656,7 +656,7 @@ public class DataStoring  {
 	                	activity.setLabelBg(sol.get("bgLabel").asLiteral().getLexicalForm());
 	                }
 	                if (sol.get("csLabel") != null) {
-	                	activity.setLabelCz(sol.get("csLabel").asLiteral().getLexicalForm());
+	                	activity.setLabelCs(sol.get("csLabel").asLiteral().getLexicalForm());
 	                }
 	                if (sol.get("daLabel") != null) {
 	                	activity.setLabelDa(sol.get("daLabel").asLiteral().getLexicalForm());
@@ -818,7 +818,7 @@ public class DataStoring  {
 	                	activity.setLabelBg(sol.get("bgLabel").asLiteral().getLexicalForm());
 	                }
 	                if (sol.get("csLabel") != null) {
-	                	activity.setLabelCz(sol.get("csLabel").asLiteral().getLexicalForm());
+	                	activity.setLabelCs(sol.get("csLabel").asLiteral().getLexicalForm());
 	                }
 	                if (sol.get("daLabel") != null) {
 	                	activity.setLabelDa(sol.get("daLabel").asLiteral().getLexicalForm());
@@ -910,6 +910,7 @@ public class DataStoring  {
 		String languageSparql = "SELECT DISTINCT(?language) " + 
 			       "WHERE {" +
 //				   "?nace a <https://lod.stirdata.eu/nace/ont/Activity> . " +
+                   "?nace a <http://www.w3.org/2004/02/skos/core#Concept> . " +
 				   "?nace <http://www.w3.org/2004/02/skos/core#inScheme> <" + cc.getNaceScheme() + "> ." +
 				   "?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?label . BIND (lang(?label) AS ?language) } "; 
 
@@ -996,7 +997,7 @@ public class DataStoring  {
                 	companyType.setLabelBg(sol.get("bgLabel").asLiteral().getLexicalForm());
                 }
                 if (sol.get("csLabel") != null) {
-                	companyType.setLabelCz(sol.get("csLabel").asLiteral().getLexicalForm());
+                	companyType.setLabelCs(sol.get("csLabel").asLiteral().getLexicalForm());
                 }
                 if (sol.get("daLabel") != null) {
                 	companyType.setLabelDa(sol.get("daLabel").asLiteral().getLexicalForm());
@@ -1087,6 +1088,7 @@ public class DataStoring  {
 		String languageSparql = "SELECT DISTINCT(?language) " + 
 			       "WHERE {" +
 //				   "?nace a <https://lod.stirdata.eu/nace/ont/Activity> . " +
+                   "?ct a <http://www.w3.org/2004/02/skos/core#Concept> . " + 
 				   "?ct <http://www.w3.org/2004/02/skos/core#inScheme> <" + cc.getCompanyTypeScheme() + "> ." +
 				   "?ct <http://www.w3.org/2004/02/skos/core#prefLabel> ?label . BIND (lang(?label) AS ?language) } "; 
 

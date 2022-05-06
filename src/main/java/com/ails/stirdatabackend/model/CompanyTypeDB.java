@@ -39,8 +39,8 @@ public class CompanyTypeDB {
 	@Column(name = "label_bg")
 	private String labelBg;
 
-	@Column(name = "label_cz")
-	private String labelCz;
+	@Column(name = "label_cs")
+	private String labelCs;
 
 	@Column(name = "label_da")
 	private String labelDa;
@@ -133,8 +133,8 @@ public class CompanyTypeDB {
 			return labelEn;
 		} else if (lang.equals("bg")) {
 			return labelBg;
-		} else if (lang.equals("cz")) {
-			return labelCz;
+		} else if (lang.equals("cs")) {
+			return labelCs;
 		} else if (lang.equals("ds")) {
 			return labelDa;
 		} else if (lang.equals("de")) {
