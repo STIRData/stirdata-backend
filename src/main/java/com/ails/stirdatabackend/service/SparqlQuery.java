@@ -143,7 +143,7 @@ public class SparqlQuery {
 	        }
         }
         
-        if (name) {
+        if (name && cc.isLegalName()) {
         	sparql += cc.getLegalNameSparql() + " ";
         }
         

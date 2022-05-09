@@ -81,7 +81,7 @@ public class QueryService {
                         "  ?entity <https://schema.org/foundingDate> ?foundingDate . }" +	           		
         		" WHERE { " +
                 cc.getEntitySparql() + " " +
-                cc.getLegalNameSparql() + " " + 
+                "OPTIONAL { " + cc.getLegalNameSparql() + " } " + 
                 (cc.isDissolutionDate() ? cc.getActiveSparql() : "") + " " +
                 "OPTIONAL { " + cc.getAddressSparql() + " ?address ?ap ?ao . } " +
 	            "OPTIONAL { " + cc.getCompanyTypeSparql() + " } " +
@@ -175,8 +175,8 @@ public class QueryService {
             if (page == 1) {
             	String countQuery = sparql.countSelectQuery();
             	
-            	System.out.println(QueryFactory.create(countQuery));
-              System.out.println(cc.getDataEndpoint());
+//            	System.out.println(QueryFactory.create(countQuery));
+//              System.out.println(cc.getDataEndpoint());
              
                 try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), QueryFactory.create(countQuery, Syntax.syntaxARQ))) {
                     ResultSet rs = qe.execSelect();
@@ -194,7 +194,7 @@ public class QueryService {
             
             String query = sparql.allSelectQuery(offset, pageSize);
             
-           System.out.println(QueryFactory.create(query));
+//           System.out.println(QueryFactory.create(query));
 
             Map<String, LegalEntity> companies = new LinkedHashMap<>();
 
@@ -208,7 +208,7 @@ public class QueryService {
                 }
             }
             
-            System.out.println(companies);
+//            System.out.println(companies);
 
             if (!companies.isEmpty()) {
             	
@@ -230,7 +230,7 @@ public class QueryService {
                                 "  ?entity <https://schema.org/foundingDate> ?foundingDate . }" +	           		
 	            		" WHERE { " +
                         cc.getEntitySparql() + " " +
-                        cc.getLegalNameSparql() + " " + 
+                        "OPTIONAL { " + cc.getLegalNameSparql() + " } " + 
                         (cc.isDissolutionDate() ? cc.getActiveSparql() : "") + " " +
                         "OPTIONAL { " + cc.getAddressSparql() + " ?address ?ap ?ao . } " + 
         	            "OPTIONAL { " + cc.getCompanyTypeSparql() + " } " +
@@ -250,7 +250,7 @@ public class QueryService {
 	                    "VALUES ?entity { " + values + "} } ";
             	}
 	
-                System.out.println(QueryFactory.create(sparqlConstruct));
+//                System.out.println(QueryFactory.create(sparqlConstruct));
 	            try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), QueryFactory.create(sparqlConstruct, Syntax.syntaxARQ))) {
 	                Model model = qe.execConstruct();
 	                
@@ -393,10 +393,11 @@ public class QueryService {
 		Object companyTypeObj = map.get("companyType");
 		if (companyTypeObj != null) {
 			if (companyTypeObj instanceof String) {
-				
-				CompanyTypeDB companyType = companyTypeService.getByCode(Code.fromCompanyTypeUri((String)companyTypeObj, cc));
-				if (companyType != null) {
-					lg.setCompanyType(new CodeLabel(companyType.getCode().toString(), companyType.getLabel(cc.getPreferredCompanyTypeLanguage()), (String)companyTypeObj));
+				if (cc.getCompanyTypePrefix() != null) {
+					CompanyTypeDB companyType = companyTypeService.getByCode(Code.fromCompanyTypeUri((String)companyTypeObj, cc));
+					if (companyType != null) {
+						lg.setCompanyType(new CodeLabel(companyType.getCode().toString(), companyType.getLabel(cc.getPreferredCompanyTypeLanguage()), (String)companyTypeObj));
+					}
 				}
 				
 //			} else if (companyTypeObj instanceof List) {
