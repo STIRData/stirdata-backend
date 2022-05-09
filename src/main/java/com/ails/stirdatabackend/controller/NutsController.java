@@ -50,6 +50,7 @@ public class NutsController {
     @GetMapping(produces = "application/json")
     public ResponseEntity<?> getNutsDb(@RequestParam(required = false) Code top, 
     		                           @RequestParam(defaultValue = "true") boolean lau,
+    		                           @RequestParam(defaultValue = "true") boolean stirdata,
     		                           @RequestParam(required = false) List<String> geometry) {
         
     	PlaceDB parent = null;
@@ -67,8 +68,18 @@ public class NutsController {
     	} else {
     		if (top.isNuts() || top.isLau()) {
     			parent = nutsService.getByCode(top);
-//    			places = nutsService.getNextNutsLauLevelListDb(top);
-    			places = nutsService.getNextDeepestListDb(top, lau);
+    			
+    			if (stirdata) {
+    				CountryDB cc = countryConfigurations.get(parent.getCountry());
+	    			if (!cc.isLau() && !cc.isNuts()) {
+	    				// country supports no places
+	    			} else {
+	//	    			places = nutsService.getNextNutsLauLevelListDb(top);
+	    				places = nutsService.getNextDeepestListDb(top, lau);
+	    			}
+    			} else {
+    				places = nutsService.getNextDeepestListDb(top, lau);
+    			}
     		}
     	}
     	
