@@ -54,7 +54,7 @@ public class UserService {
         else {
             User usr = new User();
             usr.setSolidWebId(webId);
-            name.ifPresent(n -> usr.setFirstName(nm));
+            name.ifPresent(n -> usr.setFirstName(n));
             organization.ifPresent(org -> usr.setOrganization(org));
             email.ifPresent(mail -> usr.setEmail(mail));
             usr.setSolidWebId(webId);

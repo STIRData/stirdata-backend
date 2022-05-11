@@ -2,6 +2,7 @@ package com.ails.stirdatabackend.security;
 
 import java.io.IOException;
 import java.util.Base64;
+import java.util.Optional;
 
 import com.ails.stirdatabackend.model.User;
 import com.ails.stirdatabackend.payload.GoogleAccountUserInfoDTO;
@@ -62,40 +63,55 @@ public class OAuthService {
         JsonNode jwtPayloadJson = om.readTree(jwtPayload);
 
         String target = jwtPayloadJson.get("sub").textValue();
-        System.out.println(target);
-        // HttpHeaders headers = new HttpHeaders();
-        // headers.add("ACCEPT","application/ld+json");
-        // HttpEntity<String> entity = new HttpEntity<>("body", headers);
 
-        // ResponseEntity<String> res = restTemplate.exchange(target, HttpMethod.GET, entity, String.class);
-
-        // String jsonLdStringResponse = res.getBody();
+        // Hit solid endpoint to get jsonld, load it in-memory in JENA, 
+        // perform sparql queries to get name, email, organization
 
         Model model = RDFDataMgr.loadModel(target, Lang.JSONLD);
-
         String sparql = "";
 
         sparql =
             "PREFIX foaf: <http://xmlns.com/foaf/0.1/> "+
             "PREFIX vcard: <http://www.w3.org/2006/vcard/ns#> "+
 
-            "SELECT ?name ?mail WHERE {" +
-            "<"+target+">" + "foaf:name " + "?name ."+
-            "<"+target+">" + "vcard:hasEmail " + "?mailId ."+
-            "?mailId vcard:value ?mail ." +
+            "SELECT ?name ?mail ?organization WHERE {" +
+            "<"+target+">" + " foaf:name " + "?name ."+
+            "OPTIONAL { "+
+                "<"+target+">" + " vcard:organization-name " + "?organization . }" +
+            "OPTIONAL { "+    
+                "<"+target+">" + " vcard:hasEmail " + "?mailId ."+
+                "?mailId vcard:value ?mail . }" +
 
             "}";
         
         try (QueryExecution qe = QueryExecutionFactory.create(sparql, model)) {
             ResultSet rs = qe.execSelect();
+            String jwt = "";
             if (rs.hasNext()) {
                 QuerySolution qs = rs.next();
-                System.out.println(qs.get("name").asLiteral().toString());
-                System.out.println(qs.get("mail").asLiteral().toString());
+                Optional<String> name, email, organization;
+                
+                name = qs.get("name") != null ? Optional.of(qs.get("name").asLiteral().toString()) : Optional.empty(); 
+                organization = qs.get("organization") != null ? Optional.of(qs.get("organization").asLiteral().toString()) : Optional.empty(); 
+
+                if (qs.get("mail") != null) {
+                    String mail = qs.get("mail").asResource().getURI();
+                    if (mail.startsWith("mailto:")) {
+                        mail = mail.substring(7);
+                    }
+                    email = Optional.of(mail); 
+                }
+                else {
+                    email = Optional.empty();
+                }
+
+                
+                User u = userService.checkAndCreateNewUserBySolidId(target, name, organization, email);
+                jwt = tokenProvider.generateToken(u.getId().toString());
             }
+            return jwt;
             
         }
-        return "hshgdh";
     }
 
 }
