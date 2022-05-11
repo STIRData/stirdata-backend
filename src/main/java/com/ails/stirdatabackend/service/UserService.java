@@ -46,6 +46,23 @@ public class UserService {
         }
     }
 
+    public User checkAndCreateNewUserBySolidId(String webId, Optional<String> name, Optional<String> organization, Optional<String> email) {
+        Optional<User> userOpt = userRepository.findBySolidWebId(webId);
+        if (userOpt.isPresent()) {
+            return userOpt.get();
+        }
+        else {
+            User usr = new User();
+            usr.setSolidWebId(webId);
+            name.ifPresent(n -> usr.setFirstName(n));
+            organization.ifPresent(org -> usr.setOrganization(org));
+            email.ifPresent(mail -> usr.setEmail(mail));
+            usr.setSolidWebId(webId);
+            userRepository.save(usr);
+            return usr;
+        }
+    }
+
     public Optional<User> registerUser(UserRegistrationDTO registrationRequest) {
         Optional<User> userOpt = userRepository.findByEmail(registrationRequest.getEmail());
         if (userOpt.isPresent()) {

@@ -22,16 +22,23 @@ public class OAuthController {
     @PostMapping("/authorize/{provider}")
     public ResponseEntity<?> authorize (
             @PathVariable String provider, @RequestBody OAuthRequest oauthRequest) {
+        try {
+            
+            if (provider.equals("google")) {
+                final String jwt = oAuthService.googleOauthVerify(oauthRequest.getToken());
+                return  ResponseEntity.status(HttpStatus.OK).body(new AuthenticationResponse(jwt));
 
-        if (provider.equals("google")) {
-            final String jwt = oAuthService.googleOauthVerify(oauthRequest.getToken());
-            return  ResponseEntity.status(HttpStatus.OK).body(new AuthenticationResponse(jwt));
+            } else if (provider.equals("solid")) {
+                final String jwt = oAuthService.solidOauthVerify(oauthRequest.getToken());
+                return  ResponseEntity.status(HttpStatus.OK).body(new AuthenticationResponse(jwt));
 
-        } else if (provider.equals("solid")) {
-            return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(null);
-
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(null);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(null);
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 }

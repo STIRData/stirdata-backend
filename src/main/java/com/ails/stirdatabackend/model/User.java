@@ -26,6 +26,8 @@ public class User {
         private String email;
         private String firstName;
         private String lastName;
+        private String organization;
+        private String solidWebId;
         private String password;
         private UserType userType;
 
@@ -42,6 +44,7 @@ public class User {
             this.firstName = request.getFirstName();
             this.lastName = request.getLastName();
             this.userType = UserType.USER;
+            this.organization = request.getOrganization();
         }
 
 }
