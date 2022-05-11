@@ -44,6 +44,7 @@ public class User {
             this.firstName = request.getFirstName();
             this.lastName = request.getLastName();
             this.userType = UserType.USER;
+            this.organization = request.getOrganization();
         }
 
 }
