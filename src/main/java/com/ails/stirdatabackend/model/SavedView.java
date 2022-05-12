@@ -1,5 +1,6 @@
 package com.ails.stirdatabackend.model;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -23,12 +24,13 @@ public class SavedView {
     private Date creationDate;
     private List<String> activity;
     private List<String> place;
-    private Date startDate;
-    private Date endDate;
+    private String startDate;
+    private String endDate;
 
     public SavedView() {
         this.creationDate = new Date();
         this.activity = new ArrayList<String>();
         this.place = new ArrayList<String>();
     }
+
 }   
