@@ -3,6 +3,7 @@ package com.ails.stirdatabackend.service;
 import java.util.Optional;
 
 import com.ails.stirdatabackend.model.User;
+import com.ails.stirdatabackend.model.UserType;
 import com.ails.stirdatabackend.payload.GoogleAccountUserInfoDTO;
 import com.ails.stirdatabackend.payload.LoginRequestDTO;
 import com.ails.stirdatabackend.payload.UserRegistrationDTO;
@@ -47,6 +48,9 @@ public class UserService {
     }
 
     public User checkAndCreateNewUserBySolidId(String webId, Optional<String> name, Optional<String> organization, Optional<String> email) {
+        if (email.isPresent()) {
+
+        }
         Optional<User> userOpt = userRepository.findBySolidWebId(webId);
         if (userOpt.isPresent()) {
             return userOpt.get();
@@ -58,7 +62,9 @@ public class UserService {
             organization.ifPresent(org -> usr.setOrganization(org));
             email.ifPresent(mail -> usr.setEmail(mail));
             usr.setSolidWebId(webId);
+            usr.setUserType(UserType.USER);
             userRepository.save(usr);
+            
             return usr;
         }
     }
