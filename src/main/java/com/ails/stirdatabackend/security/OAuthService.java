@@ -112,7 +112,7 @@ public class OAuthService {
 
                 Optional<User> u = userService.checkAndCreateNewUserSolid(email, name, organization);
                 if (!u.isPresent()) {
-                    return ResultDTO.fail("Solid login failed. Email in use")
+                    return ResultDTO.fail("Solid login failed. Email in use");
                 }
 
                 jwt = tokenProvider.generateToken(u.get().getId().toString());
