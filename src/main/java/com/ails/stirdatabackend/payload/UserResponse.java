@@ -1,6 +1,7 @@
 package com.ails.stirdatabackend.payload;
 
 import com.ails.stirdatabackend.model.User;
+import com.ails.stirdatabackend.model.UserLoginType;
 import com.ails.stirdatabackend.model.UserType;
 
 import org.bson.types.ObjectId;
@@ -15,6 +16,7 @@ public class UserResponse {
     private String lastName;
     private String email;
     private UserType userType;
+    private UserLoginType userLoginType;
 
     public UserResponse(User u) {
         this.id = u.getId();
@@ -22,6 +24,7 @@ public class UserResponse {
         this.lastName = u.getLastName();
         this.email = u.getEmail();
         this.userType = u.getUserType();
+        this.userLoginType = u.getUserLoginType();
     }
     
 }

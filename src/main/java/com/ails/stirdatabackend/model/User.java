@@ -27,16 +27,16 @@ public class User {
         private String firstName;
         private String lastName;
         private String organization;
-        private String solidWebId;
         private String password;
         private UserType userType;
-
+        private UserLoginType userLoginType;
 
         public User(GoogleAccountUserInfoDTO request) {
             this.email = request.getEmail();
             this.firstName = request.getGiven_name();
             this.lastName = request.getFamily_name();
             this.userType = UserType.USER;
+            this.userLoginType = UserLoginType.GOOGLE;
         }
 
         public User(UserRegistrationDTO request) {
@@ -45,6 +45,7 @@ public class User {
             this.lastName = request.getLastName();
             this.userType = UserType.USER;
             this.organization = request.getOrganization();
+            this.userLoginType = UserLoginType.CUSTOM;
         }
 
 }

@@ -3,6 +3,7 @@ package com.ails.stirdatabackend.service;
 import java.util.Optional;
 
 import com.ails.stirdatabackend.model.User;
+import com.ails.stirdatabackend.model.UserLoginType;
 import com.ails.stirdatabackend.model.UserType;
 import com.ails.stirdatabackend.payload.GoogleAccountUserInfoDTO;
 import com.ails.stirdatabackend.payload.LoginRequestDTO;
@@ -35,39 +36,42 @@ public class UserService {
     private PasswordEncoder passwordEncoder;
 
 
-    public User checkAndCreateNewUser(GoogleAccountUserInfoDTO request) {
+    public Optional<User> checkAndCreateNewUserGoogle(GoogleAccountUserInfoDTO request) {
         Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
-        if (userOpt.isPresent()) {
-            return userOpt.get();
+        if (userOpt.isPresent() && userOpt.get().getUserLoginType().equals(UserLoginType.GOOGLE)) {
+            return userOpt;
+        }
+        else if (userOpt.isPresent() && !userOpt.get().getUserLoginType().equals(UserLoginType.GOOGLE)) {
+            return Optional.empty();
         }
         else {
             User usr = new User(request);
             userRepository.save(usr);
-            return usr;
+            return Optional.of(usr);
         }
     }
 
-    public User checkAndCreateNewUserBySolidId(String webId, Optional<String> name, Optional<String> organization, Optional<String> email) {
-        if (email.isPresent()) {
-
+    public Optional<User> checkAndCreateNewUserSolid( String email, Optional<String> name, Optional<String> organization  ) {
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isPresent() && userOpt.get().getUserLoginType().equals(UserLoginType.SOLID)) {
+            return userOpt;
         }
-        Optional<User> userOpt = userRepository.findBySolidWebId(webId);
-        if (userOpt.isPresent()) {
-            return userOpt.get();
+        else if (userOpt.isPresent() && !userOpt.get().getUserLoginType().equals(UserLoginType.SOLID)) {
+            return Optional.empty();
         }
         else {
+
             User usr = new User();
-            usr.setSolidWebId(webId);
             name.ifPresent(n -> usr.setFirstName(n));
             organization.ifPresent(org -> usr.setOrganization(org));
-            email.ifPresent(mail -> usr.setEmail(mail));
-            usr.setSolidWebId(webId);
+            usr.setEmail(email);
+            usr.setUserLoginType(UserLoginType.SOLID);
             usr.setUserType(UserType.USER);
             userRepository.save(usr);
-            
-            return usr;
+            return Optional.of(usr);
         }
     }
+
 
     public Optional<User> registerUser(UserRegistrationDTO registrationRequest) {
         Optional<User> userOpt = userRepository.findByEmail(registrationRequest.getEmail());
@@ -86,7 +90,6 @@ public class UserService {
 
     public Optional<String> loginUser(LoginRequestDTO loginRequest) {
         try {
-            System.out.println(loginRequest.getPassword());
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getEmail(),
