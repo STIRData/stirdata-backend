@@ -10,5 +10,4 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface UserRepository extends MongoRepository<User, String> {
     Optional<User> findByEmail(String email);
-    Optional<User> findBySolidWebId(String solidWebId);
 }

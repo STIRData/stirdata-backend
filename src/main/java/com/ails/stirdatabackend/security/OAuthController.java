@@ -1,7 +1,9 @@
 package com.ails.stirdatabackend.security;
 
 import com.ails.stirdatabackend.payload.AuthenticationResponse;
+import com.ails.stirdatabackend.payload.Message;
 import com.ails.stirdatabackend.payload.OAuthRequest;
+import com.ails.stirdatabackend.payload.ResultDTO;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -25,12 +27,19 @@ public class OAuthController {
         try {
             
             if (provider.equals("google")) {
-                final String jwt = oAuthService.googleOauthVerify(oauthRequest.getToken());
-                return  ResponseEntity.status(HttpStatus.OK).body(new AuthenticationResponse(jwt));
+                ResultDTO<String> res = oAuthService.googleOauthVerify(oauthRequest.getToken());
+                if (res.isError()) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new Message(res.getError()));
+
+                }
+                return  ResponseEntity.status(HttpStatus.OK).body(new AuthenticationResponse(res.getResult()));
 
             } else if (provider.equals("solid")) {
-                final String jwt = oAuthService.solidOauthVerify(oauthRequest.getToken());
-                return  ResponseEntity.status(HttpStatus.OK).body(new AuthenticationResponse(jwt));
+                ResultDTO<String> res = oAuthService.solidOauthVerify(oauthRequest.getToken());
+                if (res.isError()) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new Message(res.getError()));
+                }
+                return  ResponseEntity.status(HttpStatus.OK).body(new AuthenticationResponse(res.getResult()));
 
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(null);

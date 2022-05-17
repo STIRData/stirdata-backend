@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import com.ails.stirdatabackend.model.User;
 import com.ails.stirdatabackend.payload.GoogleAccountUserInfoDTO;
+import com.ails.stirdatabackend.payload.ResultDTO;
 import com.ails.stirdatabackend.service.UserService;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -41,17 +42,21 @@ public class OAuthService {
         this.restTemplate = restTemplateBuilder.build();
     }
 
-    public String googleOauthVerify(String token) {
+    public ResultDTO<String> googleOauthVerify(String token) {
         String url =  googleUrl + "?id_token=" + token;
         GoogleAccountUserInfoDTO jsonResponse = restTemplate.getForObject(url, GoogleAccountUserInfoDTO.class);
 
-        User u = userService.checkAndCreateNewUser(jsonResponse);
-        String jwt = tokenProvider.generateToken(u.getId().toString());
+        Optional<User> u = userService.checkAndCreateNewUserGoogle(jsonResponse);
+        if (!u.isPresent()) {
+            return ResultDTO.fail("Google Login failed. Account with email already exists");
+        }
 
-        return jwt;
+        String jwt = tokenProvider.generateToken(u.get().getId().toString());
+
+        return ResultDTO.ok(jwt);
     }
 
-    public String solidOauthVerify(String token) throws JsonParseException, IOException {
+    public ResultDTO<String> solidOauthVerify(String token) throws JsonParseException, IOException, Exception {
 
         // Parse solid jwt, get the payload, decode it, get the WebID
         String[] tokenParts = token.split("\\.");
@@ -89,8 +94,8 @@ public class OAuthService {
             String jwt = "";
             if (rs.hasNext()) {
                 QuerySolution qs = rs.next();
-                Optional<String> name, email, organization;
-                
+                Optional<String> name, organization;
+                String email = "";
                 name = qs.get("name") != null ? Optional.of(qs.get("name").asLiteral().toString()) : Optional.empty(); 
                 organization = qs.get("organization") != null ? Optional.of(qs.get("organization").asLiteral().toString()) : Optional.empty(); 
 
@@ -99,17 +104,20 @@ public class OAuthService {
                     if (mail.startsWith("mailto:")) {
                         mail = mail.substring(7);
                     }
-                    email = Optional.of(mail); 
+                    email = mail;
                 }
                 else {
-                    email = Optional.empty();
+                    throw new Exception("Solid login error");
                 }
 
-                
-                User u = userService.checkAndCreateNewUserBySolidId(target, name, organization, email);
-                jwt = tokenProvider.generateToken(u.getId().toString());
+                Optional<User> u = userService.checkAndCreateNewUserSolid(email, name, organization);
+                if (!u.isPresent()) {
+                    return ResultDTO.fail("Solid login failed. Email in use");
+                }
+
+                jwt = tokenProvider.generateToken(u.get().getId().toString());
             }
-            return jwt;
+            return ResultDTO.ok(jwt);
             
         }
     }
