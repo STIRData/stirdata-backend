@@ -877,6 +877,10 @@ public class StatisticsContoller {
 	}
 	
 	private List<GenericResponse> iter(List<StatisticDB> stats, List<PlaceDB> placedb, List<ActivityDB> activitydb, Code founding, Code dissolution, String language) {
+		if (stats == null) {
+			return null;
+		}
+		
 		List<GenericResponse> result = new ArrayList<>();
 		for (StatisticDB st : stats) {
 			result.add(GenericResponse.createFromStatistic(st, countryConfigurations.get(st.getCountry()), placedb, activitydb, founding, dissolution, language));
@@ -886,6 +890,9 @@ public class StatisticsContoller {
 	}
 
 	private List<GenericResponse> iterFounding(List<StatisticDB> stats, List<PlaceDB> placedb, List<ActivityDB> activitydb, Code founding, Code dissolution, String language) {
+		if (stats == null) {
+			return null;
+		}
 		List<GenericResponse> result = new ArrayList<>();
 		for (StatisticDB st : stats) {
 			result.add(GenericResponse.createFromFoundingStatistic(st, countryConfigurations.get(st.getCountry()), placedb, activitydb, founding, dissolution, language));
@@ -895,6 +902,9 @@ public class StatisticsContoller {
 	}
 	
 	private List<GenericResponse> iterDissolution(List<StatisticDB> stats, List<PlaceDB> placedb, List<ActivityDB> activitydb, Code founding, Code dissolution, String language) {
+		if (stats == null) {
+			return null;
+		}
 		List<GenericResponse> result = new ArrayList<>();
 		for (StatisticDB st : stats) {
 			result.add(GenericResponse.createFromDissolutionStatistic(st, countryConfigurations.get(st.getCountry()), placedb, activitydb, founding, dissolution, language));
