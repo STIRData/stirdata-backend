@@ -71,7 +71,7 @@ public class NutsController {
     			
     			if (stirdata) {
     				CountryDB cc = countryConfigurations.get(parent.getCountry());
-	    			if (!cc.isLau() && !cc.isNuts()) {
+	    			if (cc == null || (!cc.isLau() && !cc.isNuts())) {
 	    				// country supports no places
 	    			} else {
 	//	    			places = nutsService.getNextNutsLauLevelListDb(top);
@@ -93,6 +93,12 @@ public class NutsController {
 		}
     	
         return ResponseEntity.ok(res);
+    }
+    
+    @GetMapping(value = "filters", produces = "application/json")
+    public ResponseEntity<?> getFilters() {
+        
+        return ResponseEntity.ok(nutsService.getFilters());
     }
     
 //    @GetMapping(value = "/getGeoJson", 

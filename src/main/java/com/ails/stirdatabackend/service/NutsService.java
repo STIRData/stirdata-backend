@@ -3,6 +3,9 @@ package com.ails.stirdatabackend.service;
 import com.ails.stirdatabackend.model.Code;
 import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.PlaceDB;
+import com.ails.stirdatabackend.model.StatisticResult;
+import com.ails.stirdatabackend.payload.CodeLabel;
+import com.ails.stirdatabackend.payload.CubeResponse;
 import com.ails.stirdatabackend.repository.PlacesDBRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,6 +18,7 @@ import lombok.Setter;
 
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
+import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.query.ResultSetFormatter;
@@ -24,14 +28,20 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 @Service
 public class NutsService {
+
+    @Autowired
+    @Qualifier("endpoint-nuts-stats-eu")
+    private String nutsStatsEndpointEU;
 
     @Autowired
     @Qualifier("endpoint-nuts-eu")
@@ -63,6 +73,8 @@ public class NutsService {
     	private List<Code> nuts3; // null means no selection
     	private List<Code> lau;   // null means no selection
     	
+    	private Set<Code> nutsStat;   // null means no selection
+    	
     	public void addNuts3(Code nuts3) {
     		if (this.nuts3 == null) {
         		this.nuts3 = new ArrayList<>();
@@ -76,6 +88,14 @@ public class NutsService {
     		}
     		this.lau.add(lau);
     	}
+
+    	public void addNutsStat(Code nutsStat) {
+    		if (this.nutsStat == null) {
+        		this.nutsStat = new HashSet<>();
+    		}
+    		this.nutsStat.add(nutsStat);
+    	}
+
     }
     
     public List<String> getLocalNutsLeafUris(CountryDB cc, List<Code> nutsCodes) {
@@ -98,19 +118,43 @@ public class NutsService {
 
     }
     
-    public List<String> getLocalNutsLeafUrisDB(CountryDB cc, List<Code> nutsCodes) {
+    public List<String> getLocalNutsLeafUrisDB(CountryDB cc, PlaceSelection ps) {
+    	List<Code> nutsCodes = ps.getNuts3();
+    	
+//    	System.out.println(">>> NNNN" );
+//    	System.out.println(ps.getNuts3());
+//    	System.out.println(ps.getNutsStat());
     	
     	if (nutsCodes != null && nutsCodes.contains(Code.createNutsCode(cc.getCode()))) { // entire country, ignore nuts
-    		return null;
+    		if (ps.getNutsStat() == null) {
+    			return null;
+    		} else {
+            	Set<String> statNuts3Uris = new HashSet<>();
+            	for (Code s : ps.getNutsStat()) {
+            		statNuts3Uris.addAll(getNutsLocalNuts3LeafUrisDB(cc, s));
+            	}
+//            	System.out.println("EFF " + statNuts3Uris);
+            	return new ArrayList<>(statNuts3Uris);
+    		}
     	}
     	
     	List<String> res = null;
     	if (nutsCodes != null) {
             Set<String> nuts3Uris = new HashSet<>();
             for (Code s : nutsCodes) {
-           		nuts3Uris.addAll(getLocalNutsLeafUrisDB(cc, s));
+           		nuts3Uris.addAll(getNutsLocalNuts3LeafUrisDB(cc, s));
             }
 
+            if (ps.getNutsStat() != null) {
+            	Set<String> statNuts3Uris = new HashSet<>();
+            	for (Code s : ps.getNutsStat()) {
+            		statNuts3Uris.addAll(getNutsLocalNuts3LeafUrisDB(cc, s));
+            	}
+            	
+            	nuts3Uris.retainAll(statNuts3Uris);
+            }
+            
+//            System.out.println("EFF " + nuts3Uris);
             res = new ArrayList<>(nuts3Uris);
     	}
     	
@@ -118,7 +162,42 @@ public class NutsService {
 
     }
     
-    public List<String> getLocalNutsLeafUrisDB(CountryDB cc, Code nutsCode) {
+    
+    public List<String> getLocalLauUris(CountryDB cc, PlaceSelection ps) {
+    	List<Code> lauCodes = ps.getLau();
+    	
+//    	System.out.println(">>> LLLL" );
+//    	System.out.println(ps.getLau());
+//    	System.out.println(ps.getNutsStat());
+    	
+    	List<String> res = null;
+    	if (lauCodes != null) {
+            Set<String> lauUris = new HashSet<>();
+            for (Code s : lauCodes) {
+           		lauUris.add(getLocalLauUri(cc, s));
+            }
+            
+            if (ps.getNutsStat() != null) {
+            	Set<String> statLauUris = new HashSet<>();
+            	for (Code s : ps.getNutsStat()) {
+            		statLauUris.addAll(getNutsLocalLauLeafUrisDB(cc, s));
+            	}
+            	
+//            	System.out.println(statLauUris);
+            	
+            	lauUris.retainAll(statLauUris);
+            }
+
+//            System.out.println("EFF " + lauUris);
+            res = new ArrayList<>(lauUris);
+    	}
+    	
+    	return res;
+
+    }
+    
+    
+    public List<String> getNutsLocalNuts3LeafUrisDB(CountryDB cc, Code nutsCode) {
     	List<String> res = new ArrayList<>();
     	
     	int level = nutsCode.getNutsLevel();
@@ -127,26 +206,49 @@ public class NutsService {
     	
     	List<PlaceDB> places = null;
     	if (level == 0) {
-    		places = placesRepository.findNUTS0Leaves(p);
+    		places = placesRepository.findNUTS0NUTS3Leaves(p);
     	} else if (level == 1) {
-    		places = placesRepository.findNUTS1Leaves(p);
+    		places = placesRepository.findNUTS1NUTS3Leaves(p);
     	} else if (level == 2) {
-    		places = placesRepository.findNUTS2Leaves(p);    	
+    		places = placesRepository.findNUTS2NUTS3Leaves(p);    	
     	} else if (level == 3) {
     		places = new ArrayList<>();
     		places.add(placesRepository.findByCode(nutsCode));
     	}
-    	
-//    	System.out.println(">>> " + places);
 
     	for (PlaceDB pp : places) {
             res.add(cc.getNutsPrefix() + pp.getCode().getCode());
         }
     	
-//    	System.out.println(">>> " + res);
+    	return res;
+    }
+    
+    public List<String> getNutsLocalLauLeafUrisDB(CountryDB cc, Code nutsCode) {
+    	List<String> res = new ArrayList<>();
+    	
+    	int level = nutsCode.getNutsLevel();
+    	
+    	PlaceDB p = new PlaceDB(nutsCode);
+    	
+    	List<PlaceDB> places = null;
+    	if (level == 0) {
+    		places = placesRepository.findNUTS0LAULeaves(p);
+    	} else if (level == 1) {
+    		places = placesRepository.findNUTS1LAULeaves(p);
+    	} else if (level == 2) {
+    		places = placesRepository.findNUTS2LAULeaves(p);    	
+    	} else if (level == 3) {
+    		places = placesRepository.findNUTS3LAULeaves(p);    	
+    	}
+
+    	for (PlaceDB pp : places) {
+            res.add(cc.getLauPrefix() + pp.getCode().getCode());
+        }
     	
     	return res;
     }
+    
+    
     
     public Set<String> getLocalNutsLeafUris(CountryDB cc, Code nutsCode) {
     	Set<String> res = new HashSet<>();
@@ -189,21 +291,7 @@ public class NutsService {
     	return res;
     }
     
-    public List<String> getLocalLauUris(CountryDB cc, List<Code> lauCodes) {
-    	
-    	List<String> res = null;
-    	if (lauCodes != null) {
-            Set<String> lauUris = new HashSet<>();
-            for (Code s : lauCodes) {
-           		lauUris.add(getLocalLauUri(cc, s));
-            }
 
-            res = new ArrayList<>(lauUris);
-    	}
-    	
-    	return res;
-
-    }
     
     public String getLocalLauUri(CountryDB cc, Code lauCode) {
   		//adjust prefix
@@ -231,8 +319,9 @@ public class NutsService {
     public Map<CountryDB, PlaceSelection> getEndpointsByNuts(List<Code> nutsLauCodes) {
         Map<CountryDB, PlaceSelection> res = new HashMap<>();
 
-        for (Code code : nutsLauCodes) {
-        	
+        List<Code> statCodes = new ArrayList<>();
+    
+    	for (Code code : nutsLauCodes) {
         	if (code.isNuts()) {
         		CountryDB cc = countryConfigurations.get(code.getNutsCountry());
         		
@@ -254,10 +343,34 @@ public class NutsService {
         		}
         		
                 rc.addLau(code);
-        	} 
-
+        	} else if (code.isStat()) {
+        		statCodes.add(code);
+        	}
         }
-        
+
+    	if (!statCodes.isEmpty()) {
+
+	    	for (Map.Entry<CountryDB, PlaceSelection> entry : res.entrySet()) {
+	    		Set<Code> codes = null;
+
+	    		// assume same level nuts for all statCodes !!!!
+
+	    		for (Code stat : statCodes) {
+	    			List<Code> cs = getNutsCodesFromStat(stat, entry.getKey());
+
+	    			if (codes == null) {
+	    				codes = new HashSet<>();
+	    				codes.addAll(cs);
+	    			} else {
+	    				codes.retainAll(cs);
+	    			}
+	    		}
+	    		
+    			entry.getValue().setNutsStat(codes);
+
+	    	}
+    	}
+    	
         return res;
     }
     
@@ -326,6 +439,7 @@ public class NutsService {
     
     //returns deepest non single children nodes (next level may contain nuts and lau if parent nuts has single child).
     public List<PlaceDB> getNextDeepestListDb(Code parent, boolean lau) {
+//    	System.out.println("PP " + parent);
     	List<PlaceDB> places = new ArrayList<>();
     	
     	PlaceDB parentPlace = null;
@@ -340,9 +454,10 @@ public class NutsService {
     	}
 
 		places = placesRepository.findByParent(parentPlace);
-		
+//		System.out.println("PX " + places);
 		if (places.size() == 1) {
 			PlaceDB next = getNextDeepestSingle(places.get(0), lau);
+//			System.out.println("PN " + next);
 			if (next.getNumberOfChildren() > 0 && (lau || !lau && next.getCode().getNutsLevel() !=3 )) {
 				places = placesRepository.findByParent(next);
 			} else {
@@ -549,5 +664,124 @@ public class NutsService {
 //
 //        return res;
 //    }
+    
+    public List<Code> getNutsCodesFromStat(Code stat, CountryDB cc) {
+    	List<CountryDB> list = new ArrayList<>();
+    	list.add(cc);
+    	return getNutsCodesFromStat(stat, list);
+    }
+    
+    public List<Code> getNutsCodesFromStat(Code stat, List<CountryDB> ccList) {
 
+    	String countries = "";
+    	if (ccList != null) {
+	    	for (CountryDB cc : ccList) {
+	    		if (countries.length() > 0) {
+	    			countries += "  ";
+	    		}
+	    		countries += "\"" + cc.getCode() + "\"";
+	    	}
+    	}
+    	
+    	String sparql = "SELECT DISTINCT(?area) WHERE { " +
+    		      "?obs a <http://purl.org/linked-data/cube#Observation> . " +
+    		      "?obs <http://purl.org/linked-data/cube#dataSet> <" + stat.getStatDatasetUri() + "> . " +
+    		      "?obs <https://w3id.org/stirdata/vocabulary/stat/refArea> ?area . " +
+    		      "?obs <" + stat.getStatPropertyUri() + "> <" + stat.getStatValueUri() + "> . " +  
+    		      "?area <https://w3id.org/stirdata/vocabulary/iso31661Alpha2Code> ?countryCode . " + 
+    		      (ccList != null ? "VALUES ?countryCode { " + countries + " } . " : "") + 
+    		      "}";
+    		
+    	List<Code> res = new ArrayList<>();
+    	
+//    	System.out.println(sparql);
+//    	System.out.println(QueryFactory.create(sparql));
+    	
+    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsStatsEndpointEU, sparql)) {
+        	ResultSet rs = qe.execSelect();
+        	
+        	while (rs.hasNext()) {
+        		QuerySolution sol = rs.next();
+
+     			String uri = sol.get("area").asResource().toString();
+     			
+//     			System.out.println(uri);
+     			if (Code.isNutsUri(uri)) {
+     				res.add(Code.fromNutsUri(uri));
+     			}
+       		}
+    	}
+    	
+//    	System.out.println(res);
+    	
+    	return res;
+    	
+    }
+
+    public List<CubeResponse> getFilters() {
+
+    	String sparql = 
+    			"PREFIX cube: <http://purl.org/linked-data/cube#> " +
+    			"SELECT ?dataset ?prop ?propLabel ?value ?valueLabel " +  
+    			"WHERE { " +
+    				"?dataset a cube:DataSet ; " +
+    	         		"cube:structure " +
+    	                	"[ a cube:DataStructureDefinition ; " +
+    	                  		"cube:component " +
+    								"[ cube:dimension <https://w3id.org/stirdata/vocabulary/stat/refArea> ] ] ; " +
+    	         		"cube:structure " +
+    	                	"[ a cube:DataStructureDefinition ; " +
+    	                  		"cube:component " +
+    								"[ cube:measure ?prop ] ] . " +
+    				"?prop a cube:DimensionProperty ; " +
+      					"<http://www.w3.org/2000/01/rdf-schema#label> ?propLabel ; " +
+    	        		"cube:codeList ?scheme . " +
+    				"?value a <http://www.w3.org/2004/02/skos/core#Concept> ; " +
+    					"<http://www.w3.org/2004/02/skos/core#prefLabel> ?valueLabel ; " +    				
+    	        		"<http://www.w3.org/2004/02/skos/core#inScheme> ?scheme . " + 
+    	        "} ORDER BY ?propLabel ?valueLabel";
+    	
+    		
+    	Map<String, CubeResponse> res = new LinkedHashMap<>();
+    	
+//    	System.out.println(sparql);
+//    	System.out.println(QueryFactory.create(sparql));
+    	
+    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsStatsEndpointEU, sparql)) {
+        	ResultSet rs = qe.execSelect();
+        	
+        	while (rs.hasNext()) {
+        		QuerySolution sol = rs.next();
+
+        		String dataset = sol.get("dataset").asResource().toString();
+        		
+     			String prop = sol.get("prop").asResource().toString();
+     			String propLabel = sol.get("propLabel").asLiteral().getLexicalForm();
+     			String value = sol.get("value").asResource().toString();
+     			String valueLabel = sol.get("valueLabel").asLiteral().getLexicalForm();
+
+     			Code datasetCode = Code.fromStatDatasetUri(dataset);
+     			CodeLabel datasetCodeLabel = new CodeLabel(datasetCode.toString(), null, dataset);
+
+     			Code propCode = Code.fromStatPropetyUri(prop);
+     			CodeLabel propCodeLabel = new CodeLabel(propCode.toString(), propLabel, prop);
+
+     			Code valueCode = Code.fromStatValueUri(value);
+     			CodeLabel valueCodeLabel = new CodeLabel(valueCode.toString(), valueLabel, value);
+     			
+     			CubeResponse cube = res.get(dataset + "##" + prop);
+     			if (cube == null) {
+     				cube = new CubeResponse();
+     				cube.setDataset(datasetCodeLabel);
+     				cube.setProperty(propCodeLabel);
+     				res.put(dataset + "##" + prop, cube);
+     			}
+     			
+     			cube.getValues().add(valueCodeLabel);
+       		}
+    	}
+    	
+    	return new ArrayList<>(res.values());
+    	
+    }
 }

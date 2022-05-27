@@ -183,6 +183,9 @@ public class NaceService {
     	
     	String s = "";
     	for (int k : cc.getEffectiveNaceLevels()) {
+    		if (k <= level) {
+    			continue;
+    		}
         	String ls = "(";
     		for (int i = 0; i < k - level; i++) {
     			if (i > 0) {
@@ -199,7 +202,10 @@ public class NaceService {
     		s += ls;
     	}
     	
-    	sparql += " ?activity (" + s + ")/skos:exactMatch" + " <" + code.toUri() + "> . "; 
+    	if (s.length() > 0) {
+    		s = "(" + s + ")/" ;
+    	}
+    	sparql += " ?activity " + s + "skos:exactMatch" + " <" + code.toUri() + "> . "; 
     	
 		sparql += " ?activity skos:inScheme <" + cc.getNaceScheme() + "> } ";
     	

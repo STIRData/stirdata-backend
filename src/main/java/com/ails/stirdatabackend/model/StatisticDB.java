@@ -33,7 +33,12 @@ import lombok.Setter;
     		       @Index(columnList = "place"), 
     		       @Index(columnList = "activity"),
     		       @Index(columnList = "parent_place"),
-    		       @Index(columnList = "parent_activity") } 
+    		       @Index(columnList = "parent_activity"),
+    		       @Index(columnList = "founding_from_date"),
+    		       @Index(columnList = "founding_to_date"),
+    		       @Index(columnList = "dissolution_from_date"),
+    		       @Index(columnList = "dissolution_to_date")
+    		       } 
 )
 public class StatisticDB {
 	

@@ -69,7 +69,9 @@ public class GenericResponse {
 		if (place == null) {
 			place = new ArrayList<>();
 		}
-		place.add(new CodeLabel(code, label, geometry));
+		CodeLabel cl = new CodeLabel(code, label, new Code(code).toUri());
+		cl.setGeometry(geometry);
+		place.add(cl);
 	}
 
 	public void addActivity(String code, String label) {

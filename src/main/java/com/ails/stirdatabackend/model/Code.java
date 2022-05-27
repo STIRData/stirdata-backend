@@ -26,6 +26,10 @@ public class Code implements Serializable {
 	public final static String nutsPrefix = "https://w3id.org/stirdata/resource/nuts/item/";
 	public final static String lauPrefix = "https://w3id.org/stirdata/resource/lau/item/";
 	
+	public final static String statDatasetPrefix = "https://w3id.org/stirdata/resource/stat/dataset/";
+	public final static String statPropertyPrefix = "https://w3id.org/stirdata/vocabulary/stat/";
+	public final static String statValuePrefix = "https://w3id.org/stirdata/resource/stat/item/";
+	
 //    public final static String lau2021Prefix = "https://lod.stirdata.eu/lau/code/2021/";
     
 //    public final static String naceRev2Prefix = "https://lod.stirdata.eu/nace/nace-rev2/code/";
@@ -36,6 +40,11 @@ public class Code implements Serializable {
     public final static String lauNamespace = "lau";
     public final static String dateIntervalNamespace = "date-range";
     
+    public final static String statNamespace = "stat";
+    public final static String statDatasetNamespace = "stat-ds";
+    public final static String statPropertyNamespace = "stat-prop";
+    public final static String statValueNamespace = "stat-val";
+    
     public final static String date1D = "1D";
     public final static String date1M = "1M";
     public final static String date3M = "3M";
@@ -44,7 +53,8 @@ public class Code implements Serializable {
     
 	private static final long serialVersionUID = 1L;
 	
-	private final static Pattern datePattern = Pattern.compile("^(.*?):(.*?)(?::(.*?))?$");
+	private final static Pattern dateIntervalPattern = Pattern.compile("^(.*?):(.*?)(?::(.*?))?$");
+	private final static Pattern statPattern = Pattern.compile("^(.*?):(.*?):(.*?)?$");
 	
 	private static Map<String, String> namespaceMap = new HashMap<>();
 	static {
@@ -59,6 +69,10 @@ public class Code implements Serializable {
 	private Date dateFrom;
 	private Date dateTo;
 	private String dateInterval;
+	
+	private String statDataset;
+	private String statProperty;
+	private String statValue;
 
 	public Code(String string) {
 //		String[] r = string.split(":");
@@ -73,7 +87,7 @@ public class Code implements Serializable {
 			code = string.substring(p + 1);
 		
 			if (namespace.equals(dateIntervalNamespace)) {
-				Matcher m = datePattern.matcher(code);
+				Matcher m = dateIntervalPattern.matcher(code);
 				if (m.find()) {
 					if (m.groupCount() == 2 || m.groupCount() == 3) {
 						try {
@@ -88,12 +102,55 @@ public class Code implements Serializable {
 						}
 					}
 				}
+			} else	if (namespace.equals(statNamespace)) {
+				Matcher m = statPattern.matcher(code);
+				if (m.find()) {
+					statDataset = m.group(1);
+					statProperty = m.group(2);
+					statValue = m.group(3);
+				}
 			}
 		} else {
 			namespace = string;
 		}
 	}
 	
+	public static Code fromStatPropetyUri(String s) {
+		if (s.startsWith(statPropertyPrefix)) {
+			return createStatPropertyCode(s.substring(statPropertyPrefix.length()));
+		} else {
+			return null;
+		}
+	}
+	
+	public static Code createStatDatasetCode(String s) {
+		return new Code(statDatasetNamespace + ":" + s);
+	}
+	
+	public static Code fromStatDatasetUri(String s) {
+		if (s.startsWith(statDatasetPrefix)) {
+			return createStatDatasetCode(s.substring(statDatasetPrefix.length()));
+		} else {
+			return null;
+		}
+	}
+
+	public static Code createStatPropertyCode(String s) {
+		return new Code(statPropertyNamespace + ":" + s);
+	}
+	
+	public static Code fromStatValueUri(String s) {
+		if (s.startsWith(statValuePrefix)) {
+			return createStatValueCode(s.substring(statValuePrefix.length()));
+		} else {
+			return null;
+		}
+	}
+	
+	public static Code createStatValueCode(String s) {
+		return new Code(statValueNamespace + ":" + s);
+	}
+
 	public static Code createNutsCode(String s) {
 		return new Code(nutsNamespace + ":" + s);
 	}
@@ -105,7 +162,7 @@ public class Code implements Serializable {
 			return null;
 		}
 	}
-	
+
 	public static Code fromLauUri(String s, CountryDB cc) {
 		if (s.startsWith(cc.getLauPrefix())) {
 			return createLauCode(s.substring(cc.getLauPrefix().length()));
@@ -290,6 +347,11 @@ public class Code implements Serializable {
 		return namespace != null && namespace.equals(lauNamespace);
 	}
 	
+	public boolean isStat() {
+		return namespace != null && namespace.equals(statNamespace);
+	}
+	
+	
 	public boolean isNaceRev2() {
 		return namespace != null && namespace.equals(naceRev2Namespace);
 	}
@@ -333,6 +395,19 @@ public class Code implements Serializable {
 	public String toUri(String appendix) {
 		return namespaceMap.get(namespace) + appendix + "/" + code;
 	}
+
+	public String getStatDatasetUri() {
+		return statDatasetPrefix + this.statDataset;
+	}
+
+	public String getStatPropertyUri() {
+		return statPropertyPrefix + this.statProperty;
+	}
+
+	public String getStatValueUri() {
+		return statValuePrefix + this.statValue;
+	}
+
 	
 	public int hashCode() {
 		return toString().hashCode();
@@ -344,5 +419,9 @@ public class Code implements Serializable {
 		} else {
 			return this.toString().equals(((Code)obj).toString());
 		}
+	}
+	
+	public static boolean isNutsUri(String uri) {
+		return uri.startsWith(nutsPrefix);
 	}
 }

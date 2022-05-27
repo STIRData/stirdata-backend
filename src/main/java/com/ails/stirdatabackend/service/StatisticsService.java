@@ -1306,8 +1306,8 @@ public class StatisticsService {
 //   	    if (dimension == Dimension.NUTSLAU) {
    	        	naceLeafUris = naceService.getLocalNaceLeafUris(cc, naceCodes);
 //   	    } else if (dimension == Dimension.NACE) {
-   		        nutsLeafUris = places == null ? null : nutsService.getLocalNutsLeafUrisDB(cc, places.getNuts3()); 
-   		        lauUris = places == null ? null : nutsService.getLocalLauUris(cc, places.getLau());
+   		        nutsLeafUris = places == null ? null : nutsService.getLocalNutsLeafUrisDB(cc, places); 
+   		        lauUris = places == null ? null : nutsService.getLocalLauUris(cc, places);
 // 	        } 
    		        
    		    if (places != null) {
@@ -1529,7 +1529,7 @@ public class StatisticsService {
 	        	if (code.isNuts()) {
 	        		
 	        		Set<String> nutsUris = new HashSet<>();
-	        		nutsUris.addAll(nutsService.getLocalNutsLeafUrisDB(cc, code));
+	        		nutsUris.addAll(nutsService.getNutsLocalNuts3LeafUrisDB(cc, code));
 	        		if (sh.nutsLeafUris != null) {
 	        			nutsUris.retainAll(sh.nutsLeafUris);
 	        		}
@@ -1588,6 +1588,7 @@ public class StatisticsService {
 //	        System.out.println(uri);
 //	        System.out.println(cc.getDataEndpoint());
 //	        System.out.println(QueryFactory.create(query));
+//    		System.out.println(query);
 //	        long start = System.currentTimeMillis();
 	        
 	        int tries = 0;

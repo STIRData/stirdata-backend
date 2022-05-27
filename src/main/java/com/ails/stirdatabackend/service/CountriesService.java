@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -100,6 +101,8 @@ public class CountriesService {
     @Autowired
     private StatisticsService statisticsService;
     
+	@Autowired
+	private Environment env;
     
 	public void reload() {
 		Map<String, CountryDB> countryConfigurations = new HashMap<>();
@@ -193,8 +196,12 @@ public class CountriesService {
     	cc.setLegalNameSparql(country.getLegalNameSparql());
     	cc.setActiveSparql(country.getActiveSparql());
     	cc.setAddressSparql(country.getAddressSparql());
-    	cc.setNuts3Sparql(country.getNuts3Sparql());
-    	cc.setLauSparql(country.getLauSparql());
+    	
+    	String nuts3Sparql = env.getProperty("sparql.nuts3." + cc.getCode());
+    	cc.setNuts3Sparql(nuts3Sparql != null ? nuts3Sparql : country.getNuts3Sparql());
+    	
+    	String lauSparql = env.getProperty("sparql.lau." + cc.getCode());
+    	cc.setLauSparql(lauSparql != null ? lauSparql : country.getLauSparql());
     	
     	cc.setFoundingDateSparql(country.getFoundingDateSparql());
     	cc.setDissolutionDateSparql(country.getDissolutionDateSparql());

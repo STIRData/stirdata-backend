@@ -86,17 +86,17 @@ public class ApplicationConfiguration {
 	    return singletonManager.getCache("labels");
 	}
 
-	@Bean(name = "nuts-geojson-cache")
-	public Cache getNutsGeojsonCache() {
-		CacheManager singletonManager = CacheManager.create();
-		if (!singletonManager.cacheExists("nuts-geojson-cache")) {
-			singletonManager.addCache(new Cache("nuts-geojson-cache", cacheSize, false, false, liveTime, liveTime));
-
-			logger.info("Created nuts-geojson cache.");
-		}
-
-		return singletonManager.getCache("nuts-geojson-cache");
-	}
+//	@Bean(name = "nuts-geojson-cache")
+//	public Cache getNutsGeojsonCache() {
+//		CacheManager singletonManager = CacheManager.create();
+//		if (!singletonManager.cacheExists("nuts-geojson-cache")) {
+//			singletonManager.addCache(new Cache("nuts-geojson-cache", cacheSize, false, false, liveTime, liveTime));
+//
+//			logger.info("Created nuts-geojson cache.");
+//		}
+//
+//		return singletonManager.getCache("nuts-geojson-cache");
+//	}
 
 	@Bean(name = "prefixes")
 	@DependsOn({ "endpoint-nace-eu", "endpoint-nuts-eu" })
@@ -120,6 +120,11 @@ public class ApplicationConfiguration {
 	@Bean(name = "endpoint-nuts-eu")
 	public String getNutsEndpointEU() {
 		return env.getProperty("endpoint.nuts.eu");
+	}
+	
+	@Bean(name = "endpoint-nuts-stats-eu")
+	public String getNutsStatsEndpointEU() {
+		return env.getProperty("endpoint.nuts-stats.eu");
 	}
 	
 	@Bean(name = "endpoint-lau-eu")

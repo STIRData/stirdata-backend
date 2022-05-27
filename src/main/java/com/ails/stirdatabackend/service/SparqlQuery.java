@@ -7,6 +7,7 @@ import java.util.List;
 import org.apache.jena.datatypes.xsd.XSDDateTime;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
+import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 
@@ -61,6 +62,8 @@ public class SparqlQuery {
    		try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), minMaxFoundingDateQuery(cc))) {
 //   			System.out.println("A " + cc.getDataEndpoint());
 //   			System.out.println("B " + minMaxFoundingDateQuery(cc));
+   			
+//   			System.out.println(QueryFactory.create(minMaxFoundingDateQuery(cc)));
 	    	ResultSet rs = qe.execSelect();
 		    	
 	    	while (rs.hasNext()) {
@@ -81,7 +84,7 @@ public class SparqlQuery {
     public Calendar[] minMaxDissolutionDate(CountryDB cc) {
     	Calendar[] date = new Calendar[2];
     	
-//    	System.out.println(minMaxDissolutionDateQuery(cc));
+//    	System.out.println(QueryFactory.create(minMaxDissolutionDateQuery(cc)));
     	
    		try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), minMaxDissolutionDateQuery(cc))) {
 	    	ResultSet rs = qe.execSelect();

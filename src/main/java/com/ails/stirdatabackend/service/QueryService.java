@@ -144,8 +144,8 @@ public class QueryService {
         	PlaceSelection places = ccEntry.getValue();
         	
         	List<String> naceLeafUris = cc.getNaceEndpoint() == null ? null : naceService.getLocalNaceLeafUris(cc, naceCodes);
-        	List<String> nutsLeafUris = places == null ? null : nutsService.getLocalNutsLeafUrisDB(cc, places.getNuts3()); 
-        	List<String> lauUris = places == null ? null : nutsService.getLocalLauUris(cc, places.getLau());
+        	List<String> nutsLeafUris = places == null ? null : nutsService.getLocalNutsLeafUrisDB(cc, places); 
+        	List<String> lauUris = places == null ? null : nutsService.getLocalLauUris(cc, places);
         	
 //        	int count = 0;
         	
@@ -172,130 +172,132 @@ public class QueryService {
 //        	System.out.println(countQuery);
         	SparqlQuery sparql = SparqlQuery.buildCoreQuery(cc, true, true, nutsLeafUris, lauUris, naceLeafUris, founding, dissolution); 
 
-            if (page == 1) {
-            	String countQuery = sparql.countSelectQuery();
-            	
-//            	System.out.println(QueryFactory.create(countQuery));
-//              System.out.println(cc.getDataEndpoint());
-             
-                try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), QueryFactory.create(countQuery, Syntax.syntaxARQ))) {
-                    ResultSet rs = qe.execSelect();
-                    while (rs.hasNext()) {
-                        QuerySolution sol = rs.next();
-                        pg.setTotalResults(sol.get("count").asLiteral().getInt());
-                    }
-                }
-//            } else {
-//            	count = -1;
-            }
-            
-            
-//            System.out.println(count);
-            
-            String query = sparql.allSelectQuery(offset, pageSize);
-            
-//           System.out.println(QueryFactory.create(query));
-
-            Map<String, LegalEntity> companies = new LinkedHashMap<>();
-
-//            StringWriter sw = new StringWriter();
-            try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), QueryFactory.create(query, Syntax.syntaxARQ))) {
-                ResultSet rs = qe.execSelect();
-                while (rs.hasNext()) {
-                    QuerySolution sol = rs.next();
-                    String uri = sol.get("entity").asResource().toString();
-                    companies.put(uri, new LegalEntity(uri));
-                }
-            }
-            
-//            System.out.println(companies);
-
-            if (!companies.isEmpty()) {
-            	
-            	String values = "";
-                for (String uri : companies.keySet()) {
-                    values += "<" + uri + "> ";
-                 }
-
-            	String sparqlConstruct = null;
-            	
-            	if (details) {
-            		sparqlConstruct = 
-                		"CONSTRUCT { " + 
-                                "  ?entity a <http://www.w3.org/ns/legal#LegalEntity> . " + 
-                                "  ?entity <http://www.w3.org/ns/legal#legalName> ?entityName . " +
-                                "  ?entity <http://www.w3.org/ns/legal#companyType> ?companyType . " +
-                                "  ?entity <http://www.w3.org/ns/legal#companyActivity> ?nace . " +
-                        		"  ?entity <http://www.w3.org/ns/legal#registeredAddress> ?address . ?address ?ap ?ao . " + 
-                                "  ?entity <https://schema.org/foundingDate> ?foundingDate . }" +	           		
-	            		" WHERE { " +
-                        cc.getEntitySparql() + " " +
-                        "OPTIONAL { " + cc.getLegalNameSparql() + " } " + 
-                        (cc.isDissolutionDate() ? cc.getActiveSparql() : "") + " " +
-                        "OPTIONAL { " + cc.getAddressSparql() + " ?address ?ap ?ao . } " + 
-        	            "OPTIONAL { " + cc.getCompanyTypeSparql() + " } " +
-        	            "OPTIONAL { " + cc.getNaceSparql() + " } " +
-	                    "OPTIONAL { " + cc.getFoundingDateSparql() + " } " +
-	                    "VALUES ?entity { " + values + "} } ";
-            	} else {
-            		sparqlConstruct =
-	            		"CONSTRUCT { " + 
-	                            "  ?entity a <http://www.w3.org/ns/legal#LegalEntity> . " + 
-	                            "  ?entity <http://www.w3.org/ns/legal#legalName> ?entityName . " +
-	                            "  ?entity <https://schema.org/foundingDate> ?foundingDate . }" +	           		
-	            		" WHERE { " +
-	                    cc.getEntitySparql() + " " +
-	                    cc.getLegalNameSparql() + " " + 
-	                    "OPTIONAL { " + cc.getFoundingDateSparql() + " } " +
-	                    "VALUES ?entity { " + values + "} } ";
-            	}
-	
-//                System.out.println(QueryFactory.create(sparqlConstruct));
-	            try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), QueryFactory.create(sparqlConstruct, Syntax.syntaxARQ))) {
-	                Model model = qe.execConstruct();
-	                
-	                Map<String,Object> jn = (Map)JsonLDWriter.toJsonLDJavaAPI((RDFFormat.JSONLDVariant)RDFFormat.JSONLD_COMPACT_PRETTY.getVariant(), DatasetFactory.wrap(model).asDatasetGraph(), null, null, context);
-	                
-	                List<Map<String, Object>> graph = (List)jn.get("@graph");
-	                
-	                Map<String, Address> addresses = null;
-	                if (details) {
-		                addresses = new HashMap<>();
-		                
-		                for (Map<String, Object> entry : graph) {
-		                	if (entry.get("@type").equals("http://www.w3.org/ns/locn#Address")) {
-		                		addresses.put((String)entry.get("@id"), createAddressFromJsonld(entry, cc));
-		                	}
-		                }
-
-		                for (Map<String, Object> entry : graph) {
-		                	if (entry.get("@type").equals("http://www.w3.org/ns/legal#LegalEntity")) {
-		                		createLegalEntityFromJsonld(companies.get((String)entry.get("@id")), entry, cc, addresses);
-		                	}
-		                }
-	                } else {
-		                for (Map<String, Object> entry : graph) {
-	                		createLegalEntityFromJsonld(companies.get((String)entry.get("@id")), entry, cc, addresses);
-		                }
+        	if (sparql != null)  {// if null it is an empty query
+	            if (page == 1) {
+	            	String countQuery = sparql.countSelectQuery();
+		            	
+//	            	System.out.println(QueryFactory.create(countQuery));
+	//              System.out.println(cc.getDataEndpoint());
+		             
+	                try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), QueryFactory.create(countQuery, Syntax.syntaxARQ))) {
+	                    ResultSet rs = qe.execSelect();
+	                    while (rs.hasNext()) {
+	                        QuerySolution sol = rs.next();
+	                        pg.setTotalResults(sol.get("count").asLiteral().getInt());
+	                    }
 	                }
-
-	            } catch (IOException e) {
-	    			// TODO Auto-generated catch block
-	    			e.printStackTrace();
 	            }
-
-	            pg.setPageSize(companies.size());
-	            qr.setLegalEntities(new ArrayList<>(companies.values()));
-
-	            responseList.add(qr);
 	            
-            } else {
+	
+	            String query = sparql.allSelectQuery(offset, pageSize);
+	            
+	//           System.out.println(QueryFactory.create(query));
+	
+	            Map<String, LegalEntity> companies = new LinkedHashMap<>();
+	
+	//            StringWriter sw = new StringWriter();
+	            try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), QueryFactory.create(query, Syntax.syntaxARQ))) {
+	                ResultSet rs = qe.execSelect();
+	                while (rs.hasNext()) {
+	                    QuerySolution sol = rs.next();
+	                    String uri = sol.get("entity").asResource().toString();
+	                    companies.put(uri, new LegalEntity(uri));
+	                }
+	            }
+	            
+	//            System.out.println(companies);
+	
+	            if (!companies.isEmpty()) {
+	            	
+	            	String values = "";
+	                for (String uri : companies.keySet()) {
+	                    values += "<" + uri + "> ";
+	                 }
+	
+	            	String sparqlConstruct = null;
+	            	
+	            	if (details) {
+	            		sparqlConstruct = 
+	                		"CONSTRUCT { " + 
+	                                "  ?entity a <http://www.w3.org/ns/legal#LegalEntity> . " + 
+	                                "  ?entity <http://www.w3.org/ns/legal#legalName> ?entityName . " +
+	                                "  ?entity <http://www.w3.org/ns/legal#companyType> ?companyType . " +
+	                                "  ?entity <http://www.w3.org/ns/legal#companyActivity> ?nace . " +
+	                        		"  ?entity <http://www.w3.org/ns/legal#registeredAddress> ?address . ?address ?ap ?ao . " + 
+	                                "  ?entity <https://schema.org/foundingDate> ?foundingDate . }" +	           		
+		            		" WHERE { " +
+	                        cc.getEntitySparql() + " " +
+	                        "OPTIONAL { " + cc.getLegalNameSparql() + " } " + 
+	                        (cc.isDissolutionDate() ? cc.getActiveSparql() : "") + " " +
+	                        "OPTIONAL { " + cc.getAddressSparql() + " ?address ?ap ?ao . } " + 
+	        	            "OPTIONAL { " + cc.getCompanyTypeSparql() + " } " +
+	        	            "OPTIONAL { " + cc.getNaceSparql() + " } " +
+		                    "OPTIONAL { " + cc.getFoundingDateSparql() + " } " +
+		                    "VALUES ?entity { " + values + "} } ";
+	            	} else {
+	            		sparqlConstruct =
+		            		"CONSTRUCT { " + 
+		                            "  ?entity a <http://www.w3.org/ns/legal#LegalEntity> . " + 
+		                            "  ?entity <http://www.w3.org/ns/legal#legalName> ?entityName . " +
+		                            "  ?entity <https://schema.org/foundingDate> ?foundingDate . }" +	           		
+		            		" WHERE { " +
+		                    cc.getEntitySparql() + " " +
+		                    cc.getLegalNameSparql() + " " + 
+		                    "OPTIONAL { " + cc.getFoundingDateSparql() + " } " +
+		                    "VALUES ?entity { " + values + "} } ";
+	            	}
+		
+	//                System.out.println(QueryFactory.create(sparqlConstruct));
+		            try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), QueryFactory.create(sparqlConstruct, Syntax.syntaxARQ))) {
+		                Model model = qe.execConstruct();
+		                
+		                Map<String,Object> jn = (Map)JsonLDWriter.toJsonLDJavaAPI((RDFFormat.JSONLDVariant)RDFFormat.JSONLD_COMPACT_PRETTY.getVariant(), DatasetFactory.wrap(model).asDatasetGraph(), null, null, context);
+		                
+		                List<Map<String, Object>> graph = (List)jn.get("@graph");
+		                
+		                Map<String, Address> addresses = null;
+		                if (details) {
+			                addresses = new HashMap<>();
+			                
+			                for (Map<String, Object> entry : graph) {
+			                	if (entry.get("@type").equals("http://www.w3.org/ns/locn#Address")) {
+			                		addresses.put((String)entry.get("@id"), createAddressFromJsonld(entry, cc));
+			                	}
+			                }
+	
+			                for (Map<String, Object> entry : graph) {
+			                	if (entry.get("@type").equals("http://www.w3.org/ns/legal#LegalEntity")) {
+			                		createLegalEntityFromJsonld(companies.get((String)entry.get("@id")), entry, cc, addresses);
+			                	}
+			                }
+		                } else {
+			                for (Map<String, Object> entry : graph) {
+		                		createLegalEntityFromJsonld(companies.get((String)entry.get("@id")), entry, cc, addresses);
+			                }
+		                }
+	
+		            } catch (IOException e) {
+		    			// TODO Auto-generated catch block
+		    			e.printStackTrace();
+		            }
+	
+		            pg.setPageSize(companies.size());
+		            qr.setLegalEntities(new ArrayList<>(companies.values()));
+	
+		            responseList.add(qr);
+		            
+	            } else {
+	                pg.setPageSize(0);
+	                qr.setLegalEntities(new ArrayList<>());
+	                
+	                responseList.add(qr);
+	            }
+        	} else {
                 pg.setPageSize(0);
                 qr.setLegalEntities(new ArrayList<>());
                 
                 responseList.add(qr);
-            }
-
+            } 
         }
         
         return responseList;
@@ -323,8 +325,8 @@ public class QueryService {
 //	        boolean lau = glau;
             
         	List<String> naceLeafUris = cc.getNaceEndpoint() == null ? null : naceService.getLocalNaceLeafUris(cc, naceCodes);
-        	List<String> nutsLeafUris = places == null ? null : nutsService.getLocalNutsLeafUris(cc, places.getNuts3()); 
-        	List<String> lauUris = places == null ? null : nutsService.getLocalLauUris(cc, places.getLau());
+        	List<String> nutsLeafUris = places == null ? null : nutsService.getLocalNutsLeafUrisDB(cc, places); 
+        	List<String> lauUris = places == null ? null : nutsService.getLocalLauUris(cc, places);
         	
         	if (naceLeafUris == null) {
         		nace = false;

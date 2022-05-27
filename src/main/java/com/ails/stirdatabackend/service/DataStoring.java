@@ -468,7 +468,7 @@ public class DataStoring  {
 //		       (nutsNamedgraphEU != null ? "FROM <" + nutsNamedgraphEU + "> " : "")  + 
 			   " WHERE {" +
 //			   "?nuts a <https://lod.stirdata.eu/nuts/ont/NUTSRegion> . " +
-			   "?nuts <http://www.w3.org/2004/02/skos/core#inScheme> <https://lod.stirdata.eu/nuts/scheme/NUTS2021> ." +
+			   "?nuts <http://www.w3.org/2004/02/skos/core#inScheme> <https://w3id.org/stirdata/resource/nuts/scheme/NUTS2021> ." +
 			   "?nuts <http://www.w3.org/2004/02/skos/core#prefLabel> ?prefLabel . " +
 			   "?nuts <" + SDVocabulary.level + "> " + i + " . " +
 			   "OPTIONAL { ?nuts <http://www.w3.org/2004/02/skos/core#altLabel> ?altLabel } " +
@@ -540,13 +540,94 @@ public class DataStoring  {
 		placesDBRepository.flush();
 		
 	}
+	
+	public void copyNUTSFromVirtuosoToRDBMS(CountryDB cc) throws IOException {
+
+		for (int i = 0; i <= 3; i++) {
+			String nutsSparql = "SELECT * " +
+//		       (nutsNamedgraphEU != null ? "FROM <" + nutsNamedgraphEU + "> " : "")  + 
+			   " WHERE {" +
+//			   "?nuts a <https://lod.stirdata.eu/nuts/ont/NUTSRegion> . " +
+			   "?nuts <http://www.w3.org/2004/02/skos/core#inScheme> <https://w3id.org/stirdata/resource/nuts/scheme/NUTS2021> ." +
+			   "?nuts <http://www.w3.org/2004/02/skos/core#prefLabel> ?prefLabel . " +
+			   "?nuts <" + SDVocabulary.level + "> " + i + " . " +
+			   "?nuts <https://w3id.org/stirdata/vocabulary/iso31661Alpha2Code> \"" + cc.getCode() + "\" . " +
+			   "OPTIONAL { ?nuts <http://www.w3.org/2004/02/skos/core#altLabel> ?altLabel } " +
+			   "OPTIONAL { ?nuts <http://www.opengis.net/ont/geosparql#sfWithin> ?broader } " +
+			   "OPTIONAL { ?nuts <http://www.opengis.net/ont/geosparql#hasGeometry> [ <http://www.opengis.net/ont/geosparql#asGeoJSON> ?geo60M ; <http://www.opengis.net/ont/geosparql#hasSpatialResolution> \"1:60000000\" ] } " +
+			   "OPTIONAL { ?nuts <http://www.opengis.net/ont/geosparql#hasGeometry> [ <http://www.opengis.net/ont/geosparql#asGeoJSON> ?geo20M ; <http://www.opengis.net/ont/geosparql#hasSpatialResolution> \"1:20000000\" ] } " +
+			   "OPTIONAL { ?nuts <http://www.opengis.net/ont/geosparql#hasGeometry> [ <http://www.opengis.net/ont/geosparql#asGeoJSON> ?geo10M ; <http://www.opengis.net/ont/geosparql#hasSpatialResolution> \"1:10000000\" ] } " +
+			   "OPTIONAL { ?nuts <http://www.opengis.net/ont/geosparql#hasGeometry> [ <http://www.opengis.net/ont/geosparql#asGeoJSON> ?geo3M ; <http://www.opengis.net/ont/geosparql#hasSpatialResolution> \"1:3000000\" ] } " +
+			   "OPTIONAL { ?nuts <http://www.opengis.net/ont/geosparql#hasGeometry> [ <http://www.opengis.net/ont/geosparql#asGeoJSON> ?geo1M ; <http://www.opengis.net/ont/geosparql#hasSpatialResolution> \"1:1000000\" ] } " +
+		       "}";
+			
+//			System.out.println(nutsSparql);
+			
+	    	try (VirtuosoSelectIterator qe = new VirtuosoSelectIterator(nutsEndpointEU, nutsSparql)) {
+	            while (qe.hasNext()) {
+	                QuerySolution sol = qe.next();
+
+	                Code code = Code.fromNutsUri(sol.get("nuts").toString());
+//	                if (code.isNutsZ()) {
+//	                	continue;
+//	                }
+//	                
+	                PlaceDB place = new PlaceDB();
+	                
+	                place.setCode(code);
+	                if (sol.get("broader") != null) {
+	                	place.setParent(new PlaceDB(Code.fromNutsUri(sol.get("broader").toString())));
+	                }
+	                place.setNationalName(sol.get("prefLabel").asLiteral().getLexicalForm());
+	                if (sol.get("altLabel") != null) {
+	                	place.setLatinName(sol.get("altLabel").asLiteral().getLexicalForm());
+	                }
+	                place.setType("NUTS");
+	                place.setLevel(i);
+	                place.setCountry(code.getCode().substring(0,2));
+	                
+	                if (code.isNutsZ()) {
+	    				place.setExtraRegio(true);
+	                }
+	                
+	                if (sol.get("geo60M") != null) {
+	                	place.setGeometry60M(sol.get("geo60M").asLiteral().getLexicalForm());
+	                }
+	
+	                if (sol.get("geo20M") != null) {
+	                	place.setGeometry20M(sol.get("geo20M").asLiteral().getLexicalForm());
+	                }
+	
+	                if (sol.get("geo10M") != null) {
+	                	place.setGeometry10M(sol.get("geo10M").asLiteral().getLexicalForm());
+	                }
+	
+	                if (sol.get("geo3M") != null) {
+	                	place.setGeometry3M(sol.get("geo3M").asLiteral().getLexicalForm());
+	                }
+	                
+	                if (sol.get("geo1M") != null) {
+	                	place.setGeometry1M(sol.get("geo1M").asLiteral().getLexicalForm());
+	                }
+	
+//	                System.out.println(place.getCode() + " " + place.getNationalName() + " " + place.getLatinName() + " " + place.getParent() + " " + place.getType());
+	                
+	                placesDBRepository.save(place);
+	                
+	            }
+	        }
+		}
+		
+		placesDBRepository.flush();
+		
+	}	
 //	
 	public void copyLAUFromVirtuosoToRDBMS() throws IOException {
 		String lauSparql = "SELECT * " + 
 //	               (lauNamedgraphEU != null ? "FROM <" + lauNamedgraphEU + "> " : "") + 
 	               " WHERE {" +
 //				   "?lau a <https://lod.stirdata.eu/nuts/ont/LAURegion> . " +
-				   "?lau <http://www.w3.org/2004/02/skos/core#inScheme> <https://lod.stirdata.eu/lau/scheme/LAU2021> ." +
+				   "?lau <http://www.w3.org/2004/02/skos/core#inScheme> <https://w3id.org/stirdata/resource/lau/scheme/LAU2021> ." +
 				   "?lau <http://www.w3.org/2004/02/skos/core#prefLabel> ?prefLabel . " +
 				   "OPTIONAL { ?lau <http://www.w3.org/2004/02/skos/core#altLabel> ?altLabel } " +
 				   "OPTIONAL { ?lau <http://www.opengis.net/ont/geosparql#sfWithin> ?broader } " +
@@ -598,7 +679,66 @@ public class DataStoring  {
     	placesDBRepository.flush();
 
 	}
-	
+
+	public void copyLAUFromVirtuosoToRDBMS(CountryDB cc) throws IOException {
+		String lauSparql = "SELECT * " + 
+//	               (lauNamedgraphEU != null ? "FROM <" + lauNamedgraphEU + "> " : "") + 
+	               " WHERE {" +
+//				   "?lau a <https://lod.stirdata.eu/nuts/ont/LAURegion> . " +
+				   "?lau <http://www.w3.org/2004/02/skos/core#inScheme> <https://w3id.org/stirdata/resource/lau/scheme/LAU2021> ." +
+				   "?lau <http://www.w3.org/2004/02/skos/core#prefLabel> ?prefLabel . " +
+				   "?lau <https://w3id.org/stirdata/vocabulary/iso31661Alpha2Code> \"" + cc.getCode() + "\" . " +
+				   "OPTIONAL { ?lau <http://www.w3.org/2004/02/skos/core#altLabel> ?altLabel } " +
+				   "OPTIONAL { ?lau <http://www.opengis.net/ont/geosparql#sfWithin> ?broader } " +
+//				   "OPTIONAL { ?lau <http://www.opengis.net/ont/geosparql#hasGeometry> [ <http://www.opengis.net/ont/geosparql#asGeoJSON> ?geo1M ; <http://www.opengis.net/ont/geosparql#hasSpatialResolution> \"1:1000000\" ] } " +
+                   "BIND ( iri(concat(\"https://lod.stirdata.eu/lau/code/2020/\",substr(str(?lau),39))) as ?x ) . " +
+                   "OPTIONAL { ?x <http://www.opengis.net/ont/geosparql#hasGeometry> [ <http://www.opengis.net/ont/geosparql#asGeoJSON> ?geo1M ; <http://www.opengis.net/ont/geosparql#hasSpatialResolution> \"1:1000000\" ] } " +
+			       "}";
+		
+//		System.out.println(lauSparql);
+		
+    	try (VirtuosoSelectIterator qe = new VirtuosoSelectIterator(lauEndpointEU, lauSparql)) {
+            while (qe.hasNext()) {
+                QuerySolution sol = qe.next();
+                
+                Code broaderCode = Code.fromNutsUri(sol.get("broader").toString());
+                
+//                if (broaderCode.isNutsZ()) {
+//                	continue;
+//                }
+
+                Code code = Code.fromLauUri(sol.get("lau").toString(),"2021");
+                
+                PlaceDB place = new PlaceDB();
+                
+                place.setCode(code);
+                if (sol.get("broader") != null) {
+                	place.setParent(new PlaceDB(broaderCode));
+                }
+                place.setNationalName(sol.get("prefLabel").asLiteral().getLexicalForm());
+                if (sol.get("altLabel") != null) {
+                	place.setLatinName(sol.get("altLabel").asLiteral().getLexicalForm());
+                }
+                place.setType("LAU");
+                place.setLevel(0);
+                place.setCountry(code.getCode().substring(0,2));
+                
+                place.setExtraRegio(false);
+                
+                if (sol.get("geo1M") != null) {
+                	place.setGeometry1M(sol.get("geo1M").asLiteral().getLexicalForm());
+                }
+
+//                System.out.println(place.getCode() + " " + place.getNationalName() + " " + place.getLatinName() + " " + place.getParent() + " " + place.getType());
+                
+                placesDBRepository.save(place);
+            }
+        }
+    	
+    	placesDBRepository.flush();
+
+	}
+
 
 	
 	public void copyNACEFromVirtuosoToRDBMS() throws IOException {
@@ -608,7 +748,7 @@ public class DataStoring  {
 //		       (naceNamedgraphEU != null ? "FROM <" + naceNamedgraphEU + "> " : "") + 
 		       " WHERE {" +
 //			   "?nace a <https://lod.stirdata.eu/nace/ont/Activity> . " +
-			   "?nace <http://www.w3.org/2004/02/skos/core#inScheme> <https://lod.stirdata.eu/nace/scheme/NACERev2> ." +
+			   "?nace <http://www.w3.org/2004/02/skos/core#inScheme> <<https://w3id.org/stirdata/resource/nace/scheme/NACERev2> ." +
 			   "?nace <" + SDVocabulary.level + "> " + i + " . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?bgLabel . FILTER (lang(?bgLabel) = 'bg') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?csLabel . FILTER (lang(?csLabel) = 'cs') } . " +
@@ -794,7 +934,7 @@ public class DataStoring  {
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#exactMatch> ?exactMatch } " +
 		       "}";
 			
-			System.out.println(naceSparql);
+//			System.out.println(naceSparql);
 			
 	    	try (VirtuosoSelectIterator qe = new VirtuosoSelectIterator(cc.getNaceEndpoint(), naceSparql)) {
 	            while (qe.hasNext()) {

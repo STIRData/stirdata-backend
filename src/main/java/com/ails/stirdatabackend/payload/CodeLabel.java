@@ -29,5 +29,21 @@ public class CodeLabel {
 		this.label = label;
 		this.uri = uri;
 	}
+	
+	public int hashCode() {
+		return code.hashCode() + label.hashCode() + uri.hashCode();
+	}
+	
+	public boolean equals(Object obj) {
+		if (!(obj instanceof CodeLabel)) {
+			return false;
+		}
+		
+		CodeLabel cl = (CodeLabel)obj;
+				
+		return (code == cl.code || code != null && cl.code != null && cl.equals(cl.code)) &&
+				(label == cl.label || label != null && cl.label != null && label.equals(cl.label)) &&
+				(uri == cl.uri || uri != null && cl.uri != null && uri.equals(cl.uri));
+	}
 
 }
