@@ -191,7 +191,7 @@ public class QueryService {
 	
 	            String query = sparql.allSelectQuery(offset, pageSize);
 	            
-	//           System.out.println(QueryFactory.create(query));
+//	           System.out.println(QueryFactory.create(query));
 	
 	            Map<String, LegalEntity> companies = new LinkedHashMap<>();
 	
@@ -247,7 +247,7 @@ public class QueryService {
 		                    "VALUES ?entity { " + values + "} } ";
 	            	}
 		
-	//                System.out.println(QueryFactory.create(sparqlConstruct));
+//	                System.out.println(QueryFactory.create(sparqlConstruct));
 		            try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), QueryFactory.create(sparqlConstruct, Syntax.syntaxARQ))) {
 		                Model model = qe.execConstruct();
 		                

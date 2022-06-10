@@ -100,45 +100,46 @@ public class StatisticsContoller {
 		@GetMapping(produces = "application/json")
 	    public ResponseEntity<?> getStatistics(@RequestParam(required = false) 
 											   @Parameter(
-													description = "Place definition in the format [prefix]:[code]" +
-																			"where prefix= nuts, lau",
+													description = "Place definition in the form [prefix]:[code]" +
+																			"where prefix= nuts, lau.",
 													schema = @Schema(implementation = String.class),
 													example = "nuts:NO"
 												)
 												List<Code> place,
 	                                            @RequestParam(required = false) 
 											   	@Parameter(
-													description = "Activity definition in the format [prefix]:[code]" +
-																							"where prefix = nace-rev2",
+													description = "Activity definition in the form nace-rev2:[code].",
 													schema = @Schema(implementation = String.class),
 													example = "nace-rev2:F"
 												) 
 												List<Code> activity,
 	                                            @RequestParam(required = false)  
 											   	@Parameter(
-													schema = @Schema(implementation = String.class)
+													description = "Founding date range in the form date-range:[start-date]:[end-date].",
+													schema = @Schema(implementation = String.class),
+													example = "date-range:2020-01-01:2020-31-12"
 												) 
 												Code founding,
 	                                            @RequestParam(required = false)  
 												@Parameter(
-													schema = @Schema(implementation = String.class)
+													description = "Dissolution date range in the form date-range:[start-date]:[end-date].",
+													schema = @Schema(implementation = String.class),
+													example = "date-range:2020-01-01:2020-31-12"
+
 												) 
 												Code dissolution,
 	                                            @RequestParam(defaultValue = "selection")  
 											   	@Parameter(
-											   		description = 	"Select the return types of the API call." +
-													  			  	"To select multiple, append it in a string separated by comma. "+
-																	"Available values: any combination of selection, place, activity, foundingDate, dissolutionDate",
+											   		description = 	"The statistics dimensions to be returned. Multiple dimensions should be separated by comma. "+
+																	"Available dimensions: selection, place, activity, foundingDate, dissolutionDate",
 													example = "place,activity"
 												) 
 												String dimension,
 	                                            @RequestParam(defaultValue = "en") 
 											   	@Parameter(
-													description = "Select the language of the labels on response"
+													description = "Select the language of the labels in the response"
 												) 
-												String language,
-	                                            @RequestParam(required = false) 
-											   	String geometry
+												String language
 											   	) {
 
 		ComplexResponse sr = new ComplexResponse();
@@ -952,63 +953,63 @@ public class StatisticsContoller {
 		return res;
 	}
 	
-	@GetMapping("/compute")
-	public ResponseEntity<?> statistics(@RequestParam(required = true) String country, 
-	    		                            @RequestParam(required = true) Dimension dimension, 
-	    		                            @RequestParam(required = false) String top,
-	    		                            @RequestParam(defaultValue = "false") boolean allLevels,
-	    		                        @RequestParam(required = false) List<Code> place,
-	                                    @RequestParam(required = false) List<Code> activity,
-	                                    @RequestParam(required = false) Code founding,
-	                                    @RequestParam(required = false) Code dissolution) {
-		CountryDB cc = countryConfigurations.get(country);
-
-	    if (cc != null) {
-	    	List<GenericResponse> res = new ArrayList<>();
-	    		
-	    	if (dimension == Dimension.NUTS || dimension == Dimension.NACE) {
-	    		List<StatisticResult> list = statisticsService.statistics(cc, dimension, top != null ? new Code(top) : null, place, activity, founding, dissolution, allLevels);
-	    			
-	    		res = mapGenericResponseFromList(list, cc, dimension);
-	    			
-	    	} else if (dimension == Dimension.FOUNDING || dimension == Dimension.DISSOLUTION) {
-	    		try {
-			    	Date fromDate = null;
-			    	Date toDate = null;
-
-	    			if (top != null) {
-	    		    	Pattern p = Pattern.compile("(\\d{4}-\\d{2}-\\d{2})?--(\\d{4}-\\d{2}-\\d{2})?");
-	    			    	
-	    		    	Matcher m = p.matcher(top);
-	    		    	if (m.find()) {
-	    		    		fromDate = Date.valueOf(m.group(1));
-	    		    		toDate = Date.valueOf(m.group(2));
-	    		    	}
-	    			}
-	    				
-//	    				statisticsService.dateStatistics(cc, dimension, fromDate, toDate, null, place.orElse(null), activity.orElse(null), foundingStartDate.orElse(null), foundingEndDate.orElse(null), dissolutionStartDate.orElse(null), dissolutionEndDate.orElse(null), res);
-//			    		if (allLevels) {
-//			    			for (int i = 0; i < res.size(); i++) {
-//			    				statisticsService.dateStatistics(cc, dimension, res.get(i).getFromDate(), res.get(i).getToDate(), res.get(i).getInterval(), place.orElse(null), activity.orElse(null), foundingStartDate.orElse(null), foundingEndDate.orElse(null), dissolutionStartDate.orElse(null), dissolutionEndDate.orElse(null), res);
-//			    			}
-//			    		}
-	    				
-	    			List<StatisticResult> list = statisticsService.dateStatistics(cc, dimension, Code.createDateCode(fromDate, toDate), place, activity, founding, dissolution, allLevels);
-	    				
-	    			res = mapGenericResponseFromList(list, cc, dimension);
-			    		
-	    		} catch (Exception e) {
-	    			e.printStackTrace();
-	    			return ResponseEntity.badRequest().build();
-	    		}
-	    	}
-	    		
-
-	    	return ResponseEntity.ok(res);
-	    } else {
-	    	return ResponseEntity.notFound().build();
-	    }
-	}
+//	@GetMapping("/compute")
+//	public ResponseEntity<?> statistics(@RequestParam(required = true) String country, 
+//	    		                            @RequestParam(required = true) Dimension dimension, 
+//	    		                            @RequestParam(required = false) String top,
+//	    		                            @RequestParam(defaultValue = "false") boolean allLevels,
+//	    		                        @RequestParam(required = false) List<Code> place,
+//	                                    @RequestParam(required = false) List<Code> activity,
+//	                                    @RequestParam(required = false) Code founding,
+//	                                    @RequestParam(required = false) Code dissolution) {
+//		CountryDB cc = countryConfigurations.get(country);
+//
+//	    if (cc != null) {
+//	    	List<GenericResponse> res = new ArrayList<>();
+//	    		
+//	    	if (dimension == Dimension.NUTS || dimension == Dimension.NACE) {
+//	    		List<StatisticResult> list = statisticsService.statistics(cc, dimension, top != null ? new Code(top) : null, place, activity, founding, dissolution, allLevels);
+//	    			
+//	    		res = mapGenericResponseFromList(list, cc, dimension);
+//	    			
+//	    	} else if (dimension == Dimension.FOUNDING || dimension == Dimension.DISSOLUTION) {
+//	    		try {
+//			    	Date fromDate = null;
+//			    	Date toDate = null;
+//
+//	    			if (top != null) {
+//	    		    	Pattern p = Pattern.compile("(\\d{4}-\\d{2}-\\d{2})?--(\\d{4}-\\d{2}-\\d{2})?");
+//	    			    	
+//	    		    	Matcher m = p.matcher(top);
+//	    		    	if (m.find()) {
+//	    		    		fromDate = Date.valueOf(m.group(1));
+//	    		    		toDate = Date.valueOf(m.group(2));
+//	    		    	}
+//	    			}
+//	    				
+////	    				statisticsService.dateStatistics(cc, dimension, fromDate, toDate, null, place.orElse(null), activity.orElse(null), foundingStartDate.orElse(null), foundingEndDate.orElse(null), dissolutionStartDate.orElse(null), dissolutionEndDate.orElse(null), res);
+////			    		if (allLevels) {
+////			    			for (int i = 0; i < res.size(); i++) {
+////			    				statisticsService.dateStatistics(cc, dimension, res.get(i).getFromDate(), res.get(i).getToDate(), res.get(i).getInterval(), place.orElse(null), activity.orElse(null), foundingStartDate.orElse(null), foundingEndDate.orElse(null), dissolutionStartDate.orElse(null), dissolutionEndDate.orElse(null), res);
+////			    			}
+////			    		}
+//	    				
+//	    			List<StatisticResult> list = statisticsService.dateStatistics(cc, dimension, Code.createDateCode(fromDate, toDate), place, activity, founding, dissolution, allLevels);
+//	    				
+//	    			res = mapGenericResponseFromList(list, cc, dimension);
+//			    		
+//	    		} catch (Exception e) {
+//	    			e.printStackTrace();
+//	    			return ResponseEntity.badRequest().build();
+//	    		}
+//	    	}
+//	    		
+//
+//	    	return ResponseEntity.ok(res);
+//	    } else {
+//	    	return ResponseEntity.notFound().build();
+//	    }
+//	}
 
 
 	

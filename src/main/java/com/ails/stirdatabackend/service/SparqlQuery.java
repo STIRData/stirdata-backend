@@ -69,8 +69,12 @@ public class SparqlQuery {
 	    	while (rs.hasNext()) {
 	    		QuerySolution sol = rs.next();
 		
-	    		date[0] = ((XSDDateTime)sol.get("minDate").asLiteral().getValue()).asCalendar();
-	    		date[1] = ((XSDDateTime)sol.get("maxDate").asLiteral().getValue()).asCalendar();
+	    		if (sol.get("minDate") != null) {
+	    			date[0] = ((XSDDateTime)sol.get("minDate").asLiteral().getValue()).asCalendar();
+	    		}
+	    		if (sol.get("maxDate") != null) {
+	    			date[1] = ((XSDDateTime)sol.get("maxDate").asLiteral().getValue()).asCalendar();
+	    		}
 	    	}
 	    }
    		

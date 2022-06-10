@@ -25,7 +25,7 @@ public class ActivityDB {
 	@Id
 	@Column(name = "code")
 	@Type(type = "com.ails.stirdatabackend.model.db.CodeDataType")
-	Code code;
+	private Code code;
 	
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "parent")
@@ -50,10 +50,10 @@ public class ActivityDB {
 	@Column(name = "label_ee")
 	private String labelEe;
 	
-	@Column(name = "label_el")
+	@Column(name = "label_el", length = 500)
 	private String labelEl;
 	
-	@Column(name = "label_en")
+	@Column(name = "label_en", length = 500)
 	private String labelEn;
 	
 	@Column(name = "label_es")
