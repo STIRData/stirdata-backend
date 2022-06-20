@@ -1,33 +1,7 @@
 package com.ails.stirdatabackend.service;
 
-import org.apache.http.client.HttpClient;
-import org.apache.http.config.Registry;
-import org.apache.http.config.RegistryBuilder;
-import org.apache.http.conn.ClientConnectionManager;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.socket.ConnectionSocketFactory;
-import org.apache.http.conn.socket.PlainConnectionSocketFactory;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.conn.ssl.TrustAllStrategy;
-import org.apache.http.conn.ssl.TrustStrategy;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.impl.conn.SingleClientConnManager;
-import org.apache.http.ssl.SSLContextBuilder;
-import org.apache.http.ssl.SSLContexts;
-
-import com.ails.stirdatabackend.configuration.ApplicationConfiguration;
-import com.ails.stirdatabackend.configuration.CountryConfiguration;
-import com.ails.stirdatabackend.model.SparqlEndpoint;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
-import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.query.ResultSetFormatter;
@@ -37,74 +11,89 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
+import com.ails.stirdatabackend.model.ActivityDB;
+import com.ails.stirdatabackend.model.Code;
+import com.ails.stirdatabackend.model.CountryDB;
+import com.ails.stirdatabackend.model.PlaceDB;
+import com.ails.stirdatabackend.repository.ActivitiesDBRepository;
+import com.ails.stirdatabackend.vocs.SDVocabulary;
+
 import java.io.ByteArrayOutputStream;
-import java.lang.reflect.Method;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
 
 @Service
 public class NaceService {
 
-	private final static Logger logger = LoggerFactory.getLogger(NaceService.class);
+//	private final static Logger logger = LoggerFactory.getLogger(NaceService.class);
 	
     @Autowired
     @Qualifier("endpoint-nace-eu")
-    private SparqlEndpoint naceEndpointEU;
+    private String naceEndpointEU;
+
+//    @Autowired
+//    @Qualifier("namedgraph-nace-eu")
+//    private String naceNamedgraphEU;
+    
+//    @Autowired
+//    @Qualifier("country-configurations")
+//    private Map<String, CountryConfiguration> countryConfigurations;
 
     @Autowired
-    @Qualifier("country-configurations")
-    private Map<String, CountryConfiguration> countryConfigurations;
+    private ActivitiesDBRepository activitiesRepository;
+
     
-    public List<String> getLocalNaceLeafUris(String country, List<String> naceList, HttpClient httpClient) {
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    // NACE REV 2
+
+    public ActivityDB getByCode(Code code) {
+    	return activitiesRepository.findByCode(code);
+    }
+
+    public ActivityDB getNaceRev2Ancestor(ActivityDB activity) {
+    	if (activity.getLevel() <= 4 && activity.getExactMatch() != null) {
+    		return activity.getExactMatch();
+    	} else if (activity.getLevel() == 5) {
+    		return activitiesRepository.findLevel4NaceRev2AncestorFromLevel5(activity);
+    	} else if (activity.getLevel() == 6) {
+    		return activitiesRepository.findLevel4NaceRev2AncestorFromLevel6(activity);
+    	} else if (activity.getLevel() == 7) {
+    		return activitiesRepository.findLevel4NaceRev2AncestorFromLevel7(activity);
+    	} else {
+    		return null;
+    	}
+    }
+
+    public List<ActivityDB> getParents(ActivityDB activity) {
+    	List<ActivityDB> parents = new ArrayList<>();
     	
-    	List<String> naceLeafUris = null;
-    	if (naceList != null) {
-    		naceLeafUris = new ArrayList<>();
-    		
-    		try {
-	    		Method md = NaceService.class.getDeclaredMethod("get" + country + "NaceLeaves", String.class, HttpClient.class);
-	    		
-	    		for (String s : naceList) {
-	       			naceLeafUris.addAll((Set<String>)md.invoke(this, s, httpClient));
-	            }
-    		} catch (Exception ex) {
-    			ex.printStackTrace();
-    			logger.error("Could not invoke NACE service for " + country);
-    		}
+    	while (activity.getParent() != null) {
+    		parents.add(0, activity.getParent());
+    		activity = activity.getParent();
     	}
     	
-    	return naceLeafUris;
+    	return parents;
     }
     
-    public String getNextNaceLevel(String parentNode, String language) {
-        String sparql = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
-                        "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
-                        "SELECT ?code ?label WHERE { ";
-        
-        if (parentNode == null) {
-            sparql += "?code <https://lod.stirdata.eu/nace/ont/level> 1 . ";
-        } else {
-            sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parentNode + "> " +  ". ";
-        }
-        sparql += "?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label " +
-                  "FILTER (lang(?label) = \"" + language + "\") }";
+    public List<ActivityDB> getNextNaceLevelListDb(Code parent) {
 
+    	ActivityDB parentActivity = null;
+    	if (parent != null) {
+    		parentActivity = new ActivityDB(parent);
+    	}
+    	
+    	return activitiesRepository.findBySchemeAndParent(Code.naceRev2Namespace, parentActivity);
+    }
+
+    public String getNextNaceLevelJsonTs(String parent, String lang) {
+        String sparql = nextNaceLevelSparqlQuery(parent, lang);
+        
         String json;
-        try (QueryExecution qe = QueryExecutionFactory.sparqlService(naceEndpointEU.getSparqlEndpoint(), sparql)) {
+        try (QueryExecution qe = QueryExecutionFactory.sparqlService(naceEndpointEU, sparql)) {
             ResultSet rs = qe.execSelect();
             ByteArrayOutputStream outStream = new ByteArrayOutputStream();
             ResultSetFormatter.outputAsJSON(outStream, rs);
@@ -113,54 +102,115 @@ public class NaceService {
         return json;
     }
     
-    public int getNaceLevel(String uri) {
-    	int pos = uri.lastIndexOf("/");
-    	if (pos < 0) {
-    		return -1;
-    	}
+    private String nextNaceLevelSparqlQuery(String parent, String lang) {
+    	String sparql = 
+    			"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
+                "SELECT ?code " + (lang == null ? "" : "?label ");
     	
-    	String code = uri.substring(pos + 1);
-    	int len = code.length();
+//    	sparql += naceNamedgraphEU != null ? "FROM <" + naceNamedgraphEU + "> " : "";
     	
-    	if (len == 1 && Character.isLetter(code.charAt(0))) {
-    		return 1;
-    	} else if (len == 2) {
-    		return 2;
-    	} else if (len == 4 && code.charAt(2) == '.') {
-    	    return 3;
-    	} else if (len == 5 && code.charAt(2) == '.') {
-    		return 4;
-    	}
-    	
-    	return -1;
-    }
+    	sparql += " WHERE { ";
 
+    	sparql += "?code <http://www.w3.org/2004/02/skos/core#inScheme> <https://w3id.org/stirdata/resource/nace/scheme/NACERev2> . ";
+    	
+		if (parent == null) {
+		    sparql += "?code <" + SDVocabulary.level + "> 1 . ";
+		} else {
+		    sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parent + "> " +  ". ";
+		}
+		
+		if (lang != null) {
+			sparql += "?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label . FILTER (lang(?label) = \"" + lang + "\") ";
+		}
+		
+		sparql += "}" ;
+		
+		return sparql;
+	}
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    // LOCAL NACE 
+
+    public List<String> getLocalNaceLeafUris(CountryDB cc, Code naceCode) {
+    	return getLocalNaceLeafUris(cc, Arrays.asList(new Code[] { naceCode }));
+   	}
     
-    public Set<String> getNONaceLeaves(String uri, HttpClient httpClient) {
+    public List<String> getLocalNaceLeafUris(CountryDB cc, List<Code> naceCodes) {
+    	List<String> naceLeafUris = null;
+    	if (naceCodes != null) {
+    		naceLeafUris = new ArrayList<>();
+
+			for (Code code : naceCodes) {
+//				System.out.println(code);
+				if (cc.getNacePathSparql() != null) {
+					naceLeafUris.add(Code.naceRev2Prefix + code.getCode()); // triples store contains local naces 	
+				} else {
+					naceLeafUris.addAll(getNaceLeafUrisTS(cc, code));
+//					naceLeafUris.addAll(getNaceLeafUrisDB(cc, code)); // much slower, not supporting multiples levels
+				}
+            }
+    	}
+    	
+    	return naceLeafUris;
+    }    
+    
+    private Set<String> getNaceLeafUrisTS(CountryDB cc, Code code) {
     	Set<String> res = new HashSet<>();
 
-    	int level = getNaceLevel(uri);
+    	int level = code.getNaceRev2Level();
     	if (level < 0) {
     		return res;
     	}
 
-    	String sparql = "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> " +
+    	String sparql = 
+    			"PREFIX skos: <http://www.w3.org/2004/02/skos/core#> " +
                 "SELECT ?activity WHERE { ";
-		if (level == 1) {
-			sparql += "?activity skos:broader/skos:exactMatch/skos:broader/skos:broader/skos:broader <" + uri + "> . "; 
-		} else if (level == 2) {
-			sparql += "?activity skos:broader/skos:exactMatch/skos:broader/skos:broader <" + uri + "> . "; 
-		} else if (level == 3) {
-			sparql += "?activity skos:broader/skos:exactMatch/skos:broader <" + uri + "> . "; 
-		} else if (level == 4) {
-			sparql += "?activity skos:broader/skos:exactMatch <" + uri + "> . "; 
+		
+//    	if (level == 1) {
+//			sparql += "?activity " + cc.getNacePath1() + " <" + code.toUri() + "> . "; 
+//		} else if (level == 2) {
+//			sparql += "?activity " + cc.getNacePath2() + " <" + code.toUri() + "> . "; 
+//		} else if (level == 3) {
+//			sparql += "?activity " + cc.getNacePath3() + " <" + code.toUri() + "> . "; 
+//		} else if (level == 4) {
+//			sparql += "?activity " + cc.getNacePath4() + " <" + code.toUri() + "> . "; 
+//    	}
+//    	
+//    	if (cc.getNaceFixedLevel() >= 0) {
+//    		sparql += " ?activity <" + SDVocabulary.level + "> " + cc.getNaceFixedLevel() + " . ";
+//    	}
+    	
+    	String s = "";
+    	for (int k : cc.getEffectiveNaceLevels()) {
+    		if (k <= level) {
+    			continue;
+    		}
+        	String ls = "(";
+    		for (int i = 0; i < k - level; i++) {
+    			if (i > 0) {
+    				ls += "/";
+    			}
+    			ls += "skos:broader" ;
+    		}
+    		ls += ")" ;
+    		
+    		if (s.length() > 0) {
+    			s += "|" ;
+    		}
+    		
+    		s += ls;
     	}
     	
-		sparql += " ?activity <https://lod.stirdata.eu/nace/ont/level> 5 . " +
-		          " ?activity skos:inScheme <https://lod.stirdata.eu/nace/scheme/SIC2007NO> } ";
-
+    	if (s.length() > 0) {
+    		s = "(" + s + ")/" ;
+    	}
+    	sparql += " ?activity " + s + "skos:exactMatch" + " <" + code.toUri() + "> . "; 
     	
-    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(countryConfigurations.get("NO").getNaceEndpoint().getSparqlEndpoint(), sparql, httpClient)) {
+		sparql += " ?activity skos:inScheme <" + cc.getNaceScheme() + "> } ";
+    	
+//		System.out.println(sparql);
+    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), sparql)) {
             ResultSet rs = qe.execSelect();
             while (rs.hasNext()) {
                 QuerySolution sol = rs.next();
@@ -170,135 +220,57 @@ public class NaceService {
     	
     	return res;
 
-    }
+    }    
     
-    public Set<String> getBENaceLeaves(String uri, HttpClient httpClient) {
+    private Set<String> getNaceLeafUrisDB(CountryDB cc, Code code) {
     	Set<String> res = new HashSet<>();
 
-    	int level = getNaceLevel(uri);
+    	int level = code.getNaceRev2Level();
     	if (level < 0) {
     		return res;
     	}
 
-    	String sparql = "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> " +
-		                "SELECT ?activity WHERE { ";
-    	if (level == 1) {
-    		sparql += "?activity skos:broader/skos:exactMatch/skos:broader/skos:broader/skos:broader <" + uri + "> . "; 
-    	} else if (level == 2) {
-			sparql += "?activity skos:broader/skos:exactMatch/skos:broader/skos:broader <" + uri + "> . "; 
-    	} else if (level == 3) {
-			sparql += "?activity skos:broader/skos:exactMatch/skos:broader <" + uri + "> . "; 
-    	} else if (level == 4) {
-			sparql += "?activity skos:broader/skos:exactMatch <" + uri + "> . "; 
+    	List<ActivityDB> activities = new ArrayList<>();  
+    	
+    	if (cc.getNaceFixedLevel() == 5) {
+    		if (level == 1) {
+    			activities.addAll(activitiesRepository.findLevel4AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    		} else if (level == 2) {
+    			activities.addAll(activitiesRepository.findLevel3AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    		} else if (level == 3) {
+    			activities.addAll(activitiesRepository.findLevel2AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    		} else if (level == 4) {
+    			activities.addAll(activitiesRepository.findLevel1AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    		} 
+    	} else if (cc.getNaceFixedLevel() == -5) {
+    		if (level == 1) {
+    			activities.addAll(activitiesRepository.findLevel4AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    			activities.addAll(activitiesRepository.findLevel3AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    			activities.addAll(activitiesRepository.findLevel2AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    			activities.addAll(activitiesRepository.findLevel1AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    			activities.addAll(activitiesRepository.findLevel0AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    		} else if (level == 2) {
+    			activities.addAll(activitiesRepository.findLevel3AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    			activities.addAll(activitiesRepository.findLevel2AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    			activities.addAll(activitiesRepository.findLevel1AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    			activities.addAll(activitiesRepository.findLevel0AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    		} else if (level == 3) {
+    			activities.addAll(activitiesRepository.findLevel2AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    			activities.addAll(activitiesRepository.findLevel1AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    			activities.addAll(activitiesRepository.findLevel0AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    		} else if (level == 4) {
+    			activities.addAll(activitiesRepository.findLevel1AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    			activities.addAll(activitiesRepository.findLevel0AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+    		} 
     	}
 
-		sparql += " ?activity <https://lod.stirdata.eu/nace/ont/level> 5 . " +
-		          " ?activity skos:inScheme <https://lod.stirdata.eu/nace/scheme/NACEBEL2008> } ";
-
-    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(countryConfigurations.get("BE").getNaceEndpoint().getSparqlEndpoint(), sparql, httpClient)) {
-            ResultSet rs = qe.execSelect();
-            while (rs.hasNext()) {
-                QuerySolution sol = rs.next();
-                res.add(sol.get("activity").asResource().toString());
-            }
-        }
+    	
+		for (ActivityDB ac : activities) {
+			res.add(cc.getNacePrefix() + "" + ac.getCode().getCode());
+		}
     	
     	return res;
 
-    }
-    
-    public Set<String> getELNaceLeaves(String uri, HttpClient httpClient) {
-    	Set<String> res = new HashSet<>();
+    }        
 
-    	int level = getNaceLevel(uri);
-    	if (level < 0) {
-    		return res;
-    	}
-
-    	String sparql = "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> " +
-		                "SELECT ?activity WHERE { ";
-    	if (level == 1) {
-    		sparql += "?activity skos:broader/skos:broader/skos:broader/skos:exactMatch/skos:broader/skos:broader/skos:broader <" + uri + "> . "; 
-    	} else if (level == 2) {
-			sparql += "?activity skos:broader/skos:broader/skos:broader/skos:exactMatch/skos:broader/skos:broader <" + uri + "> . "; 
-    	} else if (level == 3) {
-			sparql += "?activity skos:broader/skos:broader/skos:broader/skos:exactMatch/skos:broader <" + uri + "> . "; 
-    	} else if (level == 4) {
-			sparql += "?activity skos:broader/skos:broader/skos:broader/skos:exactMatch <" + uri + "> . "; 
-    	}
-
-		sparql += " ?activity <https://lod.stirdata.eu/nace/ont/level> 7 . " +
-		          " ?activity skos:inScheme <https://lod.stirdata.eu/nace/scheme/KAD2008> } ";
-
-    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(countryConfigurations.get("EL").getNaceEndpoint().getSparqlEndpoint(), sparql, httpClient)) {
-            ResultSet rs = qe.execSelect();
-            while (rs.hasNext()) {
-                QuerySolution sol = rs.next();
-                res.add(sol.get("activity").asResource().toString());
-            }
-        }
-    	
-    	return res;
-
-    }
-    
-    public Set<String> getCZNaceLeaves(String uri, HttpClient httpClient) {
-    	Set<String> res = new HashSet<>();
-
-    	int level = getNaceLevel(uri);
-    	if (level < 0) {
-    		return res;
-    	}
-
-    	String sparql = "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> " +
-		                "SELECT ?activity WHERE { " +
-    		            "   ?activity skos:broader*/skos:exactMatch  <" + uri + "> . " + 
-		                "   ?activity skos:inScheme <https://obchodní-rejstřík.stirdata.opendata.cz/zdroj/číselníky/nace-cz> " +
-    		            " } ";
-
-    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(countryConfigurations.get("CZ").getNaceEndpoint().getSparqlEndpoint(), sparql, httpClient)) {
-            ResultSet rs = qe.execSelect();
-            while (rs.hasNext()) {
-                QuerySolution sol = rs.next();
-                res.add(sol.get("activity").asResource().toString());
-            }
-        }
-    	
-    	return res;
-
-    }
-    
-    public Set<String> getFINaceLeaves(String uri, HttpClient httpClient) {
-    	Set<String> res = new HashSet<>();
-
-    	int level = getNaceLevel(uri);
-    	if (level < 0) {
-    		return res;
-    	}
-
-    	String sparql = "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> " +
-		                "SELECT ?activity WHERE { ";
-    	if (level == 1) {
-    		sparql += "?activity skos:broader/skos:exactMatch/skos:broader/skos:broader/skos:broader <" + uri + "> . "; 
-    	} else if (level == 2) {
-			sparql += "?activity skos:broader/skos:exactMatch/skos:broader/skos:broader <" + uri + "> . "; 
-    	} else if (level == 3) {
-			sparql += "?activity skos:broader/skos:exactMatch/skos:broader <" + uri + "> . "; 
-    	} else if (level == 4) {
-			sparql += "?activity skos:broader/skos:exactMatch <" + uri + "> . "; 
-    	}
-
-		sparql += " ?activity <https://lod.stirdata.eu/nace/ont/level> 5 . " +
-		          " ?activity skos:inScheme <https://lod.stirdata.eu/nace/scheme/TOL2008> } ";
-
-    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(countryConfigurations.get("FI").getNaceEndpoint().getSparqlEndpoint(), sparql, httpClient)) {
-            ResultSet rs = qe.execSelect();
-            while (rs.hasNext()) {
-                QuerySolution sol = rs.next();
-                res.add(sol.get("activity").asResource().toString());
-            }
-        }
-    	
-    	return res;
-    }
 }

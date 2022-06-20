@@ -1,83 +1,68 @@
 package com.ails.stirdatabackend.controller;
 
-import java.io.StringWriter;
-import java.io.Writer;
-import java.util.Set;
+import com.ails.stirdatabackend.model.ActivityDB;
+import com.ails.stirdatabackend.model.Code;
+import com.ails.stirdatabackend.payload.ComplexResponse;
+import com.ails.stirdatabackend.payload.GenericResponse;
+import com.ails.stirdatabackend.service.DataService;
+import com.ails.stirdatabackend.service.NaceService;
 
-import org.apache.jena.query.QueryExecution;
-import org.apache.jena.query.QueryExecutionFactory;
-import org.apache.jena.query.QueryFactory;
-import org.apache.jena.query.Syntax;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.riot.RDFDataMgr;
-import org.apache.jena.riot.RDFFormat;
+import org.apache.jena.riot.JsonLDWriteContext;
+import org.apache.jena.sparql.util.Symbol;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import com.ails.stirdatabackend.model.SparqlEndpoint;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.Element;
-
-@CrossOrigin
 @RestController
 @RequestMapping("/api/data")
 public class DataController {
 
 	@Autowired
-	@Qualifier("labels-cache")
-	private Cache labelsCache;
+	@Qualifier("model-jsonld-context")
+    private JsonLDWriteContext context;    
 
 	@Autowired
-	@Qualifier("prefixes")
-	private Set<URIDescriptor> prefixes;
+    private DataService dataService;    
 
-	
-	@GetMapping(value = "/label", produces = "application/json")
-	public String label(@RequestParam String resource)  {
+    @GetMapping(value = "/context/stirdata.jsonld", produces = "application/json")
+    public ResponseEntity<?> getContext() {
+		return ResponseEntity.ok(context.getAsString(Symbol.create("http://jena.apache.org/riot/jsonld#JSONLD_CONTEXT")));
+    }
+    
+    @GetMapping(value = "/entity", produces = "application/json")
+    public ResponseEntity<?> getEntity(@RequestParam(required = false) String uri) {
+    	return ResponseEntity.ok(dataService.getEntity(uri));
+    	
+    }
 
-		Element e = labelsCache.get(resource);
-		if (e != null) {
-			return (String)e.getObjectValue();
-		}
-		
-		Writer sw = new StringWriter();
-		
-		try {
-			if (!(resource.startsWith("http://") || resource.startsWith("https://"))) {
-				return sw.toString();
-			}
-		
-			URIDescriptor prefix = URIDescriptor.findPrefix(resource, prefixes);
-			if (prefix == null) {
-				return sw.toString();
-			}
-			
+//    	if (top == null) {
+//    		activities = naceService.getNextNaceLevelListDb(null);
+//    	} else {
+//    		if (top.isNaceRev2()) {
+//    			parent = naceService.getByCode(top);
+//    			activities = naceService.getNextNaceLevelListDb(top);
+//    		}
+//    	}
+//
+//		ComplexResponse res = new ComplexResponse();
+//		if (parent != null) {
+//			res.setEntity(GenericResponse.createFromActivity(parent, language));
+//		}
+//		
+//		if (activities.size() > 0) {
+//			res.setActivities(activities.stream().map(item -> GenericResponse.createFromActivity(item, language)).collect(Collectors.toList()));
+//		}
+//		
+//        return ResponseEntity.ok(res);
+//    }
 
-			String sparql = 						
-						"CONSTRUCT { " + "  <" + resource + "> <" + prefix.getLabelProperty() + "> ?label } " +
-						"WHERE { " +
-						"  <" + resource + "> <" + prefix.getLabelProperty() + "> ?label } " ;				
-										
-				
-//			System.out.println(resource);
-//			System.out.println(prefix);
-//			System.out.println(vi.getGraph() + " " + vi.getEndpoint());
-//			System.out.println(QueryFactory.create(sparql, Syntax.syntaxSPARQL_11));
-			
-			try (QueryExecution qe = QueryExecutionFactory.sparqlService(prefix.getEndpoint().getSparqlEndpoint(), QueryFactory.create(sparql, Syntax.syntaxSPARQL_11))) {
-				Model model = qe.execConstruct();
-	
-				RDFDataMgr.write(sw, model, RDFFormat.JSONLD_EXPAND_PRETTY);
-			}
-			
-			labelsCache.put(new Element(resource, sw.toString()));
-			
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-		
-		return sw.toString();
-	}	
 }

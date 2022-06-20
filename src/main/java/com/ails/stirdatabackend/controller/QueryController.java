@@ -1,57 +1,63 @@
 package com.ails.stirdatabackend.controller;
 
+import com.ails.stirdatabackend.model.Code;
 import com.ails.stirdatabackend.payload.EndpointResponse;
+import com.ails.stirdatabackend.payload.LegalEntity;
+import com.ails.stirdatabackend.payload.QueryResponse;
 import com.ails.stirdatabackend.service.QueryService;
-import com.ails.stirdatabackend.service.TestService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
+import java.sql.Date;
 import java.util.List;
-import java.util.Optional;
 
-@CrossOrigin
 @RestController
 @RequestMapping("/api/query")
 public class QueryController {
 
     @Autowired
-    private TestService testService;
-
-    @Autowired
     private QueryService queryService;
 
-    @GetMapping("/test/belgium")
-    public ResponseEntity<?> testEndpointConnectionBelgium() {
-        String res = testService.testSparqlQueryBelgium();
-        return ResponseEntity.ok(res);
+    @GetMapping("/entity")
+    public ResponseEntity<?> entity(@RequestParam(required = true) String uri) {
+        
+    	LegalEntity lg = queryService.lookupEntity(uri);
+    	
+        return ResponseEntity.ok(lg);
     }
 
-    @GetMapping("/test/czech")
-    public ResponseEntity<?> testEndpointConnectionCzech() {
-        List<String> res = testService.testSparqlQueryCzech();
-        return ResponseEntity.ok(res);
-    }
-
-    @GetMapping
-    public ResponseEntity<?> performQuery(@RequestParam(required = false) Optional<List<String>> NUTS,
-                                          @RequestParam(required = false) Optional<List<String>> NACE,
-                                          @RequestParam(required = false) Optional<String> startDate,
-                                          @RequestParam(required = false) Optional<String> endDate,
-                                          @RequestParam(required = false) Optional<String> country,
-                                          @RequestParam(required = false, defaultValue="1") int page) {
-        List<EndpointResponse> res = queryService.paginatedQuery(NUTS,NACE, startDate, endDate, page, country );
+    @GetMapping("/search")
+    public ResponseEntity<?> performQuery(@RequestParam(required = false) List<Code> place,
+                                          @RequestParam(required = false) List<Code> activity,
+                                          @RequestParam(required = false) Code founding,
+                                          @RequestParam(required = false) Code dissolution,
+                                          @RequestParam(defaultValue = "1") int page,
+                                          @RequestParam(defaultValue = "false") boolean details
+                                          ) {
+    	
+    	if (activity != null && activity.size() == 0) {
+    		activity = null;
+    	}
+    	
+        List<QueryResponse> res = queryService.paginatedQuery(place, activity, founding, dissolution, page, details);
         return ResponseEntity.ok(res);
     }
     
-    @GetMapping("/grouped")
-    public ResponseEntity<?> groupByQuery(@RequestParam(required = false) Optional<List<String>> NUTS,
-                                          @RequestParam(required = false) Optional<List<String>> NACE,
-                                          @RequestParam(required = false) Optional<String> startDate,
-                                          @RequestParam(required = false) Optional<String> endDate,
+    @GetMapping("/statistics")
+    public ResponseEntity<?> groupByQuery(@RequestParam(required = false) List<Code> place,
+                                          @RequestParam(required = false) List<Code> activity,
+                                          @RequestParam(required = false) Code founding,
+                                          @RequestParam(required = false) Code dissolution,
                                           @RequestParam() boolean gnace,
                                           @RequestParam() boolean gnuts3) {
-        List<EndpointResponse> res = queryService.groupedQuery(NUTS,NACE, startDate, endDate, gnace, gnuts3 );
+        
+    	List<EndpointResponse> res = queryService.groupedQuery(place, activity, founding, dissolution, gnace, gnuts3 );
         return ResponseEntity.ok(res);
     }
+    
+ 
 }

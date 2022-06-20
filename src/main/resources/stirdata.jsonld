@@ -1,0 +1,50 @@
+{   "@context" : {
+    "locatorName" : {
+      "@id" : "http://www.w3.org/ns/locn#locatorName"
+    },
+    "locatorDesignator" : {
+      "@id" : "http://www.w3.org/ns/locn#locatorDesignator"
+    },
+    "postCode" : {
+      "@id" : "http://www.w3.org/ns/locn#postCode"
+    },
+    "adminUnit" : {
+      "@id" : "http://data.europa.eu/m8g/adminUnit",
+      "@type" : "@id"
+    },
+    "adminUnitL1" : {
+      "@id" : "http://www.w3.org/ns/locn#adminUnitL1"
+    },
+    "fullAddress" : {
+      "@id" : "http://www.w3.org/ns/locn#fullAddress"
+    },
+    "postName" : {
+      "@id" : "http://www.w3.org/ns/locn#postName"
+    },
+    "thoroughfare" : {
+      "@id" : "http://www.w3.org/ns/locn#thoroughfare"
+    },
+    "adminUnitL2" : {
+      "@id" : "http://www.w3.org/ns/locn#adminUnitL2"
+    },
+    "registeredAddress" : {
+      "@id" : "http://www.w3.org/ns/legal#registeredAddress",
+      "@type" : "@id"
+    },
+    "legalName" : {
+      "@id" : "http://www.w3.org/ns/legal#legalName"
+    },
+    "companyActivity" : {
+      "@id" : "http://www.w3.org/ns/legal#companyActivity",
+      "@type" : "@id"
+    },
+    "companyType" : {
+      "@id" : "http://www.w3.org/ns/legal#companyType",
+      "@type" : "@id"
+    },
+    "foundingDate" : {
+      "@id" : "https://schema.org/foundingDate",
+      "@type" : "http://www.w3.org/2001/XMLSchema#date"
+    }
+  }
+}
