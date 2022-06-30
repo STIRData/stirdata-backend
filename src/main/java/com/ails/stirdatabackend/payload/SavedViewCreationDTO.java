@@ -15,6 +15,7 @@ public class SavedViewCreationDTO {
     private String name;
     private List<String> activity;
     private List<String> place;
+    private List<String> feature;
     private String startDate;
     private String endDate;
 }
