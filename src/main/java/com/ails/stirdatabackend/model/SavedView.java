@@ -26,11 +26,13 @@ public class SavedView {
     private List<String> place;
     private String startDate;
     private String endDate;
+    private List<String> feature;
 
     public SavedView() {
         this.creationDate = new Date();
         this.activity = new ArrayList<String>();
         this.place = new ArrayList<String>();
+        this.feature = new ArrayList<String>();
     }
 
 }   

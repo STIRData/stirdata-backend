@@ -53,6 +53,7 @@ public class SavedViewService {
         view.setCreatorId(userId);
         view.setActivity(request.getActivity());
         view.setPlace(request.getPlace());
+        view.setFeature(request.getFeature());
         view.setStartDate(request.getStartDate());
         view.setEndDate(request.getEndDate());
         savedViewRepository.save(view);
