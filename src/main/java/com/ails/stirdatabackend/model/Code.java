@@ -58,36 +58,36 @@ public class Code implements Serializable {
 	private final static Pattern statPattern = Pattern.compile("^(.*?):(.*?):(.*?)$");
 	private final static Pattern statValuePattern = Pattern.compile("^(.*?)/(.*?)(?::(.*?):(.*?))?$");
 	
-	public static void main(String[] args) {
-//		String s = "MOUNTAIN_NUTS:mountainLevel:MOUNTAIN_2";
-		String s = "TGS00112:tgs00112:accomunit/BEDPL~nace_r2/I551-I553~unit/NR:1000:";
-		
-		Matcher m = statPattern.matcher(s);
-		if (m.find()) {
-			for (int i = 0 ; i < m.groupCount() + 1; i++) {
-				System.out.println("*" + m.group(i) + "*");
-			}
-
-			System.out.println();
-			
-			String[] values = m.group(3).split("~");
-			
-			if (values.length > 1) {
-				for (String val : values) {
-					System.out.println(val);
-					
-					Matcher m2 = statValuePattern.matcher(val);
-					if (m2.find()) {
-						for (int i = 0 ; i < m2.groupCount() + 1; i++) {
-							System.out.println("*" + m2.group(i) + "*");
-						}
-					}
-				}
-			}
-
-		}
-		
-	}
+//	public static void main(String[] args) {
+////		String s = "MOUNTAIN_NUTS:mountainLevel:MOUNTAIN_2";
+//		String s = "TGS00112:tgs00112:accomunit/BEDPL~nace_r2/I551-I553~unit/NR:1000:";
+//		
+//		Matcher m = statPattern.matcher(s);
+//		if (m.find()) {
+//			for (int i = 0 ; i < m.groupCount() + 1; i++) {
+//				System.out.println("*" + m.group(i) + "*");
+//			}
+//
+//			System.out.println();
+//			
+//			String[] values = m.group(3).split("~");
+//			
+//			if (values.length > 1) {
+//				for (String val : values) {
+//					System.out.println(val);
+//					
+//					Matcher m2 = statValuePattern.matcher(val);
+//					if (m2.find()) {
+//						for (int i = 0 ; i < m2.groupCount() + 1; i++) {
+//							System.out.println("*" + m2.group(i) + "*");
+//						}
+//					}
+//				}
+//			}
+//
+//		}
+//		
+//	}
 	
 	private static Map<String, String> namespaceMap = new HashMap<>();
 	static {
