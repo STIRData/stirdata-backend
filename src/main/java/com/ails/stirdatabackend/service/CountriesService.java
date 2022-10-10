@@ -213,21 +213,21 @@ public class CountriesService {
 
 		
 		if (cc.getNaceEndpoint() != null) {
-		    cc.setNacePath1(country.getNacePath1() != null || country.getNacePathSparql() != null ? country.getNacePath1() : defaultNacePath1);
-		    cc.setNacePath2(country.getNacePath2() != null || country.getNacePathSparql() != null  ? country.getNacePath2() : defaultNacePath2);
-		    cc.setNacePath3(country.getNacePath3() != null || country.getNacePathSparql() != null ? country.getNacePath3() : defaultNacePath3);
-		    cc.setNacePath4(country.getNacePath4() != null || country.getNacePathSparql() != null ? country.getNacePath4() : defaultNacePath4);
-	
+//		    cc.setNacePath1(country.getNacePath1() != null || country.getNacePathSparql() != null ? country.getNacePath1() : defaultNacePath1);
+//		    cc.setNacePath2(country.getNacePath2() != null || country.getNacePathSparql() != null  ? country.getNacePath2() : defaultNacePath2);
+//		    cc.setNacePath3(country.getNacePath3() != null || country.getNacePathSparql() != null ? country.getNacePath3() : defaultNacePath3);
+//		    cc.setNacePath4(country.getNacePath4() != null || country.getNacePathSparql() != null ? country.getNacePath4() : defaultNacePath4);
+//	
 	//	    cc.setNaceFixedLevel(country.getNaceFixedLevel() != null || country.getNacePathSparql() != null  ? country.getNaceFixedLevel() : Integer.parseInt(defaultNaceFixedLevel));
 	//		why the above gives exception????
-		    if (country.getNaceFixedLevel() != null || country.getNacePathSparql() != null) { 
-		    	if (country.getNaceFixedLevel() != null) {
-		    		cc.setNaceFixedLevel(country.getNaceFixedLevel());
-		    	}
-		    	
-		    } else {
-		    	cc.setNaceFixedLevel(Integer.parseInt(defaultNaceFixedLevel));
-		    }
+//		    if (country.getNaceFixedLevel() != null || country.getNacePathSparql() != null) { 
+//		    	if (country.getNaceFixedLevel() != null) {
+//		    		cc.setNaceFixedLevel(country.getNaceFixedLevel());
+//		    	}
+//		    	
+//		    } else {
+//		    	cc.setNaceFixedLevel(Integer.parseInt(defaultNaceFixedLevel));
+//		    }
 		    
 		    if (country.getNaceFixedLevels() != null) {
 		    	String s = "";
@@ -243,12 +243,12 @@ public class CountriesService {
 		    	cc.setNaceFixedLevels(defaultNaceFixedLevel);
 		    }
 
-		} else {
-			cc.setNacePath1(null);
-			cc.setNacePath2(null);
-			cc.setNacePath3(null);
-			cc.setNacePath4(null);
-			cc.setNaceFixedLevel(null);
+//		} else {
+//			cc.setNacePath1(null);
+//			cc.setNacePath2(null);
+//			cc.setNacePath3(null);
+//			cc.setNacePath4(null);
+//			cc.setNaceFixedLevel(null);
 		}
 		
 		cc.setNutsEndpoint(country.getNutsEndpoint() != null ? country.getNutsEndpoint() : defaultNutsEndpoint); 

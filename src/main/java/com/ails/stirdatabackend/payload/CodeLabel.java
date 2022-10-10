@@ -1,6 +1,9 @@
 package com.ails.stirdatabackend.payload;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import lombok.AllArgsConstructor;
@@ -18,6 +21,15 @@ public class CodeLabel {
 	public String uri;
 	
 	public String geometry;
+	
+	public Integer minIntValue;
+	public Integer maxIntValue;
+	public Double minDoubleValue;
+	public Double maxDoubleValue;
+	
+	public Integer year;
+	
+	public List<CodeLabel> values;
 	
 	public CodeLabel(String code, String label) {
 		this.code = code;
@@ -44,6 +56,14 @@ public class CodeLabel {
 		return (code == cl.code || code != null && cl.code != null && cl.equals(cl.code)) &&
 				(label == cl.label || label != null && cl.label != null && label.equals(cl.label)) &&
 				(uri == cl.uri || uri != null && cl.uri != null && uri.equals(cl.uri));
+	}
+	
+	public void addValue(CodeLabel value) {
+		if (values == null) {
+			values = new ArrayList<>();
+		}
+		
+		values.add(value);
 	}
 
 }

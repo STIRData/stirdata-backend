@@ -128,6 +128,8 @@ public class QueryService {
         
     	List<QueryResponse> responseList = new ArrayList<>();
         
+//    	System.out.println(nutsLauCodes);
+    	
     	Map<CountryDB, PlaceSelection> countryPlaceMap;
     	if (nutsLauCodes != null) {
     		countryPlaceMap = nutsService.getEndpointsByNuts(nutsLauCodes);
@@ -143,10 +145,13 @@ public class QueryService {
         	CountryDB cc = ccEntry.getKey();
         	PlaceSelection places = ccEntry.getValue();
         	
+//        	System.out.println(places);
+        	
         	List<String> naceLeafUris = cc.getNaceEndpoint() == null ? null : naceService.getLocalNaceLeafUris(cc, naceCodes);
         	List<String> nutsLeafUris = places == null ? null : nutsService.getLocalNutsLeafUrisDB(cc, places); 
         	List<String> lauUris = places == null ? null : nutsService.getLocalLauUris(cc, places);
         	
+//        	System.out.println("NUTSLEAFURIS " + nutsLeafUris);
 //        	int count = 0;
         	
             Page pg = new Page();

@@ -73,20 +73,20 @@ public class CountryDB {
 	@Column(name = "nace_scheme", columnDefinition="TEXT")
 	private String naceScheme;
 	
-	@Column(name = "nace_path_1", columnDefinition="TEXT")
-	private String nacePath1;
+//	@Column(name = "nace_path_1", columnDefinition="TEXT")
+//	private String nacePath1;
+//	
+//	@Column(name = "nace_path_2", columnDefinition="TEXT")
+//	private String nacePath2;
+//	
+//	@Column(name = "nace_path_3", columnDefinition="TEXT")
+//	private String nacePath3;
+//	
+//	@Column(name = "nace_path_4", columnDefinition="TEXT")
+//	private String nacePath4;
 	
-	@Column(name = "nace_path_2", columnDefinition="TEXT")
-	private String nacePath2;
-	
-	@Column(name = "nace_path_3", columnDefinition="TEXT")
-	private String nacePath3;
-	
-	@Column(name = "nace_path_4", columnDefinition="TEXT")
-	private String nacePath4;
-	
-	@Column(name = "nace_fixed_level")
-	private Integer naceFixedLevel;
+//	@Column(name = "nace_fixed_level")
+//	private Integer naceFixedLevel;
 
 	@Column(name = "nace_fixed_levels")
 	private String naceFixedLevels;
@@ -443,7 +443,8 @@ public class CountryDB {
     
     public int[] getEffectiveNaceLevels() {
     	if (!naceEffectiveLevelsComputed) {
-    		if (naceFixedLevel != null) {
+//    		if (naceFixedLevel != null) {
+    		if (naceFixedLevels != null) {
     			String[] levels = naceFixedLevels.split(",");
     			
     			naceEffectiveLevels = new int[levels.length];

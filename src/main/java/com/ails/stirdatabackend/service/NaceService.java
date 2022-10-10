@@ -222,55 +222,55 @@ public class NaceService {
 
     }    
     
-    private Set<String> getNaceLeafUrisDB(CountryDB cc, Code code) {
-    	Set<String> res = new HashSet<>();
-
-    	int level = code.getNaceRev2Level();
-    	if (level < 0) {
-    		return res;
-    	}
-
-    	List<ActivityDB> activities = new ArrayList<>();  
-    	
-    	if (cc.getNaceFixedLevel() == 5) {
-    		if (level == 1) {
-    			activities.addAll(activitiesRepository.findLevel4AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
-    		} else if (level == 2) {
-    			activities.addAll(activitiesRepository.findLevel3AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
-    		} else if (level == 3) {
-    			activities.addAll(activitiesRepository.findLevel2AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
-    		} else if (level == 4) {
-    			activities.addAll(activitiesRepository.findLevel1AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
-    		} 
-    	} else if (cc.getNaceFixedLevel() == -5) {
-    		if (level == 1) {
-    			activities.addAll(activitiesRepository.findLevel4AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
-    			activities.addAll(activitiesRepository.findLevel3AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
-    			activities.addAll(activitiesRepository.findLevel2AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
-    			activities.addAll(activitiesRepository.findLevel1AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
-    			activities.addAll(activitiesRepository.findLevel0AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
-    		} else if (level == 2) {
-    			activities.addAll(activitiesRepository.findLevel3AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
-    			activities.addAll(activitiesRepository.findLevel2AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
-    			activities.addAll(activitiesRepository.findLevel1AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
-    			activities.addAll(activitiesRepository.findLevel0AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
-    		} else if (level == 3) {
-    			activities.addAll(activitiesRepository.findLevel2AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
-    			activities.addAll(activitiesRepository.findLevel1AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
-    			activities.addAll(activitiesRepository.findLevel0AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
-    		} else if (level == 4) {
-    			activities.addAll(activitiesRepository.findLevel1AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
-    			activities.addAll(activitiesRepository.findLevel0AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
-    		} 
-    	}
-
-    	
-		for (ActivityDB ac : activities) {
-			res.add(cc.getNacePrefix() + "" + ac.getCode().getCode());
-		}
-    	
-    	return res;
-
-    }        
+//    private Set<String> getNaceLeafUrisDB(CountryDB cc, Code code) {
+//    	Set<String> res = new HashSet<>();
+//
+//    	int level = code.getNaceRev2Level();
+//    	if (level < 0) {
+//    		return res;
+//    	}
+//
+//    	List<ActivityDB> activities = new ArrayList<>();  
+//    	
+//    	if (cc.getNaceFixedLevel() == 5) {
+//    		if (level == 1) {
+//    			activities.addAll(activitiesRepository.findLevel4AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+//    		} else if (level == 2) {
+//    			activities.addAll(activitiesRepository.findLevel3AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+//    		} else if (level == 3) {
+//    			activities.addAll(activitiesRepository.findLevel2AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+//    		} else if (level == 4) {
+//    			activities.addAll(activitiesRepository.findLevel1AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+//    		} 
+//    	} else if (cc.getNaceFixedLevel() == -5) {
+//    		if (level == 1) {
+//    			activities.addAll(activitiesRepository.findLevel4AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+//    			activities.addAll(activitiesRepository.findLevel3AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+//    			activities.addAll(activitiesRepository.findLevel2AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+//    			activities.addAll(activitiesRepository.findLevel1AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+//    			activities.addAll(activitiesRepository.findLevel0AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+//    		} else if (level == 2) {
+//    			activities.addAll(activitiesRepository.findLevel3AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+//    			activities.addAll(activitiesRepository.findLevel2AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+//    			activities.addAll(activitiesRepository.findLevel1AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+//    			activities.addAll(activitiesRepository.findLevel0AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+//    		} else if (level == 3) {
+//    			activities.addAll(activitiesRepository.findLevel2AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+//    			activities.addAll(activitiesRepository.findLevel1AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+//    			activities.addAll(activitiesRepository.findLevel0AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+//    		} else if (level == 4) {
+//    			activities.addAll(activitiesRepository.findLevel1AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+//    			activities.addAll(activitiesRepository.findLevel0AfterDescendentFromNaceRev2(new ActivityDB(code), cc.getNaceNamespace()));
+//    		} 
+//    	}
+//
+//    	
+//		for (ActivityDB ac : activities) {
+//			res.add(cc.getNacePrefix() + "" + ac.getCode().getCode());
+//		}
+//    	
+//    	return res;
+//
+//    }        
 
 }

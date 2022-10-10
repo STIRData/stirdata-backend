@@ -24,6 +24,14 @@ public class CubeResponse {
 	
 
 	public CubeResponse() {
-		values = new ArrayList<>();
+//		values = new ArrayList<>();
+	}
+	
+	public void addValue(CodeLabel value) {
+		if (values == null) {
+			values = new ArrayList<>();
+		}
+		
+		values.add(value);
 	}
 }

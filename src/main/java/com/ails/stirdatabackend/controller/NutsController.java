@@ -4,7 +4,9 @@ import com.ails.stirdatabackend.model.Code;
 import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.PlaceDB;
 import com.ails.stirdatabackend.payload.ComplexResponse;
+import com.ails.stirdatabackend.payload.CubeResponse;
 import com.ails.stirdatabackend.payload.GenericResponse;
+import com.ails.stirdatabackend.payload.QueryResponse;
 import com.ails.stirdatabackend.service.NutsService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,6 +40,15 @@ public class NutsController {
     @Qualifier("country-configurations")
     private Map<String, CountryDB> countryConfigurations;
 
+    @Autowired
+    @Qualifier("filters")
+    private List<CubeResponse> filters;
+
+    @Autowired
+    @Qualifier("eurostat-filters")
+    private List<CubeResponse> eurostatFilters;
+
+    
 //    @Autowired
 //    @Qualifier("nuts-geojson-cache")
 //    private Cache geojsonCache;
@@ -104,8 +115,21 @@ public class NutsController {
     @GetMapping(value = "filters", produces = "application/json")
     public ResponseEntity<?> getFilters() {
         
-        return ResponseEntity.ok(nutsService.getFilters());
+        return ResponseEntity.ok(filters);
     }
+    
+    @GetMapping(value = "eurostat-filters", produces = "application/json")
+    public ResponseEntity<?> getEurostatFilters() {
+        
+        return ResponseEntity.ok(eurostatFilters);
+    }
+    
+//    @GetMapping("/resolve")
+//    public ResponseEntity<?> performQuery(@RequestParam(required = false) List<Code> place) {
+//    	
+//        List<QueryResponse> res = nutsService.resolve(place);
+//        return ResponseEntity.ok(res);
+//    }
     
 //    @GetMapping(value = "/getGeoJson", 
 //                produces = "application/json")

@@ -29,7 +29,7 @@ public class Country {
 
 	private String naceNamespace;
 	
-	private Integer naceFixedLevel;
+//	private Integer naceFixedLevel;
 	
 	private int[] naceFixedLevels;
 	

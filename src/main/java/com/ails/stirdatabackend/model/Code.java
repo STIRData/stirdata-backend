@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.sql.Date;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -54,7 +55,39 @@ public class Code implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
 	private final static Pattern dateIntervalPattern = Pattern.compile("^(.*?):(.*?)(?::(.*?))?$");
-	private final static Pattern statPattern = Pattern.compile("^(.*?):(.*?):(.*?)?$");
+	private final static Pattern statPattern = Pattern.compile("^(.*?):(.*?):(.*?)$");
+	private final static Pattern statValuePattern = Pattern.compile("^(.*?)/(.*?)(?::(.*?):(.*?))?$");
+	
+	public static void main(String[] args) {
+//		String s = "MOUNTAIN_NUTS:mountainLevel:MOUNTAIN_2";
+		String s = "TGS00112:tgs00112:accomunit/BEDPL~nace_r2/I551-I553~unit/NR:1000:";
+		
+		Matcher m = statPattern.matcher(s);
+		if (m.find()) {
+			for (int i = 0 ; i < m.groupCount() + 1; i++) {
+				System.out.println("*" + m.group(i) + "*");
+			}
+
+			System.out.println();
+			
+			String[] values = m.group(3).split("~");
+			
+			if (values.length > 1) {
+				for (String val : values) {
+					System.out.println(val);
+					
+					Matcher m2 = statValuePattern.matcher(val);
+					if (m2.find()) {
+						for (int i = 0 ; i < m2.groupCount() + 1; i++) {
+							System.out.println("*" + m2.group(i) + "*");
+						}
+					}
+				}
+			}
+
+		}
+		
+	}
 	
 	private static Map<String, String> namespaceMap = new HashMap<>();
 	static {
@@ -73,8 +106,15 @@ public class Code implements Serializable {
 	private String statDataset;
 	private String statProperty;
 	private String statValue;
+	
+	private Map<String, String> statOtherValues;
+	
+	private Integer statYear;
+	private Double statMinValue;
+	private Double statMaxValue;
 
 	public Code(String string) {
+//		System.out.println(">>>>> " + string);
 //		String[] r = string.split(":");
 //		this.namespace = r[0];
 //		if (r.length > 1) {
@@ -92,10 +132,10 @@ public class Code implements Serializable {
 					if (m.groupCount() == 2 || m.groupCount() == 3) {
 						try {
 							dateFrom = Date.valueOf(m.group(1));
-						} catch (IllegalArgumentException e) { }
+						} catch (Exception e) { }
 						try {
 							dateTo = Date.valueOf(m.group(2));
-						} catch (IllegalArgumentException e) { }
+						} catch (Exception e) { }
 						
 						if (m.groupCount() == 3) {
 							dateInterval = m.group(3);
@@ -108,6 +148,37 @@ public class Code implements Serializable {
 					statDataset = m.group(1);
 					statProperty = m.group(2);
 					statValue = m.group(3);
+					
+					String[] values = statValue.split("~");
+					
+					if (values.length > 1) {
+						statOtherValues = new HashMap<>();
+						for (String val : values) {
+							Matcher m2 = statValuePattern.matcher(val);
+							if (m2.find()) {
+								
+								if (m2.group(3) == null && m2.group(4) == null) {
+									statOtherValues.put(m2.group(1), m2.group(2));
+								} else {
+									statValue = m2.group(1) + "/" + m2.group(2);
+									try {
+										statMinValue = Double.parseDouble(m2.group(3));
+									} catch (Exception e) { }
+									try {
+										statMaxValue = Double.parseDouble(m2.group(4));
+									} catch (Exception e) { }
+								}
+							}
+						}
+						
+//						System.out.println(statDataset);
+//						System.out.println(statProperty);
+//						System.out.println(statValue);
+//						System.out.println(statOtherValues);
+//						System.out.println(statValue);
+//						System.out.println(statMinValue);
+//						System.out.println(statMaxValue);
+					}
 				}
 			}
 		} else {
@@ -407,8 +478,19 @@ public class Code implements Serializable {
 	public String getStatValueUri() {
 		return statValuePrefix + this.statValue;
 	}
-
 	
+	public Integer getStatYear() {
+		return statYear;
+	}
+	
+	public Double getStatMinValue() {
+		return statMinValue;
+	}
+
+	public Double getStatMaxValue() {
+		return statMaxValue;
+	}
+
 	public int hashCode() {
 		return toString().hashCode();
 	}
@@ -423,5 +505,9 @@ public class Code implements Serializable {
 	
 	public static boolean isNutsUri(String uri) {
 		return uri.startsWith(nutsPrefix);
+	}
+	
+	public boolean isEuroStatValue() {
+		return statValue.startsWith("unit/");
 	}
 }
