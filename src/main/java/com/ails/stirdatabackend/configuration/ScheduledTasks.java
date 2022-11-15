@@ -49,7 +49,12 @@ public class ScheduledTasks {
 		CountryConfigurationsBean ccb = (CountryConfigurationsBean)context.getBean("country-configurations");
 		
 		for (CountryDB cc : countryConfigurations.values()) {
-			if (cc.getCode().equals("EE") || cc.getCode().equals("LV") || cc.getCode().equals("FI") || cc.getCode().equals("NO") || cc.getCode().equals("CZ")) {
+			if (cc.getCode().equals("EE") || 
+				cc.getCode().equals("LV") || 
+				cc.getCode().equals("FI") || 
+				cc.getCode().equals("NO") || 
+				cc.getCode().equals("CZ") || 
+				cc.getCode().equals("NL")) {
 				Country country = new Country();
 				country.setDcat(cc.getDcat());
 				CountryDB updatedcc = countriesService.updateCountry(country);
