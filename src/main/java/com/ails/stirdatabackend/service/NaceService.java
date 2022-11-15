@@ -41,7 +41,7 @@ public class NaceService {
     
 //    @Autowired
 //    @Qualifier("country-configurations")
-//    private Map<String, CountryConfiguration> countryConfigurations;
+//    private CountryConfigurationsBean countryConfigurations;
 
     @Autowired
     private ActivitiesDBRepository activitiesRepository;
@@ -54,19 +54,19 @@ public class NaceService {
     	return activitiesRepository.findByCode(code);
     }
 
-    public ActivityDB getNaceRev2Ancestor(ActivityDB activity) {
-    	if (activity.getLevel() <= 4 && activity.getExactMatch() != null) {
-    		return activity.getExactMatch();
-    	} else if (activity.getLevel() == 5) {
-    		return activitiesRepository.findLevel4NaceRev2AncestorFromLevel5(activity);
-    	} else if (activity.getLevel() == 6) {
-    		return activitiesRepository.findLevel4NaceRev2AncestorFromLevel6(activity);
-    	} else if (activity.getLevel() == 7) {
-    		return activitiesRepository.findLevel4NaceRev2AncestorFromLevel7(activity);
-    	} else {
-    		return null;
-    	}
-    }
+//    public ActivityDB getNaceRev2Ancestor(ActivityDB activity) {
+//    	if (activity.getLevel() <= 4 && activity.getExactMatch() != null) {
+//    		return activity.getExactMatch();
+//    	} else if (activity.getLevel() == 5) {
+//    		return activitiesRepository.findLevel4NaceRev2AncestorFromLevel5(activity);
+//    	} else if (activity.getLevel() == 6) {
+//    		return activitiesRepository.findLevel4NaceRev2AncestorFromLevel6(activity);
+//    	} else if (activity.getLevel() == 7) {
+//    		return activitiesRepository.findLevel4NaceRev2AncestorFromLevel7(activity);
+//    	} else {
+//    		return null;
+//    	}
+//    }
 
     public List<ActivityDB> getParents(ActivityDB activity) {
     	List<ActivityDB> parents = new ArrayList<>();
@@ -115,7 +115,8 @@ public class NaceService {
     	sparql += "?code <http://www.w3.org/2004/02/skos/core#inScheme> <https://w3id.org/stirdata/resource/nace/scheme/NACERev2> . ";
     	
 		if (parent == null) {
-		    sparql += "?code <" + SDVocabulary.level + "> 1 . ";
+//		    sparql += "?code <" + SDVocabulary.level + "> 1 . ";
+			sparql += "?code <http://www.w3.org/2004/02/skos/core#topConceptOf> ?scheme . ";
 		} else {
 		    sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parent + "> " +  ". ";
 		}
@@ -143,12 +144,12 @@ public class NaceService {
 
 			for (Code code : naceCodes) {
 //				System.out.println(code);
-				if (cc.getNacePathSparql() != null) {
-					naceLeafUris.add(Code.naceRev2Prefix + code.getCode()); // triples store contains local naces 	
-				} else {
+//				if (cc.getNacePathSparql() != null) {
+//					naceLeafUris.add(Code.naceRev2Prefix + code.getCode()); // triples store contains local naces 	
+//				} else {
 					naceLeafUris.addAll(getNaceLeafUrisTS(cc, code));
-//					naceLeafUris.addAll(getNaceLeafUrisDB(cc, code)); // much slower, not supporting multiples levels
-				}
+////					naceLeafUris.addAll(getNaceLeafUrisDB(cc, code)); // much slower, not supporting multiples levels
+//				}
             }
     	}
     	
@@ -207,8 +208,11 @@ public class NaceService {
     	}
     	sparql += " ?activity " + s + "skos:exactMatch" + " <" + code.toUri() + "> . "; 
     	
-		sparql += " ?activity skos:inScheme <" + cc.getNaceScheme() + "> } ";
-    	
+//		sparql += " ?activity skos:inScheme <" + cc.getNaceScheme() + "> } ";
+		sparql += " ?activity a <https://w3id.org/stirdata/vocabulary/BusinessActivity> . } ";
+
+		
+//		System.out.println(cc.getNaceEndpoint());
 //		System.out.println(sparql);
     	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), sparql)) {
             ResultSet rs = qe.execSelect();

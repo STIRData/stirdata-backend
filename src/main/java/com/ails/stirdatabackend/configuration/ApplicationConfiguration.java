@@ -4,6 +4,7 @@ import com.ails.stirdatabackend.controller.URIDescriptor;
 import com.ails.stirdatabackend.model.AddOn;
 import com.ails.stirdatabackend.model.Code;
 import com.ails.stirdatabackend.model.CountryConfiguration;
+import com.ails.stirdatabackend.model.CountryConfigurationsBean;
 import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.ModelConfiguration;
 import com.ails.stirdatabackend.model.StatisticDB;
@@ -196,8 +197,10 @@ public class ApplicationConfiguration {
 	
 	@Bean(name = "country-configurations")
 	@DependsOn("model-configurations")
-	public Map<String, CountryDB> getSupportedCountriesConfigurations(@Qualifier("model-configurations") Map<String, ModelConfiguration> mcMap) {
-		Map<String, CountryDB> map = new HashMap<>();
+	public CountryConfigurationsBean getSupportedCountriesConfigurations(@Qualifier("model-configurations") Map<String, ModelConfiguration> mcMap) {
+//		Map<String, CountryDB> map = new LinkedHashMap<>();
+		
+		CountryConfigurationsBean ccb = new CountryConfigurationsBean();
 		
 		System.out.println("LOADING COUNTRIES: ");
 		String s = "";
@@ -206,11 +209,11 @@ public class ApplicationConfiguration {
 //			cc.setStatistics(new HashSet<>(statisticsRepository.findDimensionsByCountry(cc.getCode())));
 			
 			s += cc.getCode() + " ";
-			map.put(cc.getCode(), cc);
+			ccb.put(cc.getCode(), cc);
 		}
 		logger.info("Loaded countries: " + s);
 		
-		return map;
+		return ccb;
 	}
 	
 	@Bean(name = "model-jsonld-context")
@@ -228,7 +231,7 @@ public class ApplicationConfiguration {
 	
 	@Bean(name = "country-addons")
 	@DependsOn("country-configurations")
-	public Map<String, AddOn> getAddons(@Qualifier("country-configurations") Map<String, CountryDB> countryConfigurations) {
+	public Map<String, AddOn> getAddons(@Qualifier("country-configurations") CountryConfigurationsBean countryConfigurations) {
 		Map<String, AddOn> map = new HashMap<>();
 		
 		String addons = env.getProperty("app.add-ons");

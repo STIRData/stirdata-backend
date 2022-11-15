@@ -1,6 +1,7 @@
 package com.ails.stirdatabackend.service;
 
 import com.ails.stirdatabackend.model.Code;
+import com.ails.stirdatabackend.model.CountryConfigurationsBean;
 import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.PlaceDB;
 import com.ails.stirdatabackend.model.StatisticResult;
@@ -73,7 +74,7 @@ public class NutsService {
 
     @Autowired
     @Qualifier("country-configurations")
-    private Map<String, CountryDB> countryConfigurations;
+    private CountryConfigurationsBean countryConfigurations;
     
     @Autowired
     private PlacesDBRepository placesRepository;
@@ -137,9 +138,9 @@ public class NutsService {
     public List<String> getLocalNutsLeafUrisDB(CountryDB cc, PlaceSelection ps) {
     	List<Code> nutsCodes = ps.getNuts3();
     	
-//    	System.out.println(">>> NNNN" );
-//    	System.out.println(ps.getNuts3());
-//    	System.out.println(ps.getNutsStat());
+    	System.out.println(">>> NNNN" );
+    	System.out.println(ps.getNuts3());
+    	System.out.println(ps.getNutsStat());
     	
     	if (nutsCodes != null && nutsCodes.contains(Code.createNutsCode(cc.getCode()))) { // entire country, ignore nuts
     		if (ps.getNutsStat() == null) {
@@ -147,6 +148,7 @@ public class NutsService {
     		} else {
             	Set<String> statNuts3Uris = new HashSet<>();
             	for (Code s : ps.getNutsStat()) {
+//            		System.out.println(">>>>" + s);
             		statNuts3Uris.addAll(getNutsLocalNuts3LeafUrisDB(cc, s));
             	}
 //            	System.out.println("EFF " + statNuts3Uris);

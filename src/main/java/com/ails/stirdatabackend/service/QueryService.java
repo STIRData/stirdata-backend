@@ -3,6 +3,7 @@ package com.ails.stirdatabackend.service;
 import com.ails.stirdatabackend.model.ActivityDB;
 import com.ails.stirdatabackend.model.Code;
 import com.ails.stirdatabackend.model.CompanyTypeDB;
+import com.ails.stirdatabackend.model.CountryConfigurationsBean;
 import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.PlaceDB;
 import com.ails.stirdatabackend.payload.Address;
@@ -59,7 +60,7 @@ public class QueryService {
 
 	@Autowired
 	@Qualifier("country-configurations")
-    private Map<String, CountryDB> countryConfigurations;
+    private CountryConfigurationsBean countryConfigurations;
 	
 	@Autowired
 	@Qualifier("model-jsonld-context")
@@ -128,7 +129,7 @@ public class QueryService {
         
     	List<QueryResponse> responseList = new ArrayList<>();
         
-//    	System.out.println(nutsLauCodes);
+    	System.out.println(nutsLauCodes);
     	
     	Map<CountryDB, PlaceSelection> countryPlaceMap;
     	if (nutsLauCodes != null) {
@@ -146,6 +147,7 @@ public class QueryService {
         	PlaceSelection places = ccEntry.getValue();
         	
 //        	System.out.println(places);
+//        	System.out.println(naceCodes);
         	
         	List<String> naceLeafUris = cc.getNaceEndpoint() == null ? null : naceService.getLocalNaceLeafUris(cc, naceCodes);
         	List<String> nutsLeafUris = places == null ? null : nutsService.getLocalNutsLeafUrisDB(cc, places); 
@@ -161,7 +163,7 @@ public class QueryService {
             qr.setCountry(new CodeLabel(cc.getCode(), cc.getLabel()));
             qr.setPage(pg);
 
-//            System.out.println(naceLeafUris);
+//            System.out.println("NACELEAFURIS " +naceLeafUris);
             
         	if ((nutsLeafUris != null && nutsLeafUris.size() == 0 && lauUris != null && lauUris.size() == 0) || (naceLeafUris != null && naceLeafUris.size() == 0)) {
         		pg.setPageSize(0);
@@ -170,19 +172,17 @@ public class QueryService {
         		continue;
         	}
         	
-
-        	
         	//could use statistics table instead of this if available
         	
 //        	System.out.println(countQuery);
-        	SparqlQuery sparql = SparqlQuery.buildCoreQuery(cc, true, true, nutsLeafUris, lauUris, naceLeafUris, founding, dissolution); 
-
+        	SparqlQuery sparql = SparqlQuery.buildCoreQuery(cc, true, true, nutsLeafUris, lauUris, naceLeafUris, founding, dissolution);
+        	
         	if (sparql != null)  {// if null it is an empty query
 	            if (page == 1) {
 	            	String countQuery = sparql.countSelectQuery();
 		            	
 //	            	System.out.println(QueryFactory.create(countQuery));
-	//              System.out.println(cc.getDataEndpoint());
+//	              System.out.println(cc.getDataEndpoint());
 		             
 	                try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), QueryFactory.create(countQuery, Syntax.syntaxARQ))) {
 	                    ResultSet rs = qe.execSelect();

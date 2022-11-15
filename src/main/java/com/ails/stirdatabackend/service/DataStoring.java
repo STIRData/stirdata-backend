@@ -744,12 +744,19 @@ public class DataStoring  {
 	public void copyNACEFromVirtuosoToRDBMS() throws IOException {
 
 		for (int i = 1; i <= 4; i++) {
+			
+			String p = "<http://www.w3.org/2004/02/skos/core#topConceptOf>";
+			for (int k = 0; k < i; k++) {
+				p = "<http://www.w3.org/2004/02/skos/core#broader>/" + p;
+			}
+			
 			String naceSparql = "SELECT * " + 
 //		       (naceNamedgraphEU != null ? "FROM <" + naceNamedgraphEU + "> " : "") + 
 		       " WHERE {" +
 //			   "?nace a <https://lod.stirdata.eu/nace/ont/Activity> . " +
-			   "?nace <http://www.w3.org/2004/02/skos/core#inScheme> <<https://w3id.org/stirdata/resource/nace/scheme/NACERev2> ." +
-			   "?nace <" + SDVocabulary.level + "> " + i + " . " +
+//			   "?nace <http://www.w3.org/2004/02/skos/core#inScheme> <https://w3id.org/stirdata/resource/nace/scheme/NACERev2> ." +
+//			   "?nace <" + SDVocabulary.level + "> " + i + " . " +
+               "?nace " + p + " <https://w3id.org/stirdata/resource/nace/scheme/NACERev2> . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?bgLabel . FILTER (lang(?bgLabel) = 'bg') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?csLabel . FILTER (lang(?csLabel) = 'cs') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?daLabel . FILTER (lang(?daLabel) = 'da') } . " +
@@ -872,7 +879,7 @@ public class DataStoring  {
 	                }
 	                
 	                activity.setScheme("nace-rev2");
-	                activity.setLevel(i);
+//	                activity.setLevel(i);
 	                
 //	                System.out.println(activity.getCode());
 	                activitiesDBRepository.save(activity);
@@ -885,6 +892,23 @@ public class DataStoring  {
 	}
 
 	@Transactional
+	public void changeNaceCodes(String oldPrefix, String newPrefix) {
+		for (ActivityDB acc : activitiesDBRepository.findByScheme(oldPrefix)) {
+			System.out.println(acc.getCode());
+			 
+//			System.out.println(acc.getCode().getNamespace() + "   " + acc.getCode().getCode());
+//			acc.setCode(new Code("nace-md:" + acc.getCode().getCode()));
+//			acc.setScheme("nace-md");
+			
+			activitiesDBRepository.changeActivityCode(acc.getCode(), new Code(newPrefix + ":" + acc.getCode().getCode()), newPrefix);
+			
+			
+		}
+		activitiesDBRepository.flush();
+	}
+	
+	
+	@Transactional
 	public void deleteNACEFromRDBMS(CountryDB cc) throws IOException {
 
 		activitiesDBRepository.deleteAllByScheme(cc.getNaceNamespace());
@@ -896,14 +920,20 @@ public class DataStoring  {
 //		deleteNACEFromRDBMS(cc);
 
 		for (int i = 1; i <= cc.getNaceLevels(); i++) {
+			String p = "<http://www.w3.org/2004/02/skos/core#topConceptOf>";
+			for (int k = 0; k < i; k++) {
+				p = "<http://www.w3.org/2004/02/skos/core#broader>/" + p;
+			}
 			
 			String naceSparql = "SELECT * " + 
 //		       (naceNamedgraphEU != null ? "FROM <" + naceNamedgraphEU + "> " : "") + 
 		       " WHERE {" +
 //			   "?nace a <https://lod.stirdata.eu/nace/ont/Activity> . " +
                "?nace a <http://www.w3.org/2004/02/skos/core#Concept> . " +
-			   "?nace <http://www.w3.org/2004/02/skos/core#inScheme> <" + cc.getNaceScheme() + "> ." +
-			   "?nace <" + SDVocabulary.level + "> " + i + " . " +
+//			   "?nace <http://www.w3.org/2004/02/skos/core#inScheme> <" + cc.getNaceScheme() + "> ." +
+			   "?nace a <https://w3id.org/stirdata/vocabulary/BusinessActivity> . " +
+//			   "?nace <" + SDVocabulary.level + "> " + i + " . " +
+               "?nace " + p + " ?scheme . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?bgLabel . FILTER (lang(?bgLabel) = 'bg') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?csLabel . FILTER (lang(?csLabel) = 'cs') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?daLabel . FILTER (lang(?daLabel) = 'da') } . " +
@@ -1034,7 +1064,7 @@ public class DataStoring  {
 	                }
 	                
 	                activity.setScheme(cc.getNaceNamespace());
-	                activity.setLevel(i);
+//	                activity.setLevel(i);
 	                
 //	                System.out.println(activity.getCode());
 	                try {
@@ -1051,7 +1081,8 @@ public class DataStoring  {
 			       "WHERE {" +
 //				   "?nace a <https://lod.stirdata.eu/nace/ont/Activity> . " +
                    "?nace a <http://www.w3.org/2004/02/skos/core#Concept> . " +
-				   "?nace <http://www.w3.org/2004/02/skos/core#inScheme> <" + cc.getNaceScheme() + "> ." +
+//				   "?nace <http://www.w3.org/2004/02/skos/core#inScheme> <" + cc.getNaceScheme() + "> ." +
+				   "?nace a <https://w3id.org/stirdata/vocabulary/BusinessActivity> . " +
 				   "?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?label . BIND (lang(?label) AS ?language) } "; 
 
         try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), languageSparql)) {

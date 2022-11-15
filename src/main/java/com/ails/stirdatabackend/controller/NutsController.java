@@ -1,6 +1,7 @@
 package com.ails.stirdatabackend.controller;
 
 import com.ails.stirdatabackend.model.Code;
+import com.ails.stirdatabackend.model.CountryConfigurationsBean;
 import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.PlaceDB;
 import com.ails.stirdatabackend.payload.ComplexResponse;
@@ -38,7 +39,7 @@ public class NutsController {
 
     @Autowired
     @Qualifier("country-configurations")
-    private Map<String, CountryDB> countryConfigurations;
+    private CountryConfigurationsBean countryConfigurations;
 
     @Autowired
     @Qualifier("filters")

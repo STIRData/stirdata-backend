@@ -33,8 +33,8 @@ public class Code implements Serializable {
 	
 //    public final static String lau2021Prefix = "https://lod.stirdata.eu/lau/code/2021/";
     
-//    public final static String naceRev2Prefix = "https://lod.stirdata.eu/nace/nace-rev2/code/";
-	public final static String naceRev2Prefix = "https://w3id.org/stirdata/resource/nace/nace-rev2/item/";
+    public final static String naceRev2Prefix = "http://data.europa.eu/ux2/nace2/";
+//	public final static String naceRev2Prefix = "https://w3id.org/stirdata/resource/nace/nace-rev2/item/";
     public final static String naceRev2Namespace = "nace-rev2";
 
     public final static String nutsNamespace = "nuts";

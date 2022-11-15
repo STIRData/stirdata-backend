@@ -19,13 +19,13 @@ public class Country {
 
 	private String naceScheme;
 	
-	private String nacePath1;
-	
-	private String nacePath2;
-	
-	private String nacePath3;
-	
-	private String nacePath4;
+//	private String nacePath1;
+//	
+//	private String nacePath2;
+//	
+//	private String nacePath3;
+//	
+//	private String nacePath4;
 
 	private String naceNamespace;
 	
@@ -59,7 +59,7 @@ public class Country {
     
     private String naceSparql;
     
-    private String nacePathSparql;
+//    private String nacePathSparql;
     
     private String companyTypeSparql;
     
@@ -79,7 +79,8 @@ public class Country {
     
     private String companyTypeEndpoint;
 
-    
+	public Country() {
+	}    
 		
 	public Country(String code) {
 		this.code = code;

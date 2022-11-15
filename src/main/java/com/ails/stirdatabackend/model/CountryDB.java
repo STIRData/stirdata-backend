@@ -55,6 +55,9 @@ public class CountryDB {
 	@Column(name = "last_updated")
 	private Date lastUpdated;
 
+	@Column(name = "last_accessed")
+	private Date lastAccessed;
+
 	@Column(name = "last_accessed_start")
 	private Date lastAccessedStart;
 
@@ -70,8 +73,8 @@ public class CountryDB {
 	@Column(name = "nace_endpoint", columnDefinition="TEXT")
 	private String naceEndpoint;
 	
-	@Column(name = "nace_scheme", columnDefinition="TEXT")
-	private String naceScheme;
+//	@Column(name = "nace_scheme", columnDefinition="TEXT")
+//	private String naceScheme;
 	
 //	@Column(name = "nace_path_1", columnDefinition="TEXT")
 //	private String nacePath1;
@@ -94,9 +97,13 @@ public class CountryDB {
 	@Column(name = "nace_levels")
 	private Integer naceLevels;
 
-	@Column(name = "nace_namespace")
-	private String naceNamespace;
+//	@Column(name = "nace_namespace")
+//	private String naceNamespace;
 
+	public String getNaceNamespace() {
+		return "nace-" + code.toLowerCase(); 
+	}
+	
 	@Column(name = "nace_languages")
 	private String naceLanguages;
 	
@@ -106,8 +113,8 @@ public class CountryDB {
 	@Column(name = "nace_prefix", columnDefinition="TEXT")
     private String nacePrefix;
 
-	@Column(name = "nace_named_graph", columnDefinition="TEXT")
-    private String naceNamedGraph;
+//	@Column(name = "nace_named_graph", columnDefinition="TEXT")
+//    private String naceNamedGraph;
 
 	@Column(name = "nuts_endpoint", columnDefinition="TEXT")
     private String nutsEndpoint;

@@ -40,6 +40,7 @@ import org.springframework.stereotype.Service;
 import org.apache.jena.riot.RDFFormat.JSONLDVariant;
 
 import com.ails.stirdatabackend.model.CountryConfiguration;
+import com.ails.stirdatabackend.model.CountryConfigurationsBean;
 import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.Dimension;
 import com.ails.stirdatabackend.model.ModelConfiguration;
@@ -68,7 +69,7 @@ public class DataService {
 
 	@Autowired
 	@Qualifier("country-configurations")
-    private Map<String, CountryDB> countryConfigurations;
+    private CountryConfigurationsBean countryConfigurations;
 
 	@Autowired
 	@Qualifier("model-jsonld-context")
