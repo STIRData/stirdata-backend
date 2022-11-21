@@ -35,6 +35,9 @@ public class UserService {
     @Autowired 
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private SavedViewService SavedViewService;
+
 
     public Optional<User> checkAndCreateNewUserGoogle(GoogleAccountUserInfoDTO request) {
         Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
@@ -91,7 +94,17 @@ public class UserService {
     }
 
     public void deleteUser(User user) {
+        SavedViewService.deleteUserSavedViews(user.getId());
         userRepository.deleteById(user.getId().toString());
+    }
+
+    public Optional<User> changeUserPassword(User user, String oldPassword, String newPassword) {
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            return Optional.empty();
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        return Optional.of(user);
     }
     
 
