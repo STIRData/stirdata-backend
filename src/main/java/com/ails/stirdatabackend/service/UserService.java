@@ -86,6 +86,13 @@ public class UserService {
         }
     }
 
+    public String encodePassword(String newPassword) {
+        return passwordEncoder.encode(newPassword);
+    }
+
+    public void deleteUser(User user) {
+        userRepository.deleteById(user.getId().toString());
+    }
     
 
     public Optional<String> loginUser(LoginRequestDTO loginRequest) {
@@ -109,4 +116,7 @@ public class UserService {
         return userRepository.findById(id);
     }
 
+    public void saveUser(User user) {
+        userRepository.save(user);
+    }
 }
