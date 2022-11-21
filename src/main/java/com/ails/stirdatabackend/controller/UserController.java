@@ -91,6 +91,17 @@ public class UserController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
             }
             User user = userOpt.get();
+
+            if (userDetailsUpdate.get("newPassword") != null && userDetailsUpdate.get("oldPassword") != null && user.getUserLoginType() == UserLoginType.CUSTOM) {
+                String oldPassword = userDetailsUpdate.get("oldPassword");
+                String newPassword = userDetailsUpdate.get("newPassword");
+                userOpt = userService.changeUserPassword(user, oldPassword, newPassword);
+                if (!userOpt.isPresent()) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                }
+                user = userOpt.get();
+            }
+            
             if (userDetailsUpdate.get("firstName") != null) {
                 user.setFirstName(userDetailsUpdate.get("firstName"));
             }
@@ -103,9 +114,7 @@ public class UserController {
             if (userDetailsUpdate.get("email") != null) {
                 user.setEmail(userDetailsUpdate.get("email"));
             }
-            if (userDetailsUpdate.get("password") != null && user.getUserLoginType() == UserLoginType.CUSTOM) {
-                user.setPassword(userService.encodePassword(userDetailsUpdate.get("password")));
-            }
+            
 
             userService.saveUser(user);
             return ResponseEntity.status(HttpStatus.OK).body(null);
