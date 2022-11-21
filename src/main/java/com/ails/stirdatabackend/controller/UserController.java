@@ -127,7 +127,6 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.OK).body(null);
         }
         catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         } 
     }
