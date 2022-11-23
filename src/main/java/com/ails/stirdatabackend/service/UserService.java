@@ -103,7 +103,6 @@ public class UserService {
             return Optional.empty();
         }
         user.setPassword(passwordEncoder.encode(newPassword));
-        userRepository.save(user);
         return Optional.of(user);
     }
     
@@ -127,6 +126,15 @@ public class UserService {
 
     public Optional<User> getUserById(String id) {
         return userRepository.findById(id);
+    }
+
+    public boolean userExistsWithEmail(String email) {
+        Optional<User> u =  userRepository.findByEmail(email);
+        if (u.isPresent()) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public void saveUser(User user) {
