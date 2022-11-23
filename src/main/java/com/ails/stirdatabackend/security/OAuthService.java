@@ -43,7 +43,7 @@ public class OAuthService {
     }
 
     public ResultDTO<String> googleOauthVerify(String token) {
-        String url =  googleUrl + "?id_token=" + token;
+        String url =  googleUrl + "?access_token=" + token;
         GoogleAccountUserInfoDTO jsonResponse = restTemplate.getForObject(url, GoogleAccountUserInfoDTO.class);
 
         Optional<User> u = userService.checkAndCreateNewUserGoogle(jsonResponse);
