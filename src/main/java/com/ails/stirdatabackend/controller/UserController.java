@@ -8,6 +8,7 @@ import com.ails.stirdatabackend.model.User;
 import com.ails.stirdatabackend.model.UserLoginType;
 import com.ails.stirdatabackend.payload.AuthenticationResponse;
 import com.ails.stirdatabackend.payload.LoginRequestDTO;
+import com.ails.stirdatabackend.payload.ResultDTO;
 import com.ails.stirdatabackend.payload.Message;
 import com.ails.stirdatabackend.payload.UserRegistrationDTO;
 import com.ails.stirdatabackend.payload.UserResponse;
@@ -97,9 +98,16 @@ public class UserController {
                 String newPassword = userDetailsUpdate.get("newPassword");
                 userOpt = userService.changeUserPassword(user, oldPassword, newPassword);
                 if (!userOpt.isPresent()) {
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultDTO.fail("Wrong password"));
                 }
                 user = userOpt.get();
+            }
+
+            if (userDetailsUpdate.get("email") != null) {
+                if (userService.userExistsWithEmail(userDetailsUpdate.get("email"))) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultDTO.fail("Email already exists"));
+                }
+                user.setEmail(userDetailsUpdate.get("email"));
             }
             
             if (userDetailsUpdate.get("firstName") != null) {
@@ -111,11 +119,7 @@ public class UserController {
             if (userDetailsUpdate.get("organization") != null) {
                 user.setOrganization(userDetailsUpdate.get("organization"));
             }
-            if (userDetailsUpdate.get("email") != null) {
-                user.setEmail(userDetailsUpdate.get("email"));
-            }
             
-
             userService.saveUser(user);
             return ResponseEntity.status(HttpStatus.OK).body(null);
         }
