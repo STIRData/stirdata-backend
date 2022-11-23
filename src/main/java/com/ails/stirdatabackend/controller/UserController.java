@@ -128,7 +128,7 @@ public class UserController {
         }  
     }
 
-    @DeleteMapping("/deleteAccount")
+    @PostMapping("/deleteAccount")
     public ResponseEntity<?> deleteUserAccount(@AuthenticationPrincipal UserPrincipal currentUser) {
         try{
             Optional<User> userOpt = userService.getUserById(currentUser.getId().toString());
