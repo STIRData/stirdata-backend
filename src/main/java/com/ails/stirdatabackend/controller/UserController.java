@@ -103,7 +103,7 @@ public class UserController {
                 user = userOpt.get();
             }
 
-            if (userDetailsUpdate.get("email") != null) {
+            if (userDetailsUpdate.get("email") != null && !userDetailsUpdate.get("email").equals(currentUser.getEmail())) {
                 if (userService.userExistsWithEmail(userDetailsUpdate.get("email"))) {
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultDTO.fail("Email already exists"));
                 }
