@@ -54,6 +54,7 @@ public class ScheduledTasks {
 				cc.getCode().equals("FI") || 
 				cc.getCode().equals("NO") || 
 				cc.getCode().equals("CZ") || 
+				cc.getCode().equals("RO") ||
 				cc.getCode().equals("NL")) {
 				Country country = new Country();
 				country.setDcat(cc.getDcat());
