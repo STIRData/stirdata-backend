@@ -417,7 +417,11 @@ public class CountriesService {
 			if (changed(sourceUri, cc.getSourceUri())) {
 				cc.setSourceUri(sourceUri);
 	
-				String sourceLabel = getPageTitle(sourceUri); 
+				String sourceLabel = null;
+				if (sourceUri != null) {
+					sourceLabel = getPageTitle(sourceUri);
+				}
+				
 				cc.setSourceLabel(sourceLabel);
 			}
 			
@@ -428,21 +432,22 @@ public class CountriesService {
 			if (changed(licenseUri, cc.getLicenseUri())) {
 	    		cc.setLicenseUri(licenseUri);
 	    		
-	    		if (licenseUri.startsWith("https://creativecommons.org/licenses/")) {
-	    			Model licenseModel = RDFDataMgr.loadModel(licenseUri + "/rdf"); // content negotiation not supported
-	    			
-	    			String licenseSparql = "SELECT ?identifier ?version { ?p <http://purl.org/dc/elements/1.1/identifier> ?identifier . ?p <http://purl.org/dc/terms/hasVersion> ?version } ";
-	    			try (QueryExecution qe = QueryExecutionFactory.create(licenseSparql, licenseModel)) {
-	    				ResultSet rs = qe.execSelect();
-	    				if (rs.hasNext()) {
-	    					QuerySolution qs = rs.next();
-	    					
-	    				    licenseLabel = qs.get("identifier").toString().toUpperCase() + " " + qs.get("version");
-	    				}
-	    			}
-	    		} else {
-	    			licenseLabel = getPageTitle(licenseUri);
-	   				
+	    		if (licenseUri != null) {
+		    		if (licenseUri.startsWith("https://creativecommons.org/licenses/")) {
+		    			Model licenseModel = RDFDataMgr.loadModel(licenseUri + "/rdf"); // content negotiation not supported
+		    			
+		    			String licenseSparql = "SELECT ?identifier ?version { ?p <http://purl.org/dc/elements/1.1/identifier> ?identifier . ?p <http://purl.org/dc/terms/hasVersion> ?version } ";
+		    			try (QueryExecution qe = QueryExecutionFactory.create(licenseSparql, licenseModel)) {
+		    				ResultSet rs = qe.execSelect();
+		    				if (rs.hasNext()) {
+		    					QuerySolution qs = rs.next();
+		    					
+		    				    licenseLabel = qs.get("identifier").toString().toUpperCase() + " " + qs.get("version");
+		    				}
+		    			}
+		    		} else {
+		    			licenseLabel = getPageTitle(licenseUri);
+		    		}
 	    		}
 	    		
 	    		cc.setSourceLabel(licenseLabel);
