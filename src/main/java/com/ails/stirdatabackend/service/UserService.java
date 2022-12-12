@@ -54,27 +54,6 @@ public class UserService {
         }
     }
 
-    public Optional<User> checkAndCreateNewUserSolid( String email, Optional<String> name, Optional<String> organization  ) {
-        Optional<User> userOpt = userRepository.findByEmail(email);
-        if (userOpt.isPresent() && userOpt.get().getUserLoginType().equals(UserLoginType.SOLID)) {
-            return userOpt;
-        }
-        else if (userOpt.isPresent() && !userOpt.get().getUserLoginType().equals(UserLoginType.SOLID)) {
-            return Optional.empty();
-        }
-        else {
-
-            User usr = new User();
-            name.ifPresent(n -> usr.setFirstName(n));
-            organization.ifPresent(org -> usr.setOrganization(org));
-            usr.setEmail(email);
-            usr.setUserLoginType(UserLoginType.SOLID);
-            usr.setUserType(UserType.USER);
-            userRepository.save(usr);
-            return Optional.of(usr);
-        }
-    }
-
 
     public Optional<User> registerUser(UserRegistrationDTO registrationRequest) {
         Optional<User> userOpt = userRepository.findByEmail(registrationRequest.getEmail());
