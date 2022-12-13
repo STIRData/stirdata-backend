@@ -14,36 +14,36 @@ import com.ails.stirdatabackend.model.CountryDB;
 
 public class PlaceTree {
 	
-    private PlaceNode root;
-    
-	private Map<Code, PlaceNode> leavesMap;
-	
-	public PlaceTree(NutsService nutsService, CountryDB cc) {
-		root = nutsService.buildPlaceTree(cc, false);
-		
-		Set<PlaceNode> leaves = new HashSet<>();
-		root.leaves(leaves);
-		
-		leavesMap = new HashMap<>();
-		
-		for (PlaceNode pn : leaves) {
-			leavesMap.put(pn.getNode().getCode(), pn);
-		}
-	}
-
-	public PlaceNode getRoot() {
-		return root;
-	}
-
-	public void setRoots(PlaceNode root) {
-		this.root = root;
-	}
-
-	public Map<Code, PlaceNode> getLeaves() {
-		return leavesMap;
-	}
-
-	public void setLeaves(Map<Code, PlaceNode> leavesMap) {
-		this.leavesMap = leavesMap;
-	}
+//    private PlaceNode root;
+//    
+//	private Map<Code, PlaceNode> leavesMap;
+//	
+//	public PlaceTree(NutsService nutsService, CountryDB cc) {
+//		root = nutsService.buildPlaceTree(cc, false);
+//		
+//		Set<PlaceNode> leaves = new HashSet<>();
+//		root.leaves(leaves);
+//		
+//		leavesMap = new HashMap<>();
+//		
+//		for (PlaceNode pn : leaves) {
+//			leavesMap.put(pn.getNode().getCode(), pn);
+//		}
+//	}
+//
+//	public PlaceNode getRoot() {
+//		return root;
+//	}
+//
+//	public void setRoots(PlaceNode root) {
+//		this.root = root;
+//	}
+//
+//	public Map<Code, PlaceNode> getLeaves() {
+//		return leavesMap;
+//	}
+//
+//	public void setLeaves(Map<Code, PlaceNode> leavesMap) {
+//		this.leavesMap = leavesMap;
+//	}
 }

@@ -93,7 +93,7 @@ public class NutsController {
 	    				// country supports no places
 	    			} else {
 	//	    			places = nutsService.getNextNutsLauLevelListDb(top);
-	    				places = nutsService.getNextDeepestListDb(top, lau);
+	    				places = nutsService.getNextDeepestListDb(top, lau && cc.isLau());
 	    			}
     			} else {
     				places = nutsService.getNextDeepestListDb(top, lau);

@@ -89,46 +89,46 @@ public class NaceService {
     	return activitiesRepository.findBySchemeAndParent(Code.naceRev2Namespace, parentActivity);
     }
 
-    public String getNextNaceLevelJsonTs(String parent, String lang) {
-        String sparql = nextNaceLevelSparqlQuery(parent, lang);
-        
-        String json;
-        try (QueryExecution qe = QueryExecutionFactory.sparqlService(naceEndpointEU, sparql)) {
-            ResultSet rs = qe.execSelect();
-            ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-            ResultSetFormatter.outputAsJSON(outStream, rs);
-            json = outStream.toString();
-        }
-        return json;
-    }
-    
-    private String nextNaceLevelSparqlQuery(String parent, String lang) {
-    	String sparql = 
-    			"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
-                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
-                "SELECT ?code " + (lang == null ? "" : "?label ");
-    	
-//    	sparql += naceNamedgraphEU != null ? "FROM <" + naceNamedgraphEU + "> " : "";
-    	
-    	sparql += " WHERE { ";
-
-    	sparql += "?code <http://www.w3.org/2004/02/skos/core#inScheme> <https://w3id.org/stirdata/resource/nace/scheme/NACERev2> . ";
-    	
-		if (parent == null) {
-//		    sparql += "?code <" + SDVocabulary.level + "> 1 . ";
-			sparql += "?code <http://www.w3.org/2004/02/skos/core#topConceptOf> ?scheme . ";
-		} else {
-		    sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parent + "> " +  ". ";
-		}
-		
-		if (lang != null) {
-			sparql += "?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label . FILTER (lang(?label) = \"" + lang + "\") ";
-		}
-		
-		sparql += "}" ;
-		
-		return sparql;
-	}
+//    public String getNextNaceLevelJsonTs(String parent, String lang) {
+//        String sparql = nextNaceLevelSparqlQuery(parent, lang);
+//        
+//        String json;
+//        try (QueryExecution qe = QueryExecutionFactory.sparqlService(naceEndpointEU, sparql)) {
+//            ResultSet rs = qe.execSelect();
+//            ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+//            ResultSetFormatter.outputAsJSON(outStream, rs);
+//            json = outStream.toString();
+//        }
+//        return json;
+//    }
+//    
+//    private String nextNaceLevelSparqlQuery(String parent, String lang) {
+//    	String sparql = 
+//    			"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
+//                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
+//                "SELECT ?code " + (lang == null ? "" : "?label ");
+//    	
+////    	sparql += naceNamedgraphEU != null ? "FROM <" + naceNamedgraphEU + "> " : "";
+//    	
+//    	sparql += " WHERE { ";
+//
+//    	sparql += "?code <http://www.w3.org/2004/02/skos/core#inScheme> <https://w3id.org/stirdata/resource/nace/scheme/NACERev2> . ";
+//    	
+//		if (parent == null) {
+////		    sparql += "?code <" + SDVocabulary.level + "> 1 . ";
+//			sparql += "?code <http://www.w3.org/2004/02/skos/core#topConceptOf> ?scheme . ";
+//		} else {
+//		    sparql += "?code <http://www.w3.org/2004/02/skos/core#broader>" + " <" + parent + "> " +  ". ";
+//		}
+//		
+//		if (lang != null) {
+//			sparql += "?code <http://www.w3.org/2004/02/skos/core#prefLabel> ?label . FILTER (lang(?label) = \"" + lang + "\") ";
+//		}
+//		
+//		sparql += "}" ;
+//		
+//		return sparql;
+//	}
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     // LOCAL NACE 
@@ -206,7 +206,7 @@ public class NaceService {
     	if (s.length() > 0) {
     		s = "(" + s + ")/" ;
     	}
-    	sparql += " ?activity " + s + "skos:exactMatch" + " <" + code.toUri() + "> . "; 
+    	sparql += " ?activity " + s + "skos:exactMatch" + " <" + code.toUx2NaceUri() + "> . ";  // replace 
     	
 //		sparql += " ?activity skos:inScheme <" + cc.getNaceScheme() + "> } ";
 		sparql += " ?activity a <https://w3id.org/stirdata/vocabulary/BusinessActivity> . } ";

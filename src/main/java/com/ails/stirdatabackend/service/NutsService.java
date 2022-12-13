@@ -138,9 +138,9 @@ public class NutsService {
     public List<String> getLocalNutsLeafUrisDB(CountryDB cc, PlaceSelection ps) {
     	List<Code> nutsCodes = ps.getNuts3();
     	
-    	System.out.println(">>> NNNN" );
-    	System.out.println(ps.getNuts3());
-    	System.out.println(ps.getNutsStat());
+//    	System.out.println(">>> NNNN" );
+//    	System.out.println(ps.getNuts3());
+//    	System.out.println(ps.getNutsStat());
     	
     	if (nutsCodes != null && nutsCodes.contains(Code.createNutsCode(cc.getCode()))) { // entire country, ignore nuts
     		if (ps.getNutsStat() == null) {
@@ -413,35 +413,35 @@ public class NutsService {
     }
     
     
-    public PlaceNode buildPlaceTree(CountryDB cc, boolean lau) {
-    	PlaceNode res = new PlaceNode();
-    	
-    	List<PlaceDB> next = this.getNextDeepestListDb(Code.createNutsCode(cc.getCode()), lau);
-    	
-    	for (PlaceDB r : next) {
-    		res.addChild(r);
-    	}
-    	
-    	for (PlaceNode r : res.getNext()) {
-    		buildPlaceTreeIter(r, lau);
-    	}
-    	
-    	return res;
-    }
+//    public PlaceNode buildPlaceTree(CountryDB cc, boolean lau) {
+//    	PlaceNode res = new PlaceNode();
+//    	
+//    	List<PlaceDB> next = this.getNextDeepestListDb(Code.createNutsCode(cc.getCode()), lau);
+//    	
+//    	for (PlaceDB r : next) {
+//    		res.addChild(r);
+//    	}
+//    	
+//    	for (PlaceNode r : res.getNext()) {
+//    		buildPlaceTreeIter(r, lau);
+//    	}
+//    	
+//    	return res;
+//    }
     
-    public void buildPlaceTreeIter(PlaceNode place, boolean lau) {
-    	List<PlaceDB> next = getNextDeepestListDb(place.getNode().getCode(), lau);
-    	
-    	for (PlaceDB r : next) {
-    		place.addChild(r);
-    	}
-    	
-    	if (place.getNext() != null) {
-	    	for (PlaceNode r : place.getNext()) {
-	    		buildPlaceTreeIter(r, lau);
-	    	}
-    	}    	
-    }
+//    public void buildPlaceTreeIter(PlaceNode place, boolean lau) {
+//    	List<PlaceDB> next = getNextDeepestListDb(place.getNode().getCode(), lau);
+//    	
+//    	for (PlaceDB r : next) {
+//    		place.addChild(r);
+//    	}
+//    	
+//    	if (place.getNext() != null) {
+//	    	for (PlaceNode r : place.getNext()) {
+//	    		buildPlaceTreeIter(r, lau);
+//	    	}
+//    	}    	
+//    }
     
     private PlaceDB getNextDeepestSingle(PlaceDB parent, boolean lau) {
     	PlaceDB res = parent;
