@@ -31,9 +31,17 @@ public class CodeLabel {
 	
 	public List<CodeLabel> values;
 	
+	public Boolean leaf;
+	
 	public CodeLabel(String code, String label) {
 		this.code = code;
 		this.label = label;
+	}
+
+	public CodeLabel(String code, String label, Boolean leaf) {
+		this.code = code;
+		this.label = label;
+		this.leaf = leaf;
 	}
 
 	public CodeLabel(String code, String label, String uri) {

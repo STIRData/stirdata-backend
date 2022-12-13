@@ -1014,28 +1014,28 @@ public class StatisticsContoller {
 
 
 	
-	private List<GenericResponse> mapGenericResponseFromList(List<StatisticResult> list, CountryDB cc, Dimension dimension) {
-		List<GenericResponse> res = new ArrayList<>();
-		   
-   		for (StatisticResult sr : list) {
-			GenericResponse gr;
-			if (dimension == Dimension.NUTS) {
-				PlaceDB placedb = placeRepository.findByCode(sr.getCode());
-				gr = GenericResponse.createFromPlace(placedb, null);
-			} else {
-				ActivityDB activitydb = activityRepository.findByCode(sr.getCode());
-				gr = GenericResponse.createFromActivity(activitydb, null);
-			}
-			if (sr.getCountry() != null) {
-				gr.setCountry(new CodeLabel(sr.getCountry(), cc.getLabel()));
-			}
-			gr.setCount(sr.getCount());
-			res.add(gr);
-			
-		}
-
-   		return res;
-	}
+//	private List<GenericResponse> mapGenericResponseFromList(List<StatisticResult> list, CountryDB cc, Dimension dimension) {
+//		List<GenericResponse> res = new ArrayList<>();
+//		   
+//   		for (StatisticResult sr : list) {
+//			GenericResponse gr;
+//			if (dimension == Dimension.NUTS) {
+//				PlaceDB placedb = placeRepository.findByCode(sr.getCode());
+//				gr = GenericResponse.createFromPlace(placedb, null);
+//			} else {
+//				ActivityDB activitydb = activityRepository.findByCode(sr.getCode());
+//				gr = GenericResponse.createFromActivity(activitydb, null);
+//			}
+//			if (sr.getCountry() != null) {
+//				gr.setCountry(new CodeLabel(sr.getCountry(), cc.getLabel()));
+//			}
+//			gr.setCount(sr.getCount());
+//			res.add(gr);
+//			
+//		}
+//
+//   		return res;
+//	}
 	   
 
 	
