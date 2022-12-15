@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -47,6 +48,7 @@ import com.ails.stirdatabackend.model.CountryConfigurationsBean;
 import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.Dimension;
 import com.ails.stirdatabackend.model.LogActionType;
+import com.ails.stirdatabackend.model.LogState;
 import com.ails.stirdatabackend.model.ModelConfiguration;
 import com.ails.stirdatabackend.model.Statistic;
 import com.ails.stirdatabackend.model.UpdateLog;
@@ -154,9 +156,15 @@ public class CountriesService {
 		
 		log.setType(LogActionType.RELOAD_COUNTRY);
 		log.setDcat(country.getDcat());
-		log.setStartedAt(new Date());
+
+		updateLogRepository.save(log);
 		
 		CountryDB cc = replace(country, log);
+		
+		if (log.getState() == LogState.RUNNING) {
+			log.completed();
+			updateLogRepository.save(log);
+		}
 		
 		if (cc != null) {
 			countriesRepository.save(cc);
@@ -166,10 +174,9 @@ public class CountriesService {
 		}
 	}
 	
-	
-	public CountryDB replace(Country country)  {
-		return replace(country, null);
-	}
+//	public CountryDB replace(Country country)  {
+//		return replace(country, null);
+//	}
 	
     public CountryDB replace(Country country, UpdateLog log)  {
 		logger.info("Checking country for " + country.getDcat() + ".");
@@ -282,7 +289,7 @@ public class CountriesService {
 	        	
 	        	while (rs.hasNext()) {
 	        		QuerySolution sol = rs.next();
-	
+	        		
 	        		if (sol.get("spatial") != null) {
 	        			String spatial = sol.get("spatial").asResource().toString();
 	        			
@@ -337,16 +344,16 @@ public class CountriesService {
 	        	}
 	        }
 	        
-	        System.out.println(">> New dataset data ");
-	        System.out.println("CT: " + conformsTo);
-	        System.out.println("DE: " + dataEndpoint);
-	        System.out.println("CL: " + countryLabel);
-	        System.out.println("CC: " + countryCode);
-	        System.out.println("MD: " + lastUpdatedDate);
-	        System.out.println("SU: " + sourceUri);
-	        System.out.println("LU: " + licenseUri);
-	        System.out.println("ND: " + naceDataset);
-	        System.out.println("<<");
+//	        System.out.println(">> New dataset data ");
+//	        System.out.println("CT: " + conformsTo);
+//	        System.out.println("DE: " + dataEndpoint);
+//	        System.out.println("CL: " + countryLabel);
+//	        System.out.println("CC: " + countryCode);
+//	        System.out.println("MD: " + lastUpdatedDate);
+//	        System.out.println("SU: " + sourceUri);
+//	        System.out.println("LU: " + licenseUri);
+//	        System.out.println("ND: " + naceDataset);
+//	        System.out.println("<<");
 	            
 			cc = countriesRepository.findByCode(countryCode);
 	
@@ -365,7 +372,7 @@ public class CountriesService {
 
 	    	cc.setLastAccessed(new Date());
 
-			System.out.println(lastUpdatedDate  + " " + cc.getLastUpdated() + " " + changed(lastUpdatedDate, cc.getLastUpdated()));
+//			System.out.println(lastUpdatedDate  + " " + cc.getLastUpdated() + " " + changed(lastUpdatedDate, cc.getLastUpdated()));
 			
 			if (changed(lastUpdatedDate, cc.getLastUpdated())) {
 				changed = true;
@@ -379,12 +386,14 @@ public class CountriesService {
 		    		updateLogRepository.save(log);
 	    		}
 		   		
-		   		logger.info(countryLabel  + " has not changed. Aborting.");
+		   		logger.info(countryLabel  + " has not changed.");
 		   		
-		   		return null;
+		   		return cc;
 			}
 			
 			logger.info(countryLabel  + " has changed. Reloading.");
+			
+			cc.modified = true;
 			
 //			System.out.println(countryLabel  + " " + cc.getLabel() + " " + changed(countryLabel, cc.getLabel()));
 			
@@ -452,7 +461,7 @@ public class CountriesService {
 	    		
 	    		cc.setSourceLabel(licenseLabel);
 	    		
-	    		System.out.println("LL: " + licenseLabel);
+//	    		System.out.println("LL: " + licenseLabel);
 
 	 		}
 			
@@ -462,8 +471,8 @@ public class CountriesService {
 	    	}
 			
     	} catch (Exception ex) {
+
     		if (log != null) {
-    	
 	    		action.failed(ex.getMessage());
 	    		log.failed();
 	    		updateLogRepository.save(log);
@@ -504,7 +513,7 @@ public class CountriesService {
 		}
 		
 
-		System.out.println("NE: " + naceEndpoint);
+//		System.out.println("NE: " + naceEndpoint);
 //    	
 //    	cc.setNutsEndpoint(country.getNutsEndpoint());
 //    	cc.setNutsNamedGraph(country.getNutsNamedGraph());
@@ -515,11 +524,11 @@ public class CountriesService {
 //    	cc.setActiveSparql(country.getActiveSparql());
 //    	cc.setAddressSparql(country.getAddressSparql());
 //    	
-//    	String nuts3Sparql = env.getProperty("sparql.nuts3." + cc.getCode());
-//    	cc.setNuts3Sparql(nuts3Sparql != null ? nuts3Sparql : country.getNuts3Sparql());
+    	String nuts3Sparql = env.getProperty("sparql.nuts3." + cc.getCode());
+    	cc.setNuts3Sparql(nuts3Sparql != null ? nuts3Sparql : null);
 //    	
-//    	String lauSparql = env.getProperty("sparql.lau." + cc.getCode());
-//    	cc.setLauSparql(lauSparql != null ? lauSparql : country.getLauSparql());
+    	String lauSparql = env.getProperty("sparql.lau." + cc.getCode());
+    	cc.setLauSparql(lauSparql != null ? lauSparql : null);
 //    	
 //    	cc.setFoundingDateSparql(country.getFoundingDateSparql());
 //    	cc.setDissolutionDateSparql(country.getDissolutionDateSparql());
@@ -629,10 +638,13 @@ public class CountriesService {
 				cc.setTradingName(qe.execAsk());
 	        }
 	
+	        System.out.println("ASK WHERE { " +  cc.getNuts3Sparql() + " }");
 	        try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), "ASK WHERE { " +  cc.getNuts3Sparql() + " }")) {
 				cc.setNuts(qe.execAsk());
 	        }
 	        
+//	        System.out.println(cc.getDataEndpoint());
+	        System.out.println("ASK WHERE { " +  cc.getLauSparql() + " }");
 	        try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), "ASK WHERE { " +  cc.getLauSparql() + " }")) {
 				cc.setLau(qe.execAsk());
 	        }
@@ -896,15 +908,27 @@ public class CountriesService {
 //			        }
 	   			}   			
 	   			
-	   			System.out.println("NL: " + levels);
+//	   			System.out.println("NL: " + levels);
 	
-	   			int [] el = new int[levels.size()];
-	   			int i = 0;
-	   			for (Integer level : levels) {
-	   				el[i++] = level;
-	   			}
-	
-	   			cc.setNaceEffectiveLevels(el);
+//	   			int [] el = new int[levels.size()];
+//	   			int i = 0;
+//	   			for (Integer level : levels) {
+//	   				el[i++] = level;
+//	   			}
+//	
+//	   			cc.setNaceEffectiveLevels(el);
+	   			
+	   			String s = "";
+	   			for (Iterator<Integer> iter = levels.iterator(); iter.hasNext();) {
+		    		if (s.length() > 0) {
+		    			s += ",";
+		    		}
+		    		s += iter.next();
+		    	}
+		    	
+	   			cc.setNaceFixedLevels(s);
+	   			
+	   			
 	   			
 		        //try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), "SELECT (count(?nace) AS ?count) WHERE { ?nace <http://www.w3.org/2004/02/skos/core#inScheme> <" +  cc.getNaceScheme() + "> . }")) {
 	   			try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), "SELECT (count(?nace) AS ?count) WHERE { ?nace a <https://w3id.org/stirdata/vocabulary/BusinessActivity> }")) {

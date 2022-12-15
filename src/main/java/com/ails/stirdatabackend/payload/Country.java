@@ -55,7 +55,7 @@ public class Country {
     
     private String addressSparql;
     
-    private String nuts3Sparql;
+//    private String nuts3Sparql;
     
     private String naceSparql;
     

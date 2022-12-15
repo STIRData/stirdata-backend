@@ -35,4 +35,8 @@ public class CountryConfigurationsBean {
 	public CountryDB get(String key) {
 		return map.get(key);
 	}
+	
+	public CountryDB remove(String key) {
+		return map.remove(key);
+	}
 }

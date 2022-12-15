@@ -38,6 +38,7 @@ import com.ails.stirdatabackend.model.CountryConfigurationsBean;
 import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.Dimension;
 import com.ails.stirdatabackend.model.LogActionType;
+import com.ails.stirdatabackend.model.LogState;
 import com.ails.stirdatabackend.model.PlaceDB;
 import com.ails.stirdatabackend.model.Statistic;
 import com.ails.stirdatabackend.model.StatisticResult;
@@ -86,12 +87,24 @@ public class StatisticsService {
     private SimpleDateFormat dateFormat = new SimpleDateFormat("YYYY-MM-dd");
 
     public void computeStatistics(CountryDB cc, Collection<Dimension> stats) {
-    	computeStatistics(cc, stats, false, null);
+		UpdateLog log = new UpdateLog();
+		
+		log.setType(LogActionType.COMPUTE_STATISTICS);
+		log.setDcat(cc.getDcat());
+
+		updateLogRepository.save(log);
+		
+    	computeStatistics(cc, stats, false, log);
+    	
+		if (log.getState() == LogState.RUNNING) {
+			log.completed();
+			updateLogRepository.save(log);
+		}
     }
     
-    public void computeStatistics(CountryDB cc, Collection<Dimension> stats, UpdateLog log) {
-    	computeStatistics(cc, stats, false, log);
-    }
+//    public void computeStatistics(CountryDB cc, Collection<Dimension> stats, UpdateLog log) {
+//    	computeStatistics(cc, stats, false, log);
+//    }
     
 	public void computeStatistics(CountryDB cc, Collection<Dimension> stats, boolean force, UpdateLog log) {
 		Set<Dimension> dims = new HashSet<>();
@@ -226,7 +239,7 @@ public class StatisticsService {
 	    	} catch (Exception ex) {
 	    		if (log != null) {
 		    		action.failed(ex.getMessage());
-		    		log.failed();
+//		    		log.failed();
 		    		updateLogRepository.save(log);
 	    		}
 	    	}		    	
@@ -320,7 +333,7 @@ public class StatisticsService {
 	    	} catch (Exception ex) {
 	    		if (log != null) {
 		    		action.failed(ex.getMessage());
-		    		log.failed();
+//		    		log.failed();
 		    		updateLogRepository.save(log);
 	    		}
 	    	}
@@ -367,7 +380,7 @@ public class StatisticsService {
 	    	} catch (Exception ex) {
 	    		if (log != null) {
 		    		action.failed(ex.getMessage());
-		    		log.failed();
+//		    		log.failed();
 		    		updateLogRepository.save(log);
 	    		}	
 	    	}
@@ -423,7 +436,7 @@ public class StatisticsService {
 	    	} catch (Exception ex) {
 	    		if (log != null) {
 		    		action.failed(ex.getMessage());
-		    		log.failed();
+//		    		log.failed();
 		    		updateLogRepository.save(log);
 	    		}	    		
 	    	}
@@ -477,7 +490,7 @@ public class StatisticsService {
 	    	} catch (Exception ex) {
 	    		if (log != null) {
 		    		action.failed(ex.getMessage());
-		    		log.failed();
+//		    		log.failed();
 		    		updateLogRepository.save(log);
 	    		}	    		
 	    	}	    		
@@ -687,7 +700,7 @@ public class StatisticsService {
 	    	} catch (Exception ex) {
 	    		if (log != null) {
 		    		action.failed(ex.getMessage());
-		    		log.failed();
+//		    		log.failed();
 		    		updateLogRepository.save(log);
 	    		}	
 	    	}
@@ -926,7 +939,7 @@ public class StatisticsService {
 	    	} catch (Exception ex) {
 	    		if (log != null) {
 		    		action.failed(ex.getMessage());
-		    		log.failed();
+//		    		log.failed();
 		    		updateLogRepository.save(log);
 	    		}	
 	    	}
@@ -1167,7 +1180,7 @@ public class StatisticsService {
 	    	} catch (Exception ex) {
 	    		if (log != null) {
 		    		action.failed(ex.getMessage());
-		    		log.failed();
+//		    		log.failed();
 		    		updateLogRepository.save(log);
 	    		}	
 	    	}
@@ -1324,7 +1337,7 @@ public class StatisticsService {
 	    	} catch (Exception ex) {
 	    		if (log != null) {
 		    		action.failed(ex.getMessage());
-		    		log.failed();
+//		    		log.failed();
 		    		updateLogRepository.save(log);
 	    		}	
 	    	}
@@ -1428,7 +1441,7 @@ public class StatisticsService {
 	    	} catch (Exception ex) {
 	    		if (log != null) {
 		    		action.failed(ex.getMessage());
-		    		log.failed();
+//		    		log.failed();
 		    		updateLogRepository.save(log);
 	    		}	
 	    	}

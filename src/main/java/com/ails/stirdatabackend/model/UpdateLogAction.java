@@ -1,5 +1,6 @@
 package com.ails.stirdatabackend.model;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -26,6 +27,8 @@ public class UpdateLogAction {
 
 	private String message;
 	
+	private List<String> errors;
+	
 	public UpdateLogAction(LogActionType type) {
 		this.type = type;
 		this.startedAt = new Date();
@@ -35,13 +38,13 @@ public class UpdateLogAction {
 	
 	public void completed() {
 		this.completedAt = new Date();
-		this.state = LogState.SUCCEDED;
+		this.state = LogState.COMPLETED;
 	}
 
 	public void completed(String message) {
 		this.completedAt = new Date();
 		this.message = message;
-		this.state = LogState.SUCCEDED;
+		this.state = LogState.COMPLETED;
 	}
 	
 	
@@ -49,5 +52,12 @@ public class UpdateLogAction {
 		this.completedAt = new Date();
 		this.message = message;
 		this.state = LogState.FAILED;
+	}
+	
+	public void error(String error) {
+		if (this.errors != null) {
+			this.errors = new ArrayList<>();
+			this.errors.add(error);
+		}
 	}
 }

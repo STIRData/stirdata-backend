@@ -269,6 +269,9 @@ public class CountryDB {
     
     @Transient
     private int[] naceEffectiveLevels;
+
+    @Transient
+    public boolean modified = false;
     
 //    @Transient
 //    private Set<Dimension> statistics;

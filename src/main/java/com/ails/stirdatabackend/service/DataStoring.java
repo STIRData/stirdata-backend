@@ -35,15 +35,20 @@ import com.ails.stirdatabackend.model.CompanyTypeDB;
 import com.ails.stirdatabackend.model.CountryConfiguration;
 import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.Dimension;
+import com.ails.stirdatabackend.model.LogActionType;
+import com.ails.stirdatabackend.model.LogState;
 import com.ails.stirdatabackend.model.PlaceDB;
 import com.ails.stirdatabackend.model.Statistic;
 import com.ails.stirdatabackend.model.StatisticDB;
+import com.ails.stirdatabackend.model.UpdateLog;
+import com.ails.stirdatabackend.model.UpdateLogAction;
 import com.ails.stirdatabackend.repository.ActivitiesDBRepository;
 import com.ails.stirdatabackend.repository.CompanyTypesDBRepository;
 import com.ails.stirdatabackend.repository.CountriesDBRepository;
 import com.ails.stirdatabackend.repository.PlacesDBRepository;
 import com.ails.stirdatabackend.repository.StatisticsDBRepository;
 import com.ails.stirdatabackend.repository.StatisticsRepository;
+import com.ails.stirdatabackend.repository.UpdateLogRepository;
 import com.ails.stirdatabackend.util.VirtuosoSelectIterator;
 import com.ails.stirdatabackend.vocs.SDVocabulary;
 
@@ -71,6 +76,10 @@ public class DataStoring  {
 
     @Autowired
     private CountriesDBRepository countriesDBRepository;
+    
+    @Autowired
+    private UpdateLogRepository updateLogRepository;
+
 
 	@Autowired
 	@Qualifier("endpoint-nace-eu")
@@ -107,44 +116,131 @@ public class DataStoring  {
 //	}
 
 	public void copyStatisticsFromMongoToRDBMS(CountryDB cc) {
+		UpdateLog log = new UpdateLog();
+		
+		log.setType(LogActionType.PERSIST_STATISTICS);
+		log.setDcat(cc.getDcat());
+
+		updateLogRepository.save(log);
+		
 		for (Statistic s : statisticsRepository.groupCountDimensionsByCountry(cc.getCode()) ) {
-			copyStatisticsFromMongoToRDBMS(cc, s);
+			copyStatisticsFromMongoToRDBMS(cc, s, log);
 		}
+		
+		if (log.getState() == LogState.RUNNING) {
+			log.completed();
+			updateLogRepository.save(log);
+		}
+
 	}
 	
-	public void copyStatisticsFromMongoToRDBMS(CountryDB cc, Set<Dimension> dimensions) {
-		for (Statistic s : statisticsRepository.groupCountDimensionsByCountry(cc.getCode()) ) {
-			if (dimensions.contains(s.getDimension())) {
-				copyStatisticsFromMongoToRDBMS(cc, s);
-			}
-		}
-	}
+//	public void copyStatisticsFromMongoToRDBMS(CountryDB cc, Set<Dimension> dimensions) {
+//		UpdateLog log = new UpdateLog();
+//		
+//		log.setType(LogActionType.COPY_STATISTICS_TO_DB);
+//		log.setDcat(cc.getDcat());
+//		log.setStartedAt(new java.util.Date());
+//		log.setState(LogState.RUNNING);
+//		updateLogRepository.save(log);
+//
+//		for (Statistic s : statisticsRepository.groupCountDimensionsByCountry(cc.getCode()) ) {
+//			if (dimensions.contains(s.getDimension())) {
+//				copyStatisticsFromMongoToRDBMS(cc, s, log);
+//			}
+//		}
+//		
+//		if (log.getState() == LogState.RUNNING) {
+//			log.completed();
+//			updateLogRepository.save(log);
+//		}
+//
+//	}
 
-	private void copyStatisticsFromMongoToRDBMS(CountryDB cc, Statistic mongoStatistic) {
+	private void copyStatisticsFromMongoToRDBMS(CountryDB cc, Statistic mongoStatistic, UpdateLog log) {
 		Dimension d = mongoStatistic.getDimension(); 
 
+		UpdateLogAction firstAction = null;
+        
 		Date ccReferenceDate = null;
 		if (d.equals(Dimension.DATA)) {
 			ccReferenceDate = cc.getStatsDataDate();
+			
+			if (log != null) {
+				firstAction = new UpdateLogAction(LogActionType.PERSIST_DATA_STATISTICS);
+	        }
+
 		} else if (d.equals(Dimension.NACE)) {
 			ccReferenceDate = cc.getStatsNaceDate();
+			
+			if (log != null) {
+				firstAction = new UpdateLogAction(LogActionType.PERSIST_NACE_STATISTICS);
+	        }
+
 		} else if (d.equals(Dimension.NUTSLAU)) {
 			ccReferenceDate = cc.getStatsNutsLauDate();
+			
+			if (log != null) {
+				firstAction = new UpdateLogAction(LogActionType.PERSIST_NUTS_STATISTICS);
+	        }
+
 		} else if (d.equals(Dimension.FOUNDING)) {
 			ccReferenceDate = cc.getStatsFoundingDate();
+			
+			if (log != null) {
+				firstAction = new UpdateLogAction(LogActionType.PERSIST_FOUNDING_STATISTICS);
+	        }
+
 		} else if (d.equals(Dimension.DISSOLUTION)) {
 			ccReferenceDate = cc.getStatsDissolutionDate();
+			
+			if (log != null) {
+				firstAction = new UpdateLogAction(LogActionType.PERSIST_DISSOLUTION_STATISTICS);
+	        }
+
 		} else if (d.equals(Dimension.NUTSLAU_FOUNDING)) {
 			ccReferenceDate = cc.getStatsNutsLauFoundingDate();
+			
+			if (log != null) {
+				firstAction = new UpdateLogAction(LogActionType.PERSIST_NUTS_FOUNDING_STATISTICS);
+	        }
+
 		} else if (d.equals(Dimension.NUTSLAU_DISSOLUTION)) {
 			ccReferenceDate = cc.getStatsNutsLauDissolutionDate();
+			
+			if (log != null) {
+				firstAction = new UpdateLogAction(LogActionType.PERSIST_NUTS_DISSOLUTION_STATISTICS);
+	        }
+
 		} else if (d.equals(Dimension.NUTSLAU_NACE)) {
 			ccReferenceDate = cc.getStatsNutsLauNaceDate();
+			
+			if (log != null) {
+				firstAction = new UpdateLogAction(LogActionType.PERSIST_NUTS_NACE_STATISTICS);
+	        }
+
 		} else if (d.equals(Dimension.NACE_FOUNDING)) {
 			ccReferenceDate = cc.getStatsNaceFoundingDate();
+			
+			if (log != null) {
+				firstAction = new UpdateLogAction(LogActionType.PERSIST_NACE_FOUNDING_STATISTICS);
+	        }
+
 		} else if (d.equals(Dimension.NACE_DISSOLUTION)) {
 			ccReferenceDate = cc.getStatsNaceDissolutionDate();
+			
+			if (log != null) {
+				firstAction = new UpdateLogAction(LogActionType.PERSIST_NACE_DISSOLUTION_STATISTICS);
+	        }
+
+		} else {
+			return;
 		}
+
+		if (log != null) {
+			log.addAction(firstAction);
+			updateLogRepository.save(log);
+		}
+		
 
 		if (ccReferenceDate != null) {
 			Calendar ccDate = Calendar.getInstance();
@@ -152,7 +248,13 @@ public class DataStoring  {
 	
 			if (ccDate.getTime().equals(mongoStatistic.getReferenceDate())) {
 				logger.info("DB statistics for " + cc.getCode() + " / " + d + " already up to date.");
-//				return;
+				
+		   		if (log != null) {
+		   			firstAction.completed("Statistics for " + cc.getCode() + " / " + d + " are already up to date.");
+		    		updateLogRepository.save(log);
+	    		}
+		   		
+				return;
 			}
 		}
 		
@@ -160,23 +262,98 @@ public class DataStoring  {
 		
 		List<Statistic> stats = null;
 		
-		if (newReferenceDate != null) {
-			stats = statisticsRepository.findByCountryAndDimensionAndReferenceDate(cc.getCode(), d, newReferenceDate);
-		} else {
-			stats = statisticsRepository.findByCountryAndDimension(cc.getCode(), d);
-			newReferenceDate = cc.getLastAccessedStart();
+		UpdateLogAction action = null;
+		
+		if (log != null) {
+        	action = new UpdateLogAction(LogActionType.READ_STATISTICS);
+			log.addAction(action);
+			updateLogRepository.save(log);
+        }
+		
+		try {
+			if (newReferenceDate != null) {
+				stats = statisticsRepository.findByCountryAndDimensionAndReferenceDate(cc.getCode(), d, newReferenceDate);
+			} else {
+				stats = statisticsRepository.findByCountryAndDimension(cc.getCode(), d);
+				newReferenceDate = cc.getLastAccessedStart();
+			}
+			
+			if (log != null) {
+	        	action.completed();
+				updateLogRepository.save(log);
+	        }
+
+		} catch (Exception ex) {
+    		if (log != null) {
+	    		action.failed(ex.getMessage());
+	    		firstAction.failed("");
+	    		updateLogRepository.save(log);
+    		}
+    		
+    		return;
 		}
+
 			
 		logger.info("Updating " + stats.size() + " DB statistics for " + cc.getCode() + " / " + d + " / " + newReferenceDate  + ".");
 			
-		copyStatisticsFromMongoToRDBMS(stats, newReferenceDate);
-	//		
+		if (log != null) {
+        	action = new UpdateLogAction(LogActionType.COPY_STATISTICS);
+			log.addAction(action);
+			updateLogRepository.save(log);
+        }
+		
+		try {
+			copyStatisticsFromMongoToRDBMS(stats, newReferenceDate, action);
+		
+			if (log != null) {
+	        	action.completed();
+				updateLogRepository.save(log);
+	        }
+		
+		} catch (Exception ex) {
+    		if (log != null) {
+	    		action.failed(ex.getMessage());
+	    		firstAction.failed("");
+	    		updateLogRepository.save(log);
+    		}
+    		
+    		return;
+		}
+
 		if (stats.size() > 0) {
 			System.out.println(stats.size() + ".");
 		}
 		
-		statisticsDBRepository.deleteAllByCountryAndDimensionAndReferenceDateNot(cc.getCode(), d.toString(), newReferenceDate);
-		statisticsDBRepository.flush();
+		if (log != null) {
+        	action = new UpdateLogAction(LogActionType.DELETE_OLD_STATISTICS);
+			log.addAction(action);
+			updateLogRepository.save(log);
+        }
+		
+		try {
+			statisticsDBRepository.deleteAllByCountryAndDimensionAndReferenceDateNot(cc.getCode(), d.toString(), newReferenceDate);
+			statisticsDBRepository.flush();
+			
+			if (log != null) {
+	        	action.completed();
+				updateLogRepository.save(log);
+	        }
+
+		} catch (Exception ex) {
+    		if (log != null) {
+	    		action.failed(ex.getMessage());
+	    		firstAction.failed("");
+	    		updateLogRepository.save(log);
+    		}
+    		
+    		return;
+		}
+		
+		if (log != null) {
+        	action = new UpdateLogAction(LogActionType.UPDATE_COUNTRY);
+			log.addAction(action);
+			updateLogRepository.save(log);
+        }
 		
 		if (d.equals(Dimension.DATA)) {
 			cc.setStatsDataDate(newReferenceDate);
@@ -208,6 +385,11 @@ public class DataStoring  {
 		
 		countriesDBRepository.save(cc);
 		countriesDBRepository.flush();
+		
+		if (log != null) {
+        	action.completed();
+			updateLogRepository.save(log);
+        }
 		
 		logger.info("Updating DB statistics for " + cc.getCode() + " / " + d + " completed.");
 	}
@@ -265,7 +447,7 @@ public class DataStoring  {
 //		statisticsDBRepository.flush();
 //	}
 	
-	private Set<Dimension> copyStatisticsFromMongoToRDBMS(List<Statistic> stats, Date referenceDate) {
+	private Set<Dimension> copyStatisticsFromMongoToRDBMS(List<Statistic> stats, Date referenceDate, UpdateLogAction action) {
 		logger.info("Copying to DB " + stats.size());
 		Set<Dimension> dimensions = new HashSet<>();
 		
@@ -418,6 +600,8 @@ public class DataStoring  {
 				list.add(sdb);
 				
 			} catch (Exception ex) {
+				action.error(ex.getMessage());
+				
 				ex.printStackTrace();
 			}
 		}

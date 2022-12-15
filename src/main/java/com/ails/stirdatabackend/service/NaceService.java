@@ -182,8 +182,13 @@ public class NaceService {
 //    		sparql += " ?activity <" + SDVocabulary.level + "> " + cc.getNaceFixedLevel() + " . ";
 //    	}
     	
+    	boolean zero = false;
     	String s = "";
     	for (int k : cc.getEffectiveNaceLevels()) {
+    		if (k == level) {
+    			zero = true;
+    		}
+    		
     		if (k <= level) {
     			continue;
     		}
@@ -204,9 +209,16 @@ public class NaceService {
     	}
     	
     	if (s.length() > 0) {
-    		s = "(" + s + ")/" ;
+    		if (!zero) {
+    			s = "(" + s + ")/skos:exactMatch" ;
+    		} else {
+    			s = "((" + s + ")/skos:exactMatch)|skos:exactMatch" ;
+    		}
+    	} else {
+    		s = "skos:exactMatch" ;
     	}
-    	sparql += " ?activity " + s + "skos:exactMatch" + " <" + code.toUx2NaceUri() + "> . ";  // replace 
+    	
+    	sparql += " ?activity " + s + " <" + code.toUx2NaceUri() + "> . ";  // replace 
     	
 //		sparql += " ?activity skos:inScheme <" + cc.getNaceScheme() + "> } ";
 		sparql += " ?activity a <https://w3id.org/stirdata/vocabulary/BusinessActivity> . } ";

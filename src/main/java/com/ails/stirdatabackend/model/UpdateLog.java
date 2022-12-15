@@ -16,7 +16,6 @@ import lombok.Setter;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Getter
 @Setter
-@NoArgsConstructor
 @Document(collection = "logs")
 public class UpdateLog {
 	   @Id
@@ -36,6 +35,11 @@ public class UpdateLog {
 
 	   private List<UpdateLogAction> actions;
 	   
+	   public UpdateLog() {
+		   startedAt = new Date();
+		   state = LogState.RUNNING;
+	   }
+	   
 	   public void addAction(UpdateLogAction action) {
 		   if (actions == null) {
 			   actions = new ArrayList<>();
@@ -46,7 +50,7 @@ public class UpdateLog {
 	   
 	   public void completed() {
 		   this.completedAt = new Date();
-		   this.state = LogState.SUCCEDED;
+		   this.state = LogState.COMPLETED;
 	   }
 	   
 	   public void failed() {
