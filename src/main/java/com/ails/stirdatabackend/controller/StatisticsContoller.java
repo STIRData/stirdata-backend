@@ -300,7 +300,7 @@ public class StatisticsContoller {
 		}
 
 //		System.out.println("COUNTRY " + country);
-//		
+		
 //		System.out.println("PLACE " + placedbCodes);
 //		System.out.println("PARENT PLACE " + placeParent);
 //
@@ -317,7 +317,15 @@ public class StatisticsContoller {
 					
 				if (cplace) {
 					List<StatisticDB> placeStats = statisticsRepository.findByDimension(Dimension.DATA.toString());
-					places = iter(placeStats, null, null, null, null, language);
+					
+					List<StatisticDB> placeStats2 = new ArrayList<>();
+					for (StatisticDB s : placeStats) {
+						if (countryConfigurations.keySet().contains(s.getCountry())) {
+							placeStats2.add(s);
+						}
+					}
+					
+					places = iter(placeStats2, null, null, null, null, language);
 				}
 				
 			} else if (placedb.isEmpty() && founding == null && dissolution == null) {
@@ -336,7 +344,15 @@ public class StatisticsContoller {
 				
 				if (cplace) {
 					List<StatisticDB> placeStats = statisticsRepository.findByDimensionAndActivity(Dimension.NACE.toString(), activitydb.get(0));
-					places = iter(placeStats, null, null, null, null, language);
+					
+					List<StatisticDB> placeStats2 = new ArrayList<>();
+					for (StatisticDB s : placeStats) {
+						if (countryConfigurations.keySet().contains(s.getCountry())) {
+							placeStats2.add(s);
+						}
+					}
+					
+					places = iter(placeStats2, null, null, null, null, language);
 				}
 				
 			} else {
