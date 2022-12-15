@@ -112,7 +112,7 @@ public class StirdataBackendApplication implements CommandLineRunner {
     	isoCountryMap.put("GEO", "GE");
     	isoCountryMap.put("DEU", "DE");
     	isoCountryMap.put("GIB", "GI");
-    	isoCountryMap.put("GRC", "GR");
+    	isoCountryMap.put("GRC", "EL");
     	isoCountryMap.put("GRL", "GL");
     	isoCountryMap.put("HUN", "HU");
     	isoCountryMap.put("ISL", "IS");
@@ -181,7 +181,7 @@ public class StirdataBackendApplication implements CommandLineRunner {
 //    	cz.setLicense("Otevřené data ISVR", "https://dataor.justice.cz/files/ISVR_OpenData_Podminky_uziti.pdf");
 //    	cz.setNaceEnpoint("https://xn--obchodn-rejstk-6lbg94p.stirdata.opendata.cz/vsparql");
 //    	cz.setNaceScheme("https://obchodní-rejstřík.stirdata.opendata.cz/zdroj/číselníky/nace-cz", "nace-cz");
-//    	cz.setNaceFixedLevels(1,2,3,4,5);
+    	cz.setNaceFixedLevels(1,2,3,4,5);
 //    	cz.setNacePathSparql("skos:broader*/skos:exactMatch");
     	cz.setCompanyTypeEndpoint("https://xn--obchodn-rejstk-6lbg94p.stirdata.opendata.cz/vsparql");
     	
@@ -287,7 +287,7 @@ public class StirdataBackendApplication implements CommandLineRunner {
 //		System.out.println(dataService.getEntity("https://lod.stirdata.eu/data/organization/fi/3117737-8"));
 //		System.out.println(dataService.getEntity("https://lod.stirdata.eu/data/organization/uk/09025276"));
 
-//		countriesService.updateCountry(ee); // ok // rubik-w3id
+//		countriesService.updateCountry(no); // ok // rubik-w3id
 		
 //		countriesService.replace(ee, new UpdateLog()); // ok // rubik-w3id
 //		countriesService.replace(lv); // ok // rubik-w3id
@@ -298,22 +298,22 @@ public class StirdataBackendApplication implements CommandLineRunner {
 //		countriesService.replace(uk); // ok // rubik-w3id
 //		countriesService.replace(nl);       // rubik-w3id
 //		countriesService.replace(be);       // rubik-w3id
-//		countriesService.replace(cz);       // rubik
+//		countriesService.updateCountry(cz);       // rubik
 //		countriesService.replace(el);	    // rubik-w3id
 //		countriesService.replace(fr);       // rubik-w3id
 //		countriesService.replace(md);       // rubik-w3id
 		
 		Set<Dimension> dimensions = new HashSet<>();
-//		dimensions.add(Dimension.DATA); // should always be included
-//		dimensions.add(Dimension.NACE);  
-//		dimensions.add(Dimension.NUTSLAU); 
-//		dimensions.add(Dimension.FOUNDING); 
-//		dimensions.add(Dimension.DISSOLUTION); 
-//		dimensions.add(Dimension.NUTSLAU_NACE);
-//		dimensions.add(Dimension.NUTSLAU_FOUNDING);
-//		dimensions.add(Dimension.NUTSLAU_DISSOLUTION);
-//		dimensions.add(Dimension.NACE_FOUNDING);
-//		dimensions.add(Dimension.NACE_DISSOLUTION);
+		dimensions.add(Dimension.DATA); // should always be included
+		dimensions.add(Dimension.NACE);  
+		dimensions.add(Dimension.NUTSLAU); 
+		dimensions.add(Dimension.FOUNDING); 
+		dimensions.add(Dimension.DISSOLUTION); 
+		dimensions.add(Dimension.NUTSLAU_NACE);
+		dimensions.add(Dimension.NUTSLAU_FOUNDING);
+		dimensions.add(Dimension.NUTSLAU_DISSOLUTION);
+		dimensions.add(Dimension.NACE_FOUNDING);
+		dimensions.add(Dimension.NACE_DISSOLUTION);
 		
 //		statisticsService.computeStatistics(countryConfigurations.get("EE"), dimensions); // ok
 //		statisticsService.computeStatistics(countryConfigurations.get("LV"), dimensions); // ok
@@ -323,7 +323,7 @@ public class StirdataBackendApplication implements CommandLineRunner {
 //		statisticsService.computeStatistics(countryConfigurations.get("CY"), dimensions); // ok
 //		statisticsService.computeStatistics(countryConfigurations.get("NL"), dimensions); // ok data, nace, found, diss
 //		statisticsService.computeStatistics(countryConfigurations.get("UK"), dimensions); // ok  
-//		statisticsService.computeStatistics(countryConfigurations.get("CZ"), dimensions); // ok			
+//		statisticsService.computeStatistics(countryConfigurations.get("CZ"), dimensions, true, null); // ok			
 //		statisticsService.computeStatistics(countryConfigurations.get("BE"), dimensions); // ok
 //		statisticsService.computeStatistics(countryConfigurations.get("FR"), dimensions); // ok 
 //		statisticsService.computeStatistics(countryConfigurations.get("MD"), dimensions); // ok

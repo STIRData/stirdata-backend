@@ -638,13 +638,13 @@ public class CountriesService {
 				cc.setTradingName(qe.execAsk());
 	        }
 	
-	        System.out.println("ASK WHERE { " +  cc.getNuts3Sparql() + " }");
+//	        System.out.println("ASK WHERE { " +  cc.getNuts3Sparql() + " }");
 	        try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), "ASK WHERE { " +  cc.getNuts3Sparql() + " }")) {
 				cc.setNuts(qe.execAsk());
 	        }
 	        
 //	        System.out.println(cc.getDataEndpoint());
-	        System.out.println("ASK WHERE { " +  cc.getLauSparql() + " }");
+//	        System.out.println("ASK WHERE { " +  cc.getLauSparql() + " }");
 	        try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), "ASK WHERE { " +  cc.getLauSparql() + " }")) {
 				cc.setLau(qe.execAsk());
 	        }
