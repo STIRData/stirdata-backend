@@ -136,20 +136,20 @@ public class CountriesService {
 		}
 	}
 	
-	public void reload() {
-		Map<String, CountryDB> countryConfigurations = new HashMap<>();
-		
-		System.out.println("LOADING COUNTRIES: ");
-		String s = "";
-		for (CountryDB cc  : countriesRepository.findAll()) {
-			cc.setModelConfiguration(modelConfigurations.get(cc.getConformsTo()));
-//			cc.setStatistics(new HashSet<>(statisticsRepository.findDimensionsByCountry(cc.getCode())));
-			
-			s += cc.getCode() + " ";
-			countryConfigurations.put(cc.getCode(), cc);
-		}
-		logger.info("Loaded countries: " + s);
-	}
+//	public void reload() {
+//		Map<String, CountryDB> countryConfigurations = new HashMap<>();
+//		
+//		System.out.println("LOADING COUNTRIES: ");
+//		String s = "";
+//		for (CountryDB cc  : countriesRepository.findAll()) {
+//			cc.setModelConfiguration(modelConfigurations.get(cc.getConformsTo()));
+////			cc.setStatistics(new HashSet<>(statisticsRepository.findDimensionsByCountry(cc.getCode())));
+//			
+//			s += cc.getCode() + " ";
+//			countryConfigurations.put(cc.getCode(), cc);
+//		}
+//		logger.info("Loaded countries: " + s);
+//	}
 	
 	public CountryDB updateCountry(Country country) {
 		UpdateLog log = new UpdateLog();
