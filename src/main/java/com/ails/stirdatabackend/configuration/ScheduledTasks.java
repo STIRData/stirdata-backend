@@ -66,10 +66,10 @@ public class ScheduledTasks {
 			
 			if (updatedcc != null) {
 				if (updatedcc.modified) {
-//						Lock writeLock = lock.writeLock();
-//						writeLock.lock();
-//						updatedCountries.add(updatedcc.getCode());
-//						writeLock.unlock();
+					Lock writeLock = lock.writeLock();
+					writeLock.lock();
+					updatedCountries.add(updatedcc.getCode());
+					writeLock.unlock();
 					
 					Lock ccLock = updateCCLock.writeLock();
 					ccLock.lock();
@@ -79,10 +79,10 @@ public class ScheduledTasks {
 			} else {
 				logger.info("Suspending country " + cc.getCode());
 
-//					Lock writeLock = lock.writeLock();
-//					writeLock.lock();
-//					updatedCountries.remove(cc.getCode());
-//					writeLock.unlock();
+				Lock writeLock = lock.writeLock();
+				writeLock.lock();
+				updatedCountries.remove(cc.getCode());
+				writeLock.unlock();
 				
 				Lock ccLock = updateCCLock.writeLock();
 				ccLock.lock();
@@ -93,7 +93,7 @@ public class ScheduledTasks {
 		
 	}
     
-//	@Scheduled(fixedRate = 86400000)
+	@Scheduled(fixedRate = 30*86400000)
 //    @Scheduled(fixedRate = 40000)
 	public void updateStatistics() {
 		logger.info("Running scheduled update statistics task. Pending countries: " + updatedCountries);
