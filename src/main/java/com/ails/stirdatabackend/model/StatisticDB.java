@@ -181,6 +181,24 @@ public class StatisticDB {
 
 	}
 	
+	public StatisticDB(String dimension, String country, ActivityDB activity, long count,  Date fromDate, Date toDate) {
+		if (dimension.equals(Dimension.FOUNDING.toString()) || dimension.equals(Dimension.NUTSLAU_FOUNDING.toString()) || dimension.equals(Dimension.NACE_FOUNDING.toString())) {
+			this.count = (int)count;
+//			this.country = country;
+			this.foundingFromDate = fromDate;
+			this.foundingToDate = toDate;
+		} else if (dimension.equals(Dimension.DISSOLUTION.toString()) || dimension.equals(Dimension.NUTSLAU_DISSOLUTION.toString()) || dimension.equals(Dimension.NACE_DISSOLUTION.toString())) {
+			this.count = (int)count;
+//			this.country = country;
+			this.dissolutionFromDate = fromDate;
+			this.dissolutionToDate = toDate;
+		}
+		
+		this.country = country;
+		this.activity = activity;
+
+	}
+	
 	public StatisticDB(String dimension, PlaceDB place, long count,  Date fromDate, Date toDate) {
 		if (dimension.equals(Dimension.FOUNDING.toString()) || dimension.equals(Dimension.NUTSLAU_FOUNDING.toString()) || dimension.equals(Dimension.NACE_FOUNDING.toString())) {
 			this.count = (int)count;
@@ -195,6 +213,10 @@ public class StatisticDB {
 		}
 		
 		this.place = place;
+		
+		if (this.place != null) {
+			this.country = this.place.getCountry();
+		}
 
 	}
 	
