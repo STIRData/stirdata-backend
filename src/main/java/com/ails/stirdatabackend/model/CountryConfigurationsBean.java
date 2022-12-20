@@ -39,4 +39,8 @@ public class CountryConfigurationsBean {
 	public CountryDB remove(String key) {
 		return map.remove(key);
 	}
+	
+	public boolean containsKey(String key) {
+		return map.containsKey(key);
+	}
 }

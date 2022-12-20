@@ -37,7 +37,6 @@ public class CountryDB {
 	@Column(unique = true, nullable = false)
 	private String code;
 	
-	@Column(nullable = false)
 	private String label;
 	
 	@Column(nullable = false)

@@ -487,6 +487,7 @@ public class DataStoring  {
 				java.sql.Date foundingToDate = null;
 				java.sql.Date dissolutionFromDate = null;
 				java.sql.Date dissolutionToDate = null;
+				String dateInterval = null;
 				
 				if (dimension == Dimension.DATA) {
 					ex = statisticsDBRepository.findByCountryAndDimension(country, dimension.toString());
@@ -499,11 +500,13 @@ public class DataStoring  {
 				} else if (dimension == Dimension.FOUNDING) {
 					foundingFromDate = java.sql.Date.valueOf(s.getFromDate());
 					foundingToDate = java.sql.Date.valueOf(s.getToDate());
-					ex = statisticsDBRepository.findByCountryAndDimensionAndFoundingFromDateAndFoundingToDate(country, dimension.toString(), foundingFromDate, foundingToDate);
+					dateInterval = s.getDateInterval();
+					ex = statisticsDBRepository.findByCountryAndDimensionAndFoundingFromDateAndFoundingToDateAndFoundingDateInterval(country, dimension.toString(), foundingFromDate, foundingToDate, dateInterval);
 				} else if (dimension == Dimension.DISSOLUTION) {
 					dissolutionFromDate = java.sql.Date.valueOf(s.getFromDate());
 					dissolutionToDate = java.sql.Date.valueOf(s.getToDate());
-					ex = statisticsDBRepository.findByCountryAndDimensionAndDissolutionFromDateAndDissolutionToDate(country, dimension.toString(), dissolutionFromDate, dissolutionToDate);
+					dateInterval = s.getDateInterval();
+					ex = statisticsDBRepository.findByCountryAndDimensionAndDissolutionFromDateAndDissolutionToDateAndDissolutionDateInterval(country, dimension.toString(), dissolutionFromDate, dissolutionToDate, dateInterval);
 				} else if (dimension == Dimension.NUTSLAU_NACE) {
 					placedb = new PlaceDB(new Code(s.getPlace()));
 					activitydb = new ActivityDB(new Code(s.getActivity()));
@@ -512,22 +515,26 @@ public class DataStoring  {
 					placedb = new PlaceDB(new Code(s.getPlace()));
 					foundingFromDate = java.sql.Date.valueOf(s.getFromDate());
 					foundingToDate = java.sql.Date.valueOf(s.getToDate());
-					ex = statisticsDBRepository.findByCountryAndDimensionAndPlaceAndFoundingFromDateAndFoundingToDate(country, dimension.toString(), placedb, foundingFromDate, foundingToDate);
+					dateInterval = s.getDateInterval();
+					ex = statisticsDBRepository.findByCountryAndDimensionAndPlaceAndFoundingFromDateAndFoundingToDateAndFoundingDateInterval(country, dimension.toString(), placedb, foundingFromDate, foundingToDate, dateInterval);
 				} else if (dimension == Dimension.NUTSLAU_DISSOLUTION) {
 					placedb = new PlaceDB(new Code(s.getPlace()));
 					dissolutionFromDate = java.sql.Date.valueOf(s.getFromDate());
 					dissolutionToDate = java.sql.Date.valueOf(s.getToDate());
-					ex = statisticsDBRepository.findByCountryAndDimensionAndPlaceAndDissolutionFromDateAndDissolutionToDate(country, dimension.toString(), placedb, dissolutionFromDate, dissolutionToDate);
+					dateInterval = s.getDateInterval();
+					ex = statisticsDBRepository.findByCountryAndDimensionAndPlaceAndDissolutionFromDateAndDissolutionToDateAndDissolutionDateInterval(country, dimension.toString(), placedb, dissolutionFromDate, dissolutionToDate, dateInterval);
 				} else if (dimension == Dimension.NACE_FOUNDING) {
 					activitydb = new ActivityDB(new Code(s.getActivity()));
 					foundingFromDate = java.sql.Date.valueOf(s.getFromDate());
 					foundingToDate = java.sql.Date.valueOf(s.getToDate());
-					ex = statisticsDBRepository.findByCountryAndDimensionAndActivityAndFoundingFromDateAndFoundingToDate(country, dimension.toString(), activitydb, foundingFromDate, foundingToDate);
+					dateInterval = s.getDateInterval();
+					ex = statisticsDBRepository.findByCountryAndDimensionAndActivityAndFoundingFromDateAndFoundingToDateAndFoundingDateInterval(country, dimension.toString(), activitydb, foundingFromDate, foundingToDate, dateInterval);
 				} else if (dimension == Dimension.NACE_DISSOLUTION) {
 					activitydb = new ActivityDB(new Code(s.getActivity()));
 					dissolutionFromDate = java.sql.Date.valueOf(s.getFromDate());
 					dissolutionToDate = java.sql.Date.valueOf(s.getToDate());
-					ex = statisticsDBRepository.findByCountryAndDimensionAndActivityAndDissolutionFromDateAndDissolutionToDate(country, dimension.toString(), activitydb, dissolutionFromDate, dissolutionToDate);
+					dateInterval = s.getDateInterval();
+					ex = statisticsDBRepository.findByCountryAndDimensionAndActivityAndDissolutionFromDateAndDissolutionToDateAndDissolutionDateInterval(country, dimension.toString(), activitydb, dissolutionFromDate, dissolutionToDate, dateInterval);
 				}				
 					
 				if (ex.size() == 0) {
@@ -541,7 +548,7 @@ public class DataStoring  {
 					//fix 
 					statisticsDBRepository.deleteAll(ex);
 
-					logger.error("Not unique " + dimension + " statistics for " + country + " [ " + placedb + " " + activitydb + " " + foundingFromDate + " " + foundingToDate + " " + dissolutionFromDate + " " + dissolutionToDate + " ].");
+					logger.error("Not unique " + dimension + " statistics for " + country + " [ " + placedb + " " + activitydb + " " + foundingFromDate + " " + foundingToDate + " " + dissolutionFromDate + "-" + dissolutionToDate + " " + dateInterval + " ].");
 				}
 
 				dimensions.add(s.getDimension());

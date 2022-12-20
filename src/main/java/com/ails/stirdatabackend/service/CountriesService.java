@@ -782,7 +782,7 @@ public class CountriesService {
 			       		ResultSet rs = qe.execSelect();
 			       		while (rs.hasNext()) {
 			       			QuerySolution qs = rs.next();
-			       			nutsUris.add(qs.get("nace").toString());
+			       			nutsUris.add(qs.get("nuts").toString());
 			            }
 			       		
 			        }
@@ -812,6 +812,76 @@ public class CountriesService {
 			}			
 		}
 		
+		if (cc.isLau()) {
+			
+        	if (log != null) {
+        		action = new UpdateLogAction(LogActionType.QUERY_LAU_PROPERTIES);
+        		log.addAction(action);
+        		updateLogRepository.save(log);
+        	}
+
+        	try {
+
+		   		List<String> lauUris = new ArrayList<>();       		
+		
+		   		int totalLau = 0;
+		        //try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), "SELECT (count(?nace) AS ?count) WHERE { ?nace <http://www.w3.org/2004/02/skos/core#inScheme> <" +  cc.getNaceScheme() + "> . }")) {
+	   			try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), "SELECT (count(?lau) AS ?count) WHERE { ?lau a <http://data.europa.eu/m8g/AdminUnit> ; <http://data.europa.eu/m8g/level> <https://w3id.org/stirdata/resource/adminUnitLevel/LAU> }")) {
+		       		ResultSet rs = qe.execSelect();
+		       		while (rs.hasNext()) {
+		       			QuerySolution qs = rs.next();
+		       			totalLau = qs.get("count").asLiteral().getInt();
+		            }
+		        }
+	   			
+	//	       	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), "SELECT ?nace WHERE { ?nace <http://www.w3.org/2004/02/skos/core#inScheme> <" +  cc.getNaceScheme() + "> } LIMIT 50")) {
+		   		try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), "SELECT ?lau WHERE { ?lau a <http://data.europa.eu/m8g/AdminUnit> ; <http://data.europa.eu/m8g/level> <https://w3id.org/stirdata/resource/adminUnitLevel/LAU> } LIMIT 50")) {
+		       		
+		   				  
+		       		ResultSet rs = qe.execSelect();
+		       		while (rs.hasNext()) {
+		       			QuerySolution qs = rs.next();
+		       			lauUris.add(qs.get("lau").toString());
+		            }
+		       		
+		        }
+		
+		       	if (totalLau > 50) {
+			       	//try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), "SELECT ?nace WHERE { ?nace <http://www.w3.org/2004/02/skos/core#inScheme> <" +  cc.getNaceScheme() + "> } LIMIT 50 OFFSET " + (totalNace - 50))) {
+		       		try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), "SELECT ?lau WHERE { ?lau a <http://data.europa.eu/m8g/AdminUnit> ; <http://data.europa.eu/m8g/level> <https://w3id.org/stirdata/resource/adminUnitLevel/LAU> } LIMIT 50 OFFSET " + (totalLau - 50))) {
+			       		
+			       		ResultSet rs = qe.execSelect();
+			       		while (rs.hasNext()) {
+			       			QuerySolution qs = rs.next();
+			       			lauUris.add(qs.get("lau").toString());
+			            }
+			       		
+			        }
+		       	}
+		       	
+		   		String lauPrefix = StringUtils.getCommonPrefix(lauUris.toArray(new String[] {}));
+		   		
+		   		while (lauPrefix.charAt(lauPrefix.length() - 1) != '/' && lauPrefix.charAt(lauPrefix.length() - 1) != '#') {
+		   			lauPrefix = lauPrefix.substring(0, lauPrefix.length() - 1);
+		   		}
+		   		
+		   		cc.setLauPrefix(lauPrefix);
+				
+		   		if (log != null) {
+					action.completed();
+					updateLogRepository.save(log);
+				}
+
+			} catch (Exception ex) {
+				if (log != null) {
+					action.failed(ex.getMessage());
+					log.failed();
+					updateLogRepository.save(log);
+					
+					return false;
+				}
+			}			
+		}
 		
         if (cc.isNace() && cc.getNaceEndpoint() != null) {
         	
@@ -853,108 +923,96 @@ public class CountriesService {
 
 		        }
 	   			
-	   			
-	   			cc.setNaceLevels(maxLevel);
-	   			
-	   			int totalNace = 0;
-	   		
-	//   			String nSparql = "SELECT distinct(?level) WHERE { " + cc.getNaceSparql() + " SERVICE <" + cc.getNaceEndpoint() + "> { ?nace <https://w3id.org/stirdata/vocabulary/level> ?level } }";
-	   			String nSparql = "SELECT distinct(?nace) WHERE { " + cc.getNaceSparql() + " }";
-//	   			System.out.println(nSparql);
-	
-	   			List<String> uris = new ArrayList<>();
-	   			
-	   			try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), nSparql)) {
-		       		ResultSet rs = qe.execSelect();
-		       		while (rs.hasNext()) {
-		       			QuerySolution qs = rs.next();
-		       			uris.add(qs.get("nace").toString());
-		            }
-		        }
-	   			
-//	   			System.out.println(uris.size());
-	   			
-	   			// detect effective nace levels
-	   			Set<Integer> levels = new TreeSet<>();
-	   			for (int j = 0; j < uris.size(); j += 1000) {
-		   				
-		   			StringBuffer sb = new StringBuffer();
-		   			for (int i = j; i < Math.min(j + 1000, uris.size()); i++) {
-		   				sb.append(" <" + uris.get(i) + ">");
-		   			}
-
-		   			for (int i = 0; i <= 8; i++) {
-		   				String p = "<http://www.w3.org/2004/02/skos/core#topConceptOf>";
-		   				for (int k = 0; k < i; k++) {
-		   					p = "<http://www.w3.org/2004/02/skos/core#broader>/" + p;
-		   				}
-		   				String lSparql = "ASK { ?nace " + p + " ?scheme . VALUES ?nace {" + sb.toString() + " } }";
-
-//		   				System.out.println(lSparql);
-			   			try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), lSparql)) {
-			   				if (qe.execAsk()) {
-			   					levels.add(i + 1);
-			   				}
-			   			}
+	   			if (maxLevel > -1) {
+		   			cc.setNaceLevels(maxLevel);
+		   			
+		   			int totalNace = 0;
+		   		
+		//   			String nSparql = "SELECT distinct(?level) WHERE { " + cc.getNaceSparql() + " SERVICE <" + cc.getNaceEndpoint() + "> { ?nace <https://w3id.org/stirdata/vocabulary/level> ?level } }";
+		   			String nSparql = "SELECT distinct(?nace) WHERE { " + cc.getNaceSparql() + " }";
+	//	   			System.out.println(nSparql);
+		
+		   			List<String> uris = new ArrayList<>();
+		   			
+		   			try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), nSparql)) {
+			       		ResultSet rs = qe.execSelect();
+			       		while (rs.hasNext()) {
+			       			QuerySolution qs = rs.next();
+			       			uris.add(qs.get("nace").toString());
+			            }
 			        }
-
-//		   			String lSparql = "SELECT DISTINCT(?level) WHERE { ?nace <https://w3id.org/stirdata/vocabulary/level> ?level . VALUES ?nace {" + sb.toString() + " } }";
-//		   			try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), lSparql)) {
-//			       		ResultSet rs = qe.execSelect();
-//			       		while (rs.hasNext()) {
-//			       			QuerySolution qs = rs.next();
-//			       			levels.add(qs.get("level").asLiteral().getInt());
-//			            }
-//			        }
-	   			}   			
-	   			
-//	   			System.out.println("NL: " + levels);
+		   			
+	//	   			System.out.println(uris.size());
+		   			
+		   			// detect effective nace levels
+		   			Set<Integer> levels = new TreeSet<>();
+		   			for (int j = 0; j < uris.size(); j += 1000) {
+			   				
+			   			StringBuffer sb = new StringBuffer();
+			   			for (int i = j; i < Math.min(j + 1000, uris.size()); i++) {
+			   				sb.append(" <" + uris.get(i) + ">");
+			   			}
 	
-//	   			int [] el = new int[levels.size()];
-//	   			int i = 0;
-//	   			for (Integer level : levels) {
-//	   				el[i++] = level;
-//	   			}
-//	
-//	   			cc.setNaceEffectiveLevels(el);
-	   			
-	   			String s = "";
-	   			for (Iterator<Integer> iter = levels.iterator(); iter.hasNext();) {
-		    		if (s.length() > 0) {
-		    			s += ",";
-		    		}
-		    		s += iter.next();
-		    	}
-		    	
-	   			cc.setNaceFixedLevels(s);
-	   			
-	   			
-	   			
-		        //try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), "SELECT (count(?nace) AS ?count) WHERE { ?nace <http://www.w3.org/2004/02/skos/core#inScheme> <" +  cc.getNaceScheme() + "> . }")) {
-	   			try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), "SELECT (count(?nace) AS ?count) WHERE { ?nace a <https://w3id.org/stirdata/vocabulary/BusinessActivity> }")) {
-		       		ResultSet rs = qe.execSelect();
-		       		while (rs.hasNext()) {
-		       			QuerySolution qs = rs.next();
-		       			totalNace = qs.get("count").asLiteral().getInt();
-		            }
-		        }
+			   			for (int i = 0; i <= 8; i++) {
+			   				String p = "<http://www.w3.org/2004/02/skos/core#topConceptOf>";
+			   				for (int k = 0; k < i; k++) {
+			   					p = "<http://www.w3.org/2004/02/skos/core#broader>/" + p;
+			   				}
+			   				String lSparql = "ASK { ?nace " + p + " ?scheme . VALUES ?nace {" + sb.toString() + " } }";
+	
+	//		   				System.out.println(lSparql);
+				   			try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), lSparql)) {
+				   				if (qe.execAsk()) {
+				   					levels.add(i + 1);
+				   				}
+				   			}
+				        }
+	
+	//		   			String lSparql = "SELECT DISTINCT(?level) WHERE { ?nace <https://w3id.org/stirdata/vocabulary/level> ?level . VALUES ?nace {" + sb.toString() + " } }";
+	//		   			try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), lSparql)) {
+	//			       		ResultSet rs = qe.execSelect();
+	//			       		while (rs.hasNext()) {
+	//			       			QuerySolution qs = rs.next();
+	//			       			levels.add(qs.get("level").asLiteral().getInt());
+	//			            }
+	//			        }
+		   			}   			
+		   			
+	//	   			System.out.println("NL: " + levels);
 		
-		   		List<String> naceUris = new ArrayList<>();       		
-		
-	//	       	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), "SELECT ?nace WHERE { ?nace <http://www.w3.org/2004/02/skos/core#inScheme> <" +  cc.getNaceScheme() + "> } LIMIT 50")) {
-		   		try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), "SELECT ?nace WHERE { ?nace a <https://w3id.org/stirdata/vocabulary/BusinessActivity> } LIMIT 50")) {
-		       		
-		       		ResultSet rs = qe.execSelect();
-		       		while (rs.hasNext()) {
-		       			QuerySolution qs = rs.next();
-		       			naceUris.add(qs.get("nace").toString());
-		            }
-		       		
-		        }
-		
-		       	if (totalNace > 50) {
-			       	//try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), "SELECT ?nace WHERE { ?nace <http://www.w3.org/2004/02/skos/core#inScheme> <" +  cc.getNaceScheme() + "> } LIMIT 50 OFFSET " + (totalNace - 50))) {
-		       		try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), "SELECT ?nace WHERE { ?nace a <https://w3id.org/stirdata/vocabulary/BusinessActivity> } LIMIT 50 OFFSET " + (totalNace - 50))) {
+	//	   			int [] el = new int[levels.size()];
+	//	   			int i = 0;
+	//	   			for (Integer level : levels) {
+	//	   				el[i++] = level;
+	//	   			}
+	//	
+	//	   			cc.setNaceEffectiveLevels(el);
+		   			
+		   			String s = "";
+		   			for (Iterator<Integer> iter = levels.iterator(); iter.hasNext();) {
+			    		if (s.length() > 0) {
+			    			s += ",";
+			    		}
+			    		s += iter.next();
+			    	}
+			    	
+		   			cc.setNaceFixedLevels(s);
+		   			
+		   			
+		   			
+			        //try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), "SELECT (count(?nace) AS ?count) WHERE { ?nace <http://www.w3.org/2004/02/skos/core#inScheme> <" +  cc.getNaceScheme() + "> . }")) {
+		   			try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), "SELECT (count(?nace) AS ?count) WHERE { ?nace a <https://w3id.org/stirdata/vocabulary/BusinessActivity> }")) {
+			       		ResultSet rs = qe.execSelect();
+			       		while (rs.hasNext()) {
+			       			QuerySolution qs = rs.next();
+			       			totalNace = qs.get("count").asLiteral().getInt();
+			            }
+			        }
+			
+			   		List<String> naceUris = new ArrayList<>();       		
+			
+		//	       	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), "SELECT ?nace WHERE { ?nace <http://www.w3.org/2004/02/skos/core#inScheme> <" +  cc.getNaceScheme() + "> } LIMIT 50")) {
+			   		try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), "SELECT ?nace WHERE { ?nace a <https://w3id.org/stirdata/vocabulary/BusinessActivity> } LIMIT 50")) {
 			       		
 			       		ResultSet rs = qe.execSelect();
 			       		while (rs.hasNext()) {
@@ -963,16 +1021,29 @@ public class CountriesService {
 			            }
 			       		
 			        }
-		       	}
-		       	
-		   		String nacePrefix = StringUtils.getCommonPrefix(naceUris.toArray(new String[] {}));
-		   		
-		   		while (nacePrefix.charAt(nacePrefix.length() - 1) != '/' && nacePrefix.charAt(nacePrefix.length() - 1) != '#') {
-		   			nacePrefix = nacePrefix.substring(0, nacePrefix.length() - 1);
-		   		}
-		   		
-		   		cc.setNacePrefix(nacePrefix);
-				
+			
+			       	if (totalNace > 50) {
+				       	//try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), "SELECT ?nace WHERE { ?nace <http://www.w3.org/2004/02/skos/core#inScheme> <" +  cc.getNaceScheme() + "> } LIMIT 50 OFFSET " + (totalNace - 50))) {
+			       		try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), "SELECT ?nace WHERE { ?nace a <https://w3id.org/stirdata/vocabulary/BusinessActivity> } LIMIT 50 OFFSET " + (totalNace - 50))) {
+				       		
+				       		ResultSet rs = qe.execSelect();
+				       		while (rs.hasNext()) {
+				       			QuerySolution qs = rs.next();
+				       			naceUris.add(qs.get("nace").toString());
+				            }
+				       		
+				        }
+			       	}
+			       	
+			   		String nacePrefix = StringUtils.getCommonPrefix(naceUris.toArray(new String[] {}));
+			   		
+			   		while (nacePrefix.charAt(nacePrefix.length() - 1) != '/' && nacePrefix.charAt(nacePrefix.length() - 1) != '#') {
+			   			nacePrefix = nacePrefix.substring(0, nacePrefix.length() - 1);
+			   		}
+			   		
+			   		cc.setNacePrefix(nacePrefix);
+	   			}
+	   			
 		   		if (log != null) {
 					action.completed();
 					updateLogRepository.save(log);

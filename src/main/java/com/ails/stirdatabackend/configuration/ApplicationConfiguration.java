@@ -205,11 +205,13 @@ public class ApplicationConfiguration {
 		System.out.println("LOADING COUNTRIES: ");
 		String s = "";
 		for (CountryDB cc  : countriesRepository.findAll()) {
-			cc.setModelConfiguration(mcMap.get(cc.getConformsTo()));
-//			cc.setStatistics(new HashSet<>(statisticsRepository.findDimensionsByCountry(cc.getCode())));
-			
-			s += cc.getCode() + " ";
-			ccb.put(cc.getCode(), cc);
+			if (cc.getActiveLegalEntityCount() != null) {
+				cc.setModelConfiguration(mcMap.get(cc.getConformsTo()));
+	//			cc.setStatistics(new HashSet<>(statisticsRepository.findDimensionsByCountry(cc.getCode())));
+				
+				s += cc.getCode() + " ";
+				ccb.put(cc.getCode(), cc);
+			}
 		}
 		logger.info("Loaded countries: " + s);
 		

@@ -2,6 +2,7 @@ package com.ails.stirdatabackend.configuration;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -21,6 +22,7 @@ import com.ails.stirdatabackend.model.CountryConfigurationsBean;
 import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.Dimension;
 import com.ails.stirdatabackend.payload.Country;
+import com.ails.stirdatabackend.repository.CountriesDBRepository;
 import com.ails.stirdatabackend.service.CountriesService;
 import com.ails.stirdatabackend.service.DataStoring;
 import com.ails.stirdatabackend.service.StatisticsService;
@@ -34,6 +36,9 @@ public class ScheduledTasks {
     private CountriesService countriesService;
 
     @Autowired
+    private CountriesDBRepository countriesDBRepository;
+
+    @Autowired
     private StatisticsService statisticsService;
 
     @Autowired
@@ -44,7 +49,7 @@ public class ScheduledTasks {
     private CountryConfigurationsBean countryConfigurations;	
     
     private ReadWriteLock lock = new ReentrantReadWriteLock();
-    private Set<String> updatedCountries = new LinkedHashSet<>();
+    private Map<String, CountryDB> updatedCountries = new LinkedHashMap<>();
     
     private ReadWriteLock updateCCLock = new ReentrantReadWriteLock();
     
@@ -58,25 +63,34 @@ public class ScheduledTasks {
 	
 		CountryConfigurationsBean ccb = (CountryConfigurationsBean)context.getBean("country-configurations");
 		
-		for (CountryDB cc : new ArrayList<>(countryConfigurations.values())) {
+		for (CountryDB cc : countriesDBRepository.findAll()) {
+			
 			Country country = new Country();
 			country.setDcat(cc.getDcat());
 			
 			CountryDB updatedcc = countriesService.updateCountry(country);
 			
-			if (updatedcc != null) {
-				if (updatedcc.modified) {
+			if (updatedcc != null) { // country responds
+				if (updatedcc.modified) { // country new or modified
 					Lock writeLock = lock.writeLock();
 					writeLock.lock();
-					updatedCountries.add(updatedcc.getCode());
+					updatedCountries.put(updatedcc.getCode(), updatedcc); // schedule for statistics computation
 					writeLock.unlock();
-					
+
 					Lock ccLock = updateCCLock.writeLock();
 					ccLock.lock();
-					ccb.put(cc.getCode(), updatedcc);
+
+					if (updatedcc.getActiveLegalEntityCount() != null) { // old statistics exist -> activate country
+						ccb.put(cc.getCode(), updatedcc);
+					} else { // no statistics exist
+						ccb.remove(cc.getCode());
+					}
+					
 					ccLock.unlock();
+
 				}
-			} else {
+			
+			} else { // country is not responding
 				logger.info("Suspending country " + cc.getCode());
 
 				Lock writeLock = lock.writeLock();
@@ -98,16 +112,15 @@ public class ScheduledTasks {
 	public void updateStatistics() {
 		logger.info("Running scheduled update statistics task. Pending countries: " + updatedCountries);
 	
-		if (updatedCountries.size() > 0) { 
-			CountryConfigurationsBean ccb = (CountryConfigurationsBean)context.getBean("country-configurations");
+		while (updatedCountries.size() > 0) { 
 			
 			Lock writeLock = lock.writeLock();
 			writeLock.lock();
-			String ccCode = updatedCountries.iterator().next();
-			updatedCountries.remove(ccCode);
+			Map.Entry<String, CountryDB> ccEntry = updatedCountries.entrySet().iterator().next();
+			updatedCountries.remove(ccEntry.getKey());
 			writeLock.unlock();
 	
-			CountryDB cc = countryConfigurations.get(ccCode);
+			CountryDB cc = ccEntry.getValue();
 			if (cc != null) {
 				Set<Dimension> dimensions = new LinkedHashSet<>();
 				dimensions.add(Dimension.DATA); // should always be included
@@ -127,7 +140,10 @@ public class ScheduledTasks {
 				
 				Lock ccLock = updateCCLock.writeLock();
 				ccLock.lock();
+				
+				CountryConfigurationsBean ccb = (CountryConfigurationsBean)context.getBean("country-configurations");
 				ccb.put(cc.getCode(), cc);
+				
 				ccLock.unlock();
 			}
 		}

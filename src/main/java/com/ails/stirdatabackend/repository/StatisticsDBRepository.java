@@ -56,14 +56,14 @@ public interface StatisticsDBRepository extends JpaRepository<StatisticDB, Integ
       public List<StatisticDB> findByCountryAndDimensionAndParentActivity(String country, String dimension, ActivityDB parentActivity);
       public List<StatisticDB> findByCountryAndDimensionAndParentActivityIsNull(String country, String dimension);
 
-      public List<StatisticDB> findByCountryAndDimensionAndFoundingFromDateAndFoundingToDate(String country, String dimension, Date dissolutionFromDate, Date dissolutionToDate);
-      public List<StatisticDB> findByCountryAndDimensionAndDissolutionFromDateAndDissolutionToDate(String country, String dimension, Date dissolutionFromDate, Date dissolutionToDate);
+      public List<StatisticDB> findByCountryAndDimensionAndFoundingFromDateAndFoundingToDateAndFoundingDateInterval(String country, String dimension, Date foundingFromDate, Date foundingToDate, String foundingDateInterval);
+      public List<StatisticDB> findByCountryAndDimensionAndDissolutionFromDateAndDissolutionToDateAndDissolutionDateInterval(String country, String dimension, Date dissolutionFromDate, Date dissolutionToDate, String dissolutionDateInterval);
 
-      public List<StatisticDB> findByCountryAndDimensionAndPlaceAndFoundingFromDateAndFoundingToDate(String country, String dimension, PlaceDB place, Date dissolutionFromDate, Date dissolutionToDate);
-      public List<StatisticDB> findByCountryAndDimensionAndPlaceAndDissolutionFromDateAndDissolutionToDate(String country, String dimension, PlaceDB place, Date dissolutionFromDate, Date dissolutionToDate);
+      public List<StatisticDB> findByCountryAndDimensionAndPlaceAndFoundingFromDateAndFoundingToDateAndFoundingDateInterval(String country, String dimension, PlaceDB place, Date foundingFromDate, Date foundingToDate, String foundingDateInterval);
+      public List<StatisticDB> findByCountryAndDimensionAndPlaceAndDissolutionFromDateAndDissolutionToDateAndDissolutionDateInterval(String country, String dimension, PlaceDB place, Date dissolutionFromDate, Date dissolutionToDate, String dissolutionDateInterval);
 
-      public List<StatisticDB> findByCountryAndDimensionAndActivityAndFoundingFromDateAndFoundingToDate(String country, String dimension, ActivityDB activity, Date dissolutionFromDate, Date dissolutionToDate);
-      public List<StatisticDB> findByCountryAndDimensionAndActivityAndDissolutionFromDateAndDissolutionToDate(String country, String dimension, ActivityDB activity, Date dissolutionFromDate, Date dissolutionToDate);
+      public List<StatisticDB> findByCountryAndDimensionAndActivityAndFoundingFromDateAndFoundingToDateAndFoundingDateInterval(String country, String dimension, ActivityDB activity, Date foundingFromDate, Date foundingToDate, String foundingDateInterval);
+      public List<StatisticDB> findByCountryAndDimensionAndActivityAndDissolutionFromDateAndDissolutionToDateAndDissolutionDateInterval(String country, String dimension, ActivityDB activity, Date dissolutionFromDate, Date dissolutionToDate, String dissolutionDateInterval);
 
       public List<StatisticDB> findByCountryAndDimensionAndParentActivityAndParentPlaceAndFoundingFromDateGreaterThanEqualAndFoundingToDateLessThanEqualAndFoundingDateInterval(String country, String dimension, ActivityDB parentActivity, PlaceDB parentPlace, Date foundingFromDate, Date foundingToDate, String interval);
 
