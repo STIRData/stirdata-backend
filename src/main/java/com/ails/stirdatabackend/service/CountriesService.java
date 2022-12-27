@@ -54,6 +54,7 @@ import com.ails.stirdatabackend.model.Statistic;
 import com.ails.stirdatabackend.model.UpdateLog;
 import com.ails.stirdatabackend.model.UpdateLogAction;
 import com.ails.stirdatabackend.payload.Country;
+import com.ails.stirdatabackend.repository.ActivitiesDBRepository;
 import com.ails.stirdatabackend.repository.CountriesDBRepository;
 import com.ails.stirdatabackend.repository.StatisticsRepository;
 import com.ails.stirdatabackend.repository.UpdateLogRepository;
@@ -105,6 +106,9 @@ public class CountriesService {
 	
     @Autowired
     private CountriesDBRepository countriesRepository;
+
+    @Autowired
+    private ActivitiesDBRepository activitiesRepository;
 
     @Autowired
     private StatisticsRepository statisticsRepository;
@@ -355,7 +359,8 @@ public class CountriesService {
 //	        System.out.println("ND: " + naceDataset);
 //	        System.out.println("<<");
 	            
-			cc = countriesRepository.findByCode(countryCode);
+//			cc = countriesRepository.findByCode(countryCode);
+	        cc = countriesRepository.findByDcat(country.getDcat());
 	
 	    	boolean changed = false;
 	    	
@@ -459,7 +464,7 @@ public class CountriesService {
 		    		}
 	    		}
 	    		
-	    		cc.setSourceLabel(licenseLabel);
+	    		cc.setLicenseLabel(licenseLabel);
 	    		
 //	    		System.out.println("LL: " + licenseLabel);
 
@@ -550,7 +555,7 @@ public class CountriesService {
 //    	
 //    	cc.setLicenseLabel(country.getLicenceLabel());
 //    	cc.setLicenseUri(country.getLicenceUri());
-//    	
+    	
     	loadCountry(cc, log);
     	
 //		if (cc.getNaceEndpoint() != null) {
@@ -887,6 +892,33 @@ public class CountriesService {
 		}
 		
         if (cc.isNace() && cc.getNaceEndpoint() != null) {
+        	
+        	if (activitiesRepository.findByScheme(cc.getNaceNamespace()).size() == 0) {
+            	if (log != null) {
+            		action = new UpdateLogAction(LogActionType.COPY_LOCAL_NACE);
+            		log.addAction(action);
+            		updateLogRepository.save(log);
+            	}
+
+        		try {
+					ds.copyNACEFromVirtuosoToRDBMS(cc);
+					
+			   		if (log != null) {
+						action.completed();
+						updateLogRepository.save(log);
+					}
+
+				} catch (IOException ex) {
+					if (log != null) {
+						action.failed(ex.getMessage());
+						log.failed();
+						updateLogRepository.save(log);
+						
+						return false;
+					}
+				}
+        	}
+        	
         	
         	if (log != null) {
         		action = new UpdateLogAction(LogActionType.QUERY_NACE_PROPERTIES);

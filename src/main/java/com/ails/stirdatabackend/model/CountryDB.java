@@ -34,12 +34,12 @@ public class CountryDB {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	int id;
 	
-	@Column(unique = true, nullable = false)
+	@Column(unique = true)
 	private String code;
 	
 	private String label;
 	
-	@Column(nullable = false)
+	@Column(unique = true, nullable = false)
 	private String dcat;
 	
 	@Column(name = "conforms_to", columnDefinition="TEXT")

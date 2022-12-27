@@ -37,6 +37,8 @@ public enum LogActionType {
     UPDATE_COUNTRY,
     
     RELOAD_COUNTRY,
+    CHECK_FOR_NEW_COUNTRIES,
+    COPY_LOCAL_NACE
     
     
 }

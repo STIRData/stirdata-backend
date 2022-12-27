@@ -10,10 +10,16 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.jena.query.QueryExecution;
+import org.apache.jena.query.QueryExecutionFactory;
+import org.apache.jena.query.QueryFactory;
+import org.apache.jena.query.ResultSet;
+import org.apache.jena.query.Syntax;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -21,8 +27,11 @@ import org.springframework.stereotype.Component;
 import com.ails.stirdatabackend.model.CountryConfigurationsBean;
 import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.Dimension;
+import com.ails.stirdatabackend.model.LogActionType;
+import com.ails.stirdatabackend.model.UpdateLog;
 import com.ails.stirdatabackend.payload.Country;
 import com.ails.stirdatabackend.repository.CountriesDBRepository;
+import com.ails.stirdatabackend.repository.UpdateLogRepository;
 import com.ails.stirdatabackend.service.CountriesService;
 import com.ails.stirdatabackend.service.DataStoring;
 import com.ails.stirdatabackend.service.StatisticsService;
@@ -45,6 +54,12 @@ public class ScheduledTasks {
     private DataStoring ds;
     
     @Autowired
+    private UpdateLogRepository updateLogRepository;
+    
+	@Value("${endpoint.data.EU}")
+	private String dataEuropaSparql;
+	
+    @Autowired
     @Qualifier("country-configurations")
     private CountryConfigurationsBean countryConfigurations;	
     
@@ -61,6 +76,8 @@ public class ScheduledTasks {
 	public void updateCountries() {
 		logger.info("Running scheduled update countries task");
 	
+		checkDataPortal();
+		
 		CountryConfigurationsBean ccb = (CountryConfigurationsBean)context.getBean("country-configurations");
 		
 		for (CountryDB cc : countriesDBRepository.findAll()) {
@@ -107,7 +124,7 @@ public class ScheduledTasks {
 		
 	}
     
-	@Scheduled(fixedRate = 2*86400000)
+	@Scheduled(fixedRate = 86400000)
 //    @Scheduled(fixedRate = 40000)
 	public void updateStatistics() {
 		logger.info("Running scheduled update statistics task. Pending countries: " + updatedCountries);
@@ -147,6 +164,43 @@ public class ScheduledTasks {
 				ccLock.unlock();
 			}
 		}
+	}
+	
+	private void checkDataPortal() {
+		logger.info("Checking " + dataEuropaSparql + " for new countries.");
+		UpdateLog log = new UpdateLog();
+		
+		log.setType(LogActionType.CHECK_FOR_NEW_COUNTRIES);
+		
+		updateLogRepository.save(log);
+		
+		String sparql =  
+			"SELECT ?dataset WHERE { " +
+			"  ?dataset a <http://www.w3.org/ns/dcat#Dataset> ; " +
+		    "  <http://purl.org/dc/terms/conformsTo <https://stirdata.github.io/data-specification/> . } ";
+		
+        try (QueryExecution qe = QueryExecutionFactory.sparqlService(dataEuropaSparql, QueryFactory.create(sparql, Syntax.syntaxARQ))) {
+        	ResultSet rs = qe.execSelect();
+        			
+        	while (rs.hasNext()) {
+        		String dcat = rs.next().get("dataset").toString();
+        		
+        		CountryDB cc = countriesDBRepository.findByDcat(dcat);
+        		if (cc == null) {
+        			cc = new CountryDB();
+        			cc.setDcat(dcat);
+        			
+        			countriesDBRepository.save(cc);
+        		}
+        	}
+        	
+			log.completed();
+			updateLogRepository.save(log);
+        	
+        } catch (Exception ex) {
+        	log.failed();
+        	updateLogRepository.save(log);
+        }
 	}
 
 }

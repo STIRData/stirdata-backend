@@ -1108,7 +1108,8 @@ public class DataStoring  {
 	
 	public void copyNACEFromVirtuosoToRDBMS(CountryDB cc) throws IOException {
 
-//		deleteNACEFromRDBMS(cc);
+		logger.info("Copying NACE national extension for country " + cc.getCode() + " from " + cc.getNaceEndpoint());
+		deleteNACEFromRDBMS(cc);
 
 		for (int i = 1; i <= cc.getNaceLevels(); i++) {
 			String p = "<http://www.w3.org/2004/02/skos/core#topConceptOf>";
@@ -1296,6 +1297,7 @@ public class DataStoring  {
         
 		activitiesDBRepository.flush();
 	}
+	
 	
 	public void copyCompanyTypesFromVirtuosoToRDBMS(CountryDB cc) throws IOException {
 
