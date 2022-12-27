@@ -529,7 +529,10 @@ public class CountriesService {
 //    	
     	String lauSparql = env.getProperty("sparql.lau." + cc.getCode());
     	cc.setLauSparql(lauSparql != null ? lauSparql : null);
-//    	
+
+    	String leiCodeSparql = env.getProperty("sparql.leiCode." + cc.getCode());
+    	cc.setLeiCodeSparql(leiCodeSparql != null ? leiCodeSparql : null);
+    	
 //    	cc.setFoundingDateSparql(country.getFoundingDateSparql());
 //    	cc.setDissolutionDateSparql(country.getDissolutionDateSparql());
 //

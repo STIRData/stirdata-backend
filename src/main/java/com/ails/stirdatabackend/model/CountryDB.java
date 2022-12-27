@@ -259,6 +259,9 @@ public class CountryDB {
 
     @Column(name = "license_uri")
     private String licenseUri;
+    
+    @Column(name = "lei_code_sparql")
+    private String leiCodeSparql;
 
 	@Transient
     private ModelConfiguration modelConfiguration;
@@ -317,6 +320,10 @@ public class CountryDB {
 
     public String getDissolutionDateSparql() {
     	return dissolutionDateSparql != null ? dissolutionDateSparql : modelConfiguration.getDissolutionDateSparql();
+    }
+    
+    public String getLeiCodeSparql() {
+    	return leiCodeSparql != null ? leiCodeSparql : modelConfiguration.getLeiCodeSparql();
     }
     
     public Date getStatsDate(Dimension dimension) {

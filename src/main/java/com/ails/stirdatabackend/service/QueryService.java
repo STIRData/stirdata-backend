@@ -79,7 +79,8 @@ public class QueryService {
                         "  ?entity <http://www.w3.org/ns/legal#companyType> ?companyType . " +
                         "  ?entity <http://www.w3.org/ns/legal#companyActivity> ?nace . " +
                 		"  ?entity <http://www.w3.org/ns/legal#registeredAddress> ?address . ?address ?ap ?ao . " + 
-                        "  ?entity <https://schema.org/foundingDate> ?foundingDate . }" +	           		
+                        "  ?entity <https://schema.org/foundingDate> ?foundingDate . " +	           		
+                        "  ?entity <https://schema.org/leiCode> ?leiCode . } " +
         		" WHERE { " +
                 cc.getEntitySparql() + " " +
                 "OPTIONAL { " + cc.getLegalNameSparql() + " } " + 
@@ -88,6 +89,7 @@ public class QueryService {
 	            "OPTIONAL { " + cc.getCompanyTypeSparql() + " } " +
 	            "OPTIONAL { " + cc.getNaceSparql() + " } " +
                 "OPTIONAL { " + cc.getFoundingDateSparql() + " } " +
+                "OPTIONAL { " + cc.getLeiCodeSparql() + " } " +
                 "VALUES ?entity { <" + uri + "> } } ";
 
        	LegalEntity entity = null;
