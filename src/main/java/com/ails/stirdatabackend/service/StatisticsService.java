@@ -161,10 +161,10 @@ public class StatisticsService {
 				
 				if (sqlDate != null) {
 					ccDate.setTimeInMillis(sqlDate.getTime());
-					System.out.println(d);
-					System.out.println(ccDate.getTime());
-					System.out.println(cc.getLastUpdated());
-					System.out.println(ccDate.getTime().equals(cc.getLastUpdated()));
+//					System.out.println(d);
+//					System.out.println(ccDate.getTime());
+//					System.out.println(cc.getLastUpdated());
+//					System.out.println(ccDate.getTime().equals(cc.getLastUpdated()));
 						
 					if (ccDate.getTime().equals(cc.getLastUpdated())) {
 						dims.remove(d);
