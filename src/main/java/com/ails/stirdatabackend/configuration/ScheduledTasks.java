@@ -125,7 +125,7 @@ public class ScheduledTasks {
 		
 	}
     
-	@Scheduled(fixedRate = 2*86400000)
+	@Scheduled(fixedRate = 86400000)
 //    @Scheduled(fixedRate = 40000)
 	public void updateStatistics() {
 		logger.info("Running scheduled update statistics task. Pending countries: " + updatedCountries);

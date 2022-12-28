@@ -23,6 +23,9 @@ public interface StatisticsRepository extends MongoRepository<Statistic, String>
 	  
 	  public void deleteAllByCountryAndDimensionAndPlace(String country, Dimension dimension, String place);
 	  
+	  @Query(value = "{ 'country' : ?0, 'dimension' : ?1, referenceDate: {$ne: ?2} }")
+	  public void deleteAllByCountryAndDimensionAndNotReferenceDate(String country, Dimension dimension, Date referenceDate);
+	  
 	  public void deleteAllByCountryAndDimensionAndActivity(String country, Dimension dimension, String activity);
 
 	  public void deleteAllByDimension(Dimension dimension);

@@ -699,6 +699,8 @@ public class StatisticsService {
 	
 				}			
 				
+				statisticsRepository.deleteAllByCountryAndDimensionAndNotReferenceDate(cc.getCode(), Dimension.NUTSLAU_NACE, cc.getLastUpdated());
+				
 				logger.info("Computing " + Dimension.NUTSLAU_NACE + " statistics for " + cc.getCode() + " completed.");
 
 				if (log != null) {
@@ -939,6 +941,8 @@ public class StatisticsService {
 	
 				}			
 				
+				statisticsRepository.deleteAllByCountryAndDimensionAndNotReferenceDate(cc.getCode(), Dimension.NUTSLAU_FOUNDING, cc.getLastUpdated());
+
 				logger.info("Computing " + Dimension.NUTSLAU_FOUNDING + " statistics for " + cc.getCode() + " completed.");
 
 				if (log != null) {
@@ -1181,6 +1185,8 @@ public class StatisticsService {
 	
 				}		    		
 				
+				statisticsRepository.deleteAllByCountryAndDimensionAndNotReferenceDate(cc.getCode(), Dimension.NUTSLAU_DISSOLUTION, cc.getLastUpdated());
+
 				logger.info("Computing " + Dimension.NUTSLAU_DISSOLUTION + " statistics for " + cc.getCode() + " completed.");
 				
 				if (log != null) {
@@ -1339,6 +1345,8 @@ public class StatisticsService {
 	
 				}
 				
+				statisticsRepository.deleteAllByCountryAndDimensionAndNotReferenceDate(cc.getCode(), Dimension.NACE_FOUNDING, cc.getLastUpdated());
+
 				logger.info("Computing " + Dimension.NACE_FOUNDING + " statistics for " + cc.getCode() + " completed.");
 				
 				if (log != null) {
@@ -1444,6 +1452,8 @@ public class StatisticsService {
 	
 				}
 				
+				statisticsRepository.deleteAllByCountryAndDimensionAndNotReferenceDate(cc.getCode(), Dimension.NACE_DISSOLUTION, cc.getLastUpdated());
+
 				logger.info("Computing " + Dimension.NACE_DISSOLUTION + " statistics for " + cc.getCode() + " completed.");
 				
 				if (log != null) {
