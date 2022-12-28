@@ -421,6 +421,19 @@ public class QueryService {
 			}
 		}
 		
+		Object leiCode = map.get("leiCode");
+		if (leiCode != null) {
+    		if (leiCode instanceof String) {
+    			lg.setLeiCode((String)leiCode);
+    		} else if (legalNameObj instanceof List) {
+				for (Object s : (List)leiCode) {
+		    		if (s instanceof String) {
+		    			lg.setLeiCode((String)s);
+		    		}
+				}
+			}
+		}
+		
 		Object registeredAddressObj = map.get("registeredAddress");
 		if (registeredAddressObj != null) {
 			if (registeredAddressObj instanceof String) {
