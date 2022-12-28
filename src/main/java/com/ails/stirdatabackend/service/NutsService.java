@@ -497,8 +497,8 @@ public class NutsService {
         return places;
     }
     
-    public List<PlaceDB> getNextNutsLauLevelListDb(Code parent) {
-    	return getNextDeepestListDb(parent, true);
+    public List<PlaceDB> getNextNutsLauLevelListDb(Code parent, boolean lau) {
+    	return getNextDeepestListDb(parent, lau);
     }
     
     public List<PlaceDB> getNextNutsLauLevelListDbSameLevel(Code parent) {

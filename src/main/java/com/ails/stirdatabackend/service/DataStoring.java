@@ -124,6 +124,7 @@ public class DataStoring  {
 		updateLogRepository.save(log);
 		
 		for (Statistic s : statisticsRepository.groupCountDimensionsByCountry(cc.getCode()) ) {
+//			System.out.println(">>>> " + s.getCountry() + " " + s.getDimension() + " " + s.getReferenceDate());
 			copyStatisticsFromMongoToRDBMS(cc, s, log);
 		}
 		
@@ -284,6 +285,7 @@ public class DataStoring  {
 	        }
 
 		} catch (Exception ex) {
+			ex.printStackTrace();
     		if (log != null) {
 	    		action.failed(ex.getMessage());
 	    		firstAction.failed("");
@@ -311,6 +313,7 @@ public class DataStoring  {
 	        }
 		
 		} catch (Exception ex) {
+			ex.printStackTrace();
     		if (log != null) {
 	    		action.failed(ex.getMessage());
 	    		firstAction.failed("");
@@ -340,6 +343,7 @@ public class DataStoring  {
 	        }
 
 		} catch (Exception ex) {
+			ex.printStackTrace();
     		if (log != null) {
 	    		action.failed(ex.getMessage());
 	    		firstAction.failed("");
@@ -607,9 +611,8 @@ public class DataStoring  {
 				list.add(sdb);
 				
 			} catch (Exception ex) {
-				action.error(ex.getMessage());
-				
 				ex.printStackTrace();
+				action.error(ex.getMessage());
 			}
 		}
 		
@@ -637,7 +640,7 @@ public class DataStoring  {
 		
 		List<StatisticDB> group = placesDBRepository.groupByParentPlace();
 		for (StatisticDB st : group) {
-			System.out.println(st.getPlace().getCode() + " " + st.getCount());
+//			System.out.println(st.getPlace().getCode() + " " + st.getCount());
 			PlaceDB placedb = placesDBRepository.findByCode(st.getPlace().getCode());
 			placedb.setNumberOfChildren(st.getCount());
 			placesDBRepository.save(placedb);

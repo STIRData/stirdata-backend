@@ -71,7 +71,7 @@ public class ScheduledTasks {
 	@Autowired
 	ApplicationContext context;
     
-	@Scheduled(fixedRate = 86400000)
+	@Scheduled(fixedRate = 30*86400000)
 ////    @Scheduled(fixedRate = 60000)
 	public void updateCountries() {
 		logger.info("Running scheduled update countries task");
@@ -86,6 +86,7 @@ public class ScheduledTasks {
 			country.setDcat(cc.getDcat());
 			
 			CountryDB updatedcc = countriesService.updateCountry(country);
+//			System.out.println(">>>> " + cc.getLastUpdated());
 			
 			if (updatedcc != null) { // country responds
 				if (updatedcc.modified) { // country new or modified
@@ -124,7 +125,7 @@ public class ScheduledTasks {
 		
 	}
     
-	@Scheduled(fixedRate = 86400000)
+	@Scheduled(fixedRate = 30*86400000)
 //    @Scheduled(fixedRate = 40000)
 	public void updateStatistics() {
 		logger.info("Running scheduled update statistics task. Pending countries: " + updatedCountries);
@@ -145,11 +146,11 @@ public class ScheduledTasks {
 				dimensions.add(Dimension.NUTSLAU);
 				dimensions.add(Dimension.FOUNDING);
 				dimensions.add(Dimension.DISSOLUTION);
-				dimensions.add(Dimension.NUTSLAU_NACE);
-				dimensions.add(Dimension.NUTSLAU_FOUNDING);
-				dimensions.add(Dimension.NUTSLAU_DISSOLUTION);
-				dimensions.add(Dimension.NACE_FOUNDING);
-				dimensions.add(Dimension.NACE_DISSOLUTION);
+//				dimensions.add(Dimension.NUTSLAU_NACE);
+//				dimensions.add(Dimension.NUTSLAU_FOUNDING);
+//				dimensions.add(Dimension.NUTSLAU_DISSOLUTION);
+//				dimensions.add(Dimension.NACE_FOUNDING);
+//				dimensions.add(Dimension.NACE_DISSOLUTION);
 				
 				statisticsService.computeStatistics(cc, dimensions); 
 				

@@ -161,6 +161,10 @@ public class StatisticsService {
 				
 				if (sqlDate != null) {
 					ccDate.setTimeInMillis(sqlDate.getTime());
+					System.out.println(d);
+					System.out.println(ccDate.getTime());
+					System.out.println(cc.getLastUpdated());
+					System.out.println(ccDate.getTime().equals(cc.getLastUpdated()));
 						
 					if (ccDate.getTime().equals(cc.getLastUpdated())) {
 						dims.remove(d);
@@ -237,6 +241,7 @@ public class StatisticsService {
 		        }
 		        
 	    	} catch (Exception ex) {
+    			ex.printStackTrace();
 	    		if (log != null) {
 		    		action.failed(ex.getMessage());
 //		    		log.failed();
@@ -323,7 +328,7 @@ public class StatisticsService {
 	    			statisticsRepository.save(stat);
 	    		}
 	    		
-	    		logger.info("Computing " + Dimension.NUTSLAU + " statistics for " + cc.getCode() + " completed.");
+	    		logger.info("Computing " + Dimension.NUTSLAU + " statistics for " + cc.getCode() + " completed (" + nuts.size() + ").");
 	        
 	    		if (log != null) {
 		        	action.completed();
@@ -331,6 +336,7 @@ public class StatisticsService {
 		        }
 		        
 	    	} catch (Exception ex) {
+    			ex.printStackTrace();
 	    		if (log != null) {
 		    		action.failed(ex.getMessage());
 //		    		log.failed();
@@ -378,6 +384,7 @@ public class StatisticsService {
 		        }
 		        
 	    	} catch (Exception ex) {
+    			ex.printStackTrace();
 	    		if (log != null) {
 		    		action.failed(ex.getMessage());
 //		    		log.failed();
@@ -434,6 +441,7 @@ public class StatisticsService {
 		        }
 		        
 	    	} catch (Exception ex) {
+    			ex.printStackTrace();
 	    		if (log != null) {
 		    		action.failed(ex.getMessage());
 //		    		log.failed();
@@ -488,6 +496,7 @@ public class StatisticsService {
 		        }
 		        
 	    	} catch (Exception ex) {
+    			ex.printStackTrace();
 	    		if (log != null) {
 		    		action.failed(ex.getMessage());
 //		    		log.failed();
@@ -698,6 +707,7 @@ public class StatisticsService {
 		        }
 		        
 	    	} catch (Exception ex) {
+    			ex.printStackTrace();
 	    		if (log != null) {
 		    		action.failed(ex.getMessage());
 //		    		log.failed();
@@ -937,6 +947,7 @@ public class StatisticsService {
 		        }
 		        
 	    	} catch (Exception ex) {
+    			ex.printStackTrace();
 	    		if (log != null) {
 		    		action.failed(ex.getMessage());
 //		    		log.failed();
@@ -1178,6 +1189,7 @@ public class StatisticsService {
 		        }
 		        
 	    	} catch (Exception ex) {
+    			ex.printStackTrace();
 	    		if (log != null) {
 		    		action.failed(ex.getMessage());
 //		    		log.failed();
@@ -1335,6 +1347,7 @@ public class StatisticsService {
 		        }
 		        
 	    	} catch (Exception ex) {
+    			ex.printStackTrace();
 	    		if (log != null) {
 		    		action.failed(ex.getMessage());
 //		    		log.failed();
@@ -1439,6 +1452,7 @@ public class StatisticsService {
 		        }
 		        
 	    	} catch (Exception ex) {
+    			ex.printStackTrace();
 	    		if (log != null) {
 		    		action.failed(ex.getMessage());
 //		    		log.failed();
@@ -1753,7 +1767,7 @@ public class StatisticsService {
 	    List<Code> iterCodes = null;
 	    
         if (dimension == Dimension.NUTSLAU) {
-        	List<PlaceDB> place = nutsService.getNextNutsLauLevelListDb(root == null ? Code.createNutsCode(cc.getCode()) : root);
+        	List<PlaceDB> place = nutsService.getNextNutsLauLevelListDb(root == null ? Code.createNutsCode(cc.getCode()) : root, cc.isLau());
         	iterCodes = place.stream().map(item -> item.getCode()).collect(Collectors.toList());;
         } else if (dimension == Dimension.NACE) {
         	List<ActivityDB> activities = naceService.getNextNaceLevelListDb(root);
