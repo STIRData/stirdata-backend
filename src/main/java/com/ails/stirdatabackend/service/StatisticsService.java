@@ -1860,7 +1860,7 @@ public class StatisticsService {
 //	        long start = System.currentTimeMillis();
 	        
 	        int tries = 0;
-	        while (tries < 3) {
+	        while (tries < 4) {
 	        	tries++;
 	        	
 		        try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), query)) {
@@ -1914,6 +1914,12 @@ public class StatisticsService {
 		        	System.out.println(ex.getResponse());
 		        	System.out.println(ex.getResponseCode());
 		        	System.out.println(ex.getResponseMessage());
+		        	try {
+						Thread.sleep(500);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 		        	continue;
 		        }	        
 		        
@@ -1978,7 +1984,7 @@ public class StatisticsService {
 //	    System.out.println(query);
         
         int tries = 0;
-        while (tries < 3) {
+        while (tries < 4) {
         	tries++;
         	
 	        try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), query)) {
@@ -2001,7 +2007,12 @@ public class StatisticsService {
 	        	System.out.println(ex.getResponse());
 	        	System.out.println(ex.getResponseCode());
 	        	System.out.println(ex.getResponseMessage());
-	        	
+	        	try {
+					Thread.sleep(500);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}	        	
 	        	continue;
 	        }
 	        
@@ -2136,7 +2147,7 @@ public class StatisticsService {
 //	        System.out.println(query);
 	
 	        int tries = 0;
-	        while (tries < 3) {
+	        while (tries < 4) {
 	        	tries++;
 		        
 	            try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), query)) {
@@ -2208,7 +2219,12 @@ public class StatisticsService {
 		        	System.out.println(ex.getResponse());
 		        	System.out.println(ex.getResponseCode());
 		        	System.out.println(ex.getResponseMessage());
-		        	
+		        	try {
+						Thread.sleep(500);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}		        	
 		        	continue;
 		        }
 	            
