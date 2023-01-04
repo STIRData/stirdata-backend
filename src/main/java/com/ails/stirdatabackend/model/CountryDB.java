@@ -174,19 +174,19 @@ public class CountryDB {
     private boolean foundingDate;
     
     @Column(name = "founding_date_from")
-    private String foundingDateFrom;
+    private java.sql.Date foundingDateFrom;
     
     @Column(name = "founding_date_to")
-    private String foundingDateTo;
+    private java.sql.Date foundingDateTo;
     
     @Column(name = "dissolution_date")
     private boolean dissolutionDate;
-    
+
     @Column(name = "dissolution_date_from")
-    private String dissolutionDateFrom;
-    
+    private java.sql.Date dissolutionDateFrom;
+
     @Column(name = "dissolution_date_to")
-    private String dissolutionDateTo;
+    private java.sql.Date dissolutionDateTo;
  
     @Column(name = "entity_sparql")
     private String entitySparql;

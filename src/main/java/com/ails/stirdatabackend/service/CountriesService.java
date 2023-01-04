@@ -122,9 +122,12 @@ public class CountriesService {
     @Autowired
     private DataStoring ds;
     
-    
 	@Autowired
 	private Environment env;
+	
+    @Autowired
+    @Qualifier("default-from-date")
+    private Date defaultFromDate;
     
 	public static String fixDcat(String dcat) {
 		if (dcat == null) {
@@ -497,7 +500,7 @@ public class CountriesService {
 	    	}
 
 	    	try {
-	    		System.out.println("LOADING " + naceDataset);
+//	    		System.out.println("LOADING " + naceDataset);
 		    	Model naceDcatModel = RDFDataMgr.loadModel(fixDcat(naceDataset));
 		    	
 		    	naceEndpoint = readEndpointFromDCat(naceDcatModel);
@@ -664,10 +667,15 @@ public class CountriesService {
 	        if (cc.isFoundingDate()) {
 	        	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), "SELECT (MIN(?foundingDate) AS ?min) (MAX(?foundingDate) AS ?max) WHERE { " +  cc.getFoundingDateSparql() + " }")) {
 	           		ResultSet rs = qe.execSelect();
-	           		while (rs.hasNext()) {
+	           		if (rs.hasNext()) {
 	           			QuerySolution qs = rs.next();
-	           			cc.setFoundingDateFrom(qs.get("min").asLiteral().getLexicalForm());
-	           			cc.setFoundingDateTo(qs.get("max").asLiteral().getLexicalForm());
+	           			cc.setFoundingDateFrom(java.sql.Date.valueOf(qs.get("min").asLiteral().getLexicalForm()));
+	           			cc.setFoundingDateTo(java.sql.Date.valueOf(qs.get("max").asLiteral().getLexicalForm()));
+	           			
+		           		if (cc.getFoundingDateTo().before(defaultFromDate)) {
+		           			cc.setFoundingDate(false);
+		           		}
+
 	           		}
 	            }	
 	        }
@@ -679,10 +687,15 @@ public class CountriesService {
 	        if (cc.isDissolutionDate()) {
 	        	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), "SELECT (MIN(?dissolutionDate) AS ?min) (MAX(?dissolutionDate) AS ?max) WHERE { " +  cc.getDissolutionDateSparql() + " }")) {
 	           		ResultSet rs = qe.execSelect();
-	           		while (rs.hasNext()) {
+	           		if (rs.hasNext()) {
 	           			QuerySolution qs = rs.next();
-	           			cc.setDissolutionDateFrom(qs.get("min").asLiteral().getLexicalForm());
-	           			cc.setDissolutionDateTo(qs.get("max").asLiteral().getLexicalForm());
+	           			cc.setDissolutionDateFrom(java.sql.Date.valueOf(qs.get("min").asLiteral().getLexicalForm()));
+	           			cc.setDissolutionDateTo(java.sql.Date.valueOf(qs.get("max").asLiteral().getLexicalForm()));
+	           			
+		           		if (cc.getDissolutionDateTo().before(defaultFromDate)) {
+		           			cc.setDissolutionDate(false);
+		           		}
+
 	           		}
 	            }	
 	        }
