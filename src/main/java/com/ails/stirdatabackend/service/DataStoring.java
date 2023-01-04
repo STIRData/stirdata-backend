@@ -128,6 +128,34 @@ public class DataStoring  {
 			copyStatisticsFromMongoToRDBMS(cc, s, log);
 		}
 		
+		// Clear non relevant statistic dates
+		if (!cc.isNace()) {
+			cc.setStatsNaceDate(null);
+			cc.setStatsNutsLauNaceDate(null);
+			cc.setStatsNaceFoundingDate(null);
+			cc.setStatsNaceDissolutionDate(null);
+		}
+		
+		if (!cc.isNuts() && !cc.isLau()) {
+			cc.setStatsNutsLauDate(null);
+			cc.setStatsNutsLauNaceDate(null);
+			cc.setStatsNutsLauFoundingDate(null);
+			cc.setStatsNutsLauDissolutionDate(null);
+		} 
+		
+		if (!cc.isFoundingDate()) {
+			cc.setStatsFoundingDate(null);
+			cc.setStatsNutsLauFoundingDate(null);
+			cc.setStatsNaceFoundingDate(null);
+		} 
+		
+		if (!cc.isDissolutionDate()) {
+			cc.setStatsDissolutionDate(null);
+			cc.setStatsNutsLauDissolutionDate(null);
+			cc.setStatsNaceDissolutionDate(null);
+		} 
+		
+		
 		if (log.getState() == LogState.RUNNING) {
 			log.completed();
 			updateLogRepository.save(log);
