@@ -155,6 +155,8 @@ public class DataStoring  {
 			cc.setStatsNaceDissolutionDate(null);
 		} 
 		
+		countriesDBRepository.save(cc);
+		countriesDBRepository.flush();
 		
 		if (log.getState() == LogState.RUNNING) {
 			log.completed();
