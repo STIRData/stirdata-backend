@@ -22,9 +22,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Code implements Serializable {
 
-//    public final static String nutsPrefix = "https://lod.stirdata.eu/nuts/code/";
-//    public final static String lauPrefix = "https://lod.stirdata.eu/lau/code/";
-	public final static String nutsPrefix = "https://w3id.org/stirdata/resource/nuts/item/";
+	public final static String nutsPrefix = "http://data.europa.eu/nuts/code/";
 	public final static String lauPrefix = "https://w3id.org/stirdata/resource/lau/item/";
 	
 	public final static String statDatasetPrefix = "https://w3id.org/stirdata/resource/stat/dataset/";
