@@ -35,20 +35,20 @@ public class ActivityDB {
 	@JoinColumn(name = "exact_match")
 	private ActivityDB exactMatch;	
 
-	@Column(name = "label_bg")
+	@Column(name = "label_bg", length = 500)
 	private String labelBg;
 
-	@Column(name = "label_cs")
+	@Column(name = "label_cs", length = 500)
 	private String labelCs;
 
-	@Column(name = "label_da")
+	@Column(name = "label_da", length = 500)
 	private String labelDa;
 	
-	@Column(name = "label_de")
+	@Column(name = "label_de", length = 500)
 	private String labelDe;
 	
-	@Column(name = "label_ee")
-	private String labelEe;
+	@Column(name = "label_et", length = 500)
+	private String labelEt;
 	
 	@Column(name = "label_el", length = 500)
 	private String labelEl;
@@ -56,61 +56,61 @@ public class ActivityDB {
 	@Column(name = "label_en", length = 500)
 	private String labelEn;
 	
-	@Column(name = "label_es")
+	@Column(name = "label_es", length = 500)
 	private String labelEs;
 	
-	@Column(name = "label_fi")
+	@Column(name = "label_fi", length = 500)
 	private String labelFi;
 	
-	@Column(name = "label_fr")
+	@Column(name = "label_fr", length = 500)
 	private String labelFr;
 	
-	@Column(name = "label_hr")
+	@Column(name = "label_hr", length = 500)
 	private String labelHr;
 	
-	@Column(name = "label_hu")
+	@Column(name = "label_hu", length = 500)
 	private String labelHu;
 	
-	@Column(name = "label_it")
+	@Column(name = "label_it", length = 500)
 	private String labelIt;
 	
-	@Column(name = "label_lt")
+	@Column(name = "label_lt", length = 500)
 	private String labelLt;
 	
-	@Column(name = "label_lv")
+	@Column(name = "label_lv", length = 500)
 	private String labelLv;
 	
-	@Column(name = "label_mt")
+	@Column(name = "label_mt", length = 500)
 	private String labelMt;
 	
-	@Column(name = "label_nl")
+	@Column(name = "label_nl", length = 500)
 	private String labelNl;
 	
-	@Column(name = "label_no")
+	@Column(name = "label_no", length = 500)
 	private String labelNo;
 	
-	@Column(name = "label_pl")
+	@Column(name = "label_pl", length = 500)
 	private String labelPl;
 	
-	@Column(name = "label_pt")
+	@Column(name = "label_pt", length = 500)
 	private String labelPt;
 	
-	@Column(name = "label_ro")
+	@Column(name = "label_ro", length = 500)
 	private String labelRo;
 	
-	@Column(name = "label_ru")
+	@Column(name = "label_ru", length = 500)
 	private String labelRu;
 	
-	@Column(name = "label_si")
-	private String labelSi;
+	@Column(name = "label_sl", length = 500)
+	private String labelSl;
 	
-	@Column(name = "label_sk")
+	@Column(name = "label_sk", length = 500)
 	private String labelSk;
 	
-	@Column(name = "label_sv")
+	@Column(name = "label_sv", length = 500)
 	private String labelSv;
 	
-	@Column(name = "label_tr")
+	@Column(name = "label_tr", length = 500)
 	private String labelTr;
 	
 	@Column(name = "scheme")
@@ -141,8 +141,8 @@ public class ActivityDB {
 			return labelDa;
 		} else if (lang.equals("de")) {
 			return labelDe;
-		} else if (lang.equals("ee")) {
-			return labelEe;
+		} else if (lang.equals("et")) {
+			return labelEt;
 		} else if (lang.equals("el")) {
 			return labelEl;
 		} else if (lang.equals("es")) {
@@ -175,8 +175,8 @@ public class ActivityDB {
 			return labelRo;
 		} else if (lang.equals("ru")) {
 			return labelRu;
-		} else if (lang.equals("si")) {
-			return labelSi;
+		} else if (lang.equals("sl")) {
+			return labelSl;
 		} else if (lang.equals("sk")) {
 			return labelSk;
 		} else if (lang.equals("sv")) {

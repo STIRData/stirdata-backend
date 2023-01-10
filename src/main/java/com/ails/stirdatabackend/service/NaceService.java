@@ -218,7 +218,8 @@ public class NaceService {
     		s = "skos:exactMatch" ;
     	}
     	
-    	sparql += " ?activity " + s + " <" + code.toUx2NaceUri() + "> . ";  // replace 
+//    	sparql += " ?activity " + s + " <" + code.toUx2NaceUri() + "> . ";  // replace 
+    	sparql += " ?activity " + s + " <" + code.toUri() + "> . "; 
     	
 //		sparql += " ?activity skos:inScheme <" + cc.getNaceScheme() + "> } ";
 		sparql += " ?activity a <https://w3id.org/stirdata/vocabulary/BusinessActivity> . } ";

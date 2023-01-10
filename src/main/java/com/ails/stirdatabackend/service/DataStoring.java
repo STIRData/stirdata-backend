@@ -966,26 +966,27 @@ public class DataStoring  {
 
 	
 	public void copyNACEFromVirtuosoToRDBMS() throws IOException {
-
+		logger.info("Copying NACE REV2 from " + naceEndpointEU);
+		
 		for (int i = 1; i <= 4; i++) {
 			
 			String p = "<http://www.w3.org/2004/02/skos/core#topConceptOf>";
-			for (int k = 0; k < i; k++) {
+			for (int k = 1; k < i; k++) {
 				p = "<http://www.w3.org/2004/02/skos/core#broader>/" + p;
 			}
 			
 			String naceSparql = "SELECT * " + 
 //		       (naceNamedgraphEU != null ? "FROM <" + naceNamedgraphEU + "> " : "") + 
 		       " WHERE {" +
-//			   "?nace a <https://lod.stirdata.eu/nace/ont/Activity> . " +
+			   "?nace a <http://www.w3.org/2004/02/skos/core#Concept> . " +
 //			   "?nace <http://www.w3.org/2004/02/skos/core#inScheme> <https://w3id.org/stirdata/resource/nace/scheme/NACERev2> ." +
 //			   "?nace <" + SDVocabulary.level + "> " + i + " . " +
-               "?nace " + p + " <https://w3id.org/stirdata/resource/nace/scheme/NACERev2> . " +
+               "?nace " + p + " <http://data.europa.eu/ux2/nace2/nace2> . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?bgLabel . FILTER (lang(?bgLabel) = 'bg') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?csLabel . FILTER (lang(?csLabel) = 'cs') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?daLabel . FILTER (lang(?daLabel) = 'da') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?deLabel . FILTER (lang(?deLabel) = 'de') } . " +
-			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?eeLabel . FILTER (lang(?eeLabel) = 'ee') } . " +
+			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?etLabel . FILTER (lang(?etLabel) = 'et') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?elLabel . FILTER (lang(?elLabel) = 'el') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?enLabel . FILTER (lang(?enLabel) = 'en') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?esLabel . FILTER (lang(?esLabel) = 'es') } . " +
@@ -1003,13 +1004,14 @@ public class DataStoring  {
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?ptLabel . FILTER (lang(?ptLabel) = 'pt') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?roLabel . FILTER (lang(?roLabel) = 'ro') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?ruLabel . FILTER (lang(?ruLabel) = 'ru') } . " +
-			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?siLabel . FILTER (lang(?siLabel) = 'si') } . " +
+			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?slLabel . FILTER (lang(?slLabel) = 'sl') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?skLabel . FILTER (lang(?skLabel) = 'sk') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?svLabel . FILTER (lang(?svLabel) = 'sv') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?trLabel . FILTER (lang(?trLabel) = 'tr') } . " +			   
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#broader> ?broader } " +
 		       "}";
 			
+//			System.out.println(naceEndpointEU);
 //			System.out.println(naceSparql);
 			
 	    	try (VirtuosoSelectIterator qe = new VirtuosoSelectIterator(naceEndpointEU, naceSparql)) {
@@ -1035,8 +1037,8 @@ public class DataStoring  {
 	                if (sol.get("deLabel") != null) {
 	                	activity.setLabelDe(sol.get("deLabel").asLiteral().getLexicalForm());
 	                }
-	                if (sol.get("eeLabel") != null) {
-	                	activity.setLabelEe(sol.get("eeLabel").asLiteral().getLexicalForm());
+	                if (sol.get("etLabel") != null) {
+	                	activity.setLabelEt(sol.get("etLabel").asLiteral().getLexicalForm());
 	                }
 	                if (sol.get("elLabel") != null) {
 	                	activity.setLabelEl(sol.get("elLabel").asLiteral().getLexicalForm());	                
@@ -1077,6 +1079,9 @@ public class DataStoring  {
 	                if (sol.get("noLabel") != null) {
 	                	activity.setLabelNo(sol.get("noLabel").asLiteral().getLexicalForm());
 	                }
+	                if (sol.get("nbLabel") != null) {
+	                	activity.setLabelNo(sol.get("nbLabel").asLiteral().getLexicalForm());
+	                }
 	                if (sol.get("plLabel") != null) {
 	                	activity.setLabelPl(sol.get("plLabel").asLiteral().getLexicalForm());
 	                }
@@ -1089,8 +1094,8 @@ public class DataStoring  {
 	                if (sol.get("ruLabel") != null) {
 	                	activity.setLabelRu(sol.get("ruLabel").asLiteral().getLexicalForm());
 	                }
-	                if (sol.get("siLabel") != null) {
-	                	activity.setLabelSi(sol.get("siLabel").asLiteral().getLexicalForm());
+	                if (sol.get("slLabel") != null) {
+	                	activity.setLabelSl(sol.get("slLabel").asLiteral().getLexicalForm());
 	                }
 	                if (sol.get("skLabel") != null) {
 	                	activity.setLabelSk(sol.get("skLabel").asLiteral().getLexicalForm());
@@ -1131,6 +1136,32 @@ public class DataStoring  {
 		activitiesDBRepository.flush();
 	}
 	
+	@Transactional
+	public void changeStatisticsNaceCodes(CountryDB cc) {
+		Dimension[] dims = { Dimension.NACE, Dimension.NACE_DISSOLUTION, Dimension.NACE_FOUNDING, Dimension.NUTSLAU_NACE} ;
+		for (Dimension d : dims) {
+			for (StatisticDB st : statisticsDBRepository.findByCountryAndDimension(cc.getCode(), d.toString())) {
+				boolean save = false;
+				if (st.getActivity() != null) {
+					save = true;
+					st.setActivity(new ActivityDB(Code.createNaceRev2Code(st.getActivity().getCode().getCode().replaceAll("\\.",""))));
+				}
+				if (st.getParentActivity() != null) {
+					save = true;
+					st.setParentActivity(new ActivityDB(Code.createNaceRev2Code(st.getParentActivity().getCode().getCode().replaceAll("\\.",""))));
+				}
+				 
+	//			System.out.println(acc.getCode().getNamespace() + "   " + acc.getCode().getCode());
+	//			acc.setCode(new Code("nace-md:" + acc.getCode().getCode()));
+	//			acc.setScheme("nace-md");
+				
+				if (save) {
+					statisticsDBRepository.save(st);
+				}
+			}
+		}
+		statisticsDBRepository.flush();
+	}
 	
 	@Transactional
 	public void deleteNACEFromRDBMS(CountryDB cc) throws IOException {
@@ -1146,14 +1177,13 @@ public class DataStoring  {
 
 		for (int i = 1; i <= cc.getNaceLevels(); i++) {
 			String p = "<http://www.w3.org/2004/02/skos/core#topConceptOf>";
-			for (int k = 0; k < i; k++) {
+			for (int k = 1; k < i; k++) {
 				p = "<http://www.w3.org/2004/02/skos/core#broader>/" + p;
 			}
 			
 			String naceSparql = "SELECT * " + 
 //		       (naceNamedgraphEU != null ? "FROM <" + naceNamedgraphEU + "> " : "") + 
 		       " WHERE {" +
-//			   "?nace a <https://lod.stirdata.eu/nace/ont/Activity> . " +
                "?nace a <http://www.w3.org/2004/02/skos/core#Concept> . " +
 //			   "?nace <http://www.w3.org/2004/02/skos/core#inScheme> <" + cc.getNaceScheme() + "> ." +
 			   "?nace a <https://w3id.org/stirdata/vocabulary/BusinessActivity> . " +
@@ -1163,7 +1193,7 @@ public class DataStoring  {
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?csLabel . FILTER (lang(?csLabel) = 'cs') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?daLabel . FILTER (lang(?daLabel) = 'da') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?deLabel . FILTER (lang(?deLabel) = 'de') } . " +
-			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?eeLabel . FILTER (lang(?eeLabel) = 'ee') } . " +
+			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?etLabel . FILTER (lang(?eeLabel) = 'et') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?elLabel . FILTER (lang(?elLabel) = 'el') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?enLabel . FILTER (lang(?enLabel) = 'en') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?esLabel . FILTER (lang(?esLabel) = 'es') } . " +
@@ -1177,11 +1207,12 @@ public class DataStoring  {
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?mtLabel . FILTER (lang(?mtLabel) = 'mt') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?nlLabel . FILTER (lang(?nlLabel) = 'nl') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?noLabel . FILTER (lang(?noLabel) = 'no') } . " +
+			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?nbLabel . FILTER (lang(?nbLabel) = 'nb') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?plLabel . FILTER (lang(?plLabel) = 'pl') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?ptLabel . FILTER (lang(?ptLabel) = 'pt') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?roLabel . FILTER (lang(?roLabel) = 'ro') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?ruLabel . FILTER (lang(?ruLabel) = 'ru') } . " +
-			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?siLabel . FILTER (lang(?siLabel) = 'si') } . " +
+			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?slLabel . FILTER (lang(?siLabel) = 'sl') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?skLabel . FILTER (lang(?skLabel) = 'sk') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?svLabel . FILTER (lang(?svLabel) = 'sv') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?trLabel . FILTER (lang(?trLabel) = 'tr') } . " +			   
@@ -1197,93 +1228,151 @@ public class DataStoring  {
 	                
 //	                System.out.println(sol);
 	                
-	                ActivityDB activity = new ActivityDB();
+	                ActivityDB activity = activitiesDBRepository.findByCode(Code.fromNaceUri(sol.get("nace").toString(), cc));
+	                if (activity == null) {
+	                	activity = new ActivityDB();
+		                activity.setCode(Code.fromNaceUri(sol.get("nace").toString(), cc));
+	                }
 	                
-	                activity.setCode(Code.fromNaceUri(sol.get("nace").toString(), cc));
-	                
+	                activity.setParent(null);
 	                if (sol.get("broader") != null) {
 	                	activity.setParent(new ActivityDB(Code.fromNaceUri(sol.get("broader").toString(), cc)));
 	                }
 	                
+	                activity.setExactMatch(null);
 	                if (sol.get("exactMatch") != null) {
 	                	activity.setExactMatch(new ActivityDB(Code.fromNaceRev2Uri(sol.get("exactMatch").toString())));
 	                }
 	                
+	                activity.setLabelBg(null);
 	                if (sol.get("bgLabel") != null) {
 	                	activity.setLabelBg(sol.get("bgLabel").asLiteral().getLexicalForm());
 	                }
+	                
+	                activity.setLabelCs(null);
 	                if (sol.get("csLabel") != null) {
 	                	activity.setLabelCs(sol.get("csLabel").asLiteral().getLexicalForm());
 	                }
+	                
+	                activity.setLabelDa(null);
 	                if (sol.get("daLabel") != null) {
 	                	activity.setLabelDa(sol.get("daLabel").asLiteral().getLexicalForm());
 	                }
+	                
+	                activity.setLabelDe(null);
 	                if (sol.get("deLabel") != null) {
 	                	activity.setLabelDe(sol.get("deLabel").asLiteral().getLexicalForm());
 	                }
+	                
+	                activity.setLabelEt(null);
 	                if (sol.get("eeLabel") != null) {
-	                	activity.setLabelEe(sol.get("eeLabel").asLiteral().getLexicalForm());
+	                	activity.setLabelEt(sol.get("etLabel").asLiteral().getLexicalForm());
 	                }
+	                
+	                activity.setLabelEl(null);
 	                if (sol.get("elLabel") != null) {
 	                	activity.setLabelEl(sol.get("elLabel").asLiteral().getLexicalForm());	                
 	                }
+	                
+	                activity.setLabelEn(null);
 	                if (sol.get("enLabel") != null) {
 	                	activity.setLabelEn(sol.get("enLabel").asLiteral().getLexicalForm());
 	                }
+	                
+	                activity.setLabelEs(null);
 	                if (sol.get("esLabel") != null) {
 	                	activity.setLabelEs(sol.get("esLabel").asLiteral().getLexicalForm());
 	                }
+	                
+	                activity.setLabelFi(null);
 	                if (sol.get("fiLabel") != null) {
 	                	activity.setLabelFi(sol.get("fiLabel").asLiteral().getLexicalForm());
 	                }
+	                
+	                activity.setLabelFr(null);
 	                if (sol.get("frLabel") != null) {
 	                	activity.setLabelFr(sol.get("frLabel").asLiteral().getLexicalForm());
 	                }
+	                
+	                activity.setLabelHr(null);
 	                if (sol.get("hrLabel") != null) {
 	                	activity.setLabelHr(sol.get("hrLabel").asLiteral().getLexicalForm());
 	                }
+	                
+	                activity.setLabelHu(null);
 	                if (sol.get("huLabel") != null) {
 	                	activity.setLabelHu(sol.get("huLabel").asLiteral().getLexicalForm());
 	                }
+	                
+	                activity.setLabelIt(null);
 	                if (sol.get("itLabel") != null) {
 	                	activity.setLabelIt(sol.get("itLabel").asLiteral().getLexicalForm());	                
 	                }
+	                
+	                activity.setLabelLt(null);
 	                if (sol.get("ltLabel") != null) {
 	                	activity.setLabelLt(sol.get("ltLabel").asLiteral().getLexicalForm());
 	                }
+	                
+	                activity.setLabelLv(null);
 	                if (sol.get("lvLabel") != null) {
 	                	activity.setLabelLv(sol.get("lvLabel").asLiteral().getLexicalForm());
 	                }
+	                
+	                activity.setLabelMt(null);
 	                if (sol.get("mtLabel") != null) {
 	                	activity.setLabelMt(sol.get("mtLabel").asLiteral().getLexicalForm());
 	                }
+	                
+	                activity.setLabelNl(null);
 	                if (sol.get("nlLabel") != null) {
 	                	activity.setLabelNl(sol.get("nlLabel").asLiteral().getLexicalForm());
 	                }
+	                
+	                activity.setLabelNo(null);
 	                if (sol.get("noLabel") != null) {
 	                	activity.setLabelNo(sol.get("noLabel").asLiteral().getLexicalForm());
 	                }
+	                if (sol.get("nbLabel") != null) {
+	                	activity.setLabelNo(sol.get("nbLabel").asLiteral().getLexicalForm());
+	                }
+	                
+	                activity.setLabelPl(null);
 	                if (sol.get("plLabel") != null) {
 	                	activity.setLabelPl(sol.get("plLabel").asLiteral().getLexicalForm());
 	                }
+	                
+	                activity.setLabelPt(null);
 	                if (sol.get("ptLabel") != null) {
 	                	activity.setLabelPt(sol.get("ptLabel").asLiteral().getLexicalForm());
 	                }
+	                
+	                activity.setLabelRo(null);
 	                if (sol.get("roLabel") != null) {
 	                	activity.setLabelRo(sol.get("roLabel").asLiteral().getLexicalForm());
 	                }
+	                
+	                activity.setLabelRu(null);
 	                if (sol.get("ruLabel") != null) {
 	                	activity.setLabelRu(sol.get("ruLabel").asLiteral().getLexicalForm());
 	                }
-	                if (sol.get("siLabel") != null) {
-	                	activity.setLabelSi(sol.get("siLabel").asLiteral().getLexicalForm());
+	                
+	                activity.setLabelSl(null);
+	                if (sol.get("slLabel") != null) {
+	                	activity.setLabelSl(sol.get("slLabel").asLiteral().getLexicalForm());
 	                }
+	                
+	                activity.setLabelSk(null);
 	                if (sol.get("skLabel") != null) {
 	                	activity.setLabelSk(sol.get("skLabel").asLiteral().getLexicalForm());
 	                }
+	                
+	                activity.setLabelSv(null);
 	                if (sol.get("svLabel") != null) {
 	                	activity.setLabelSv(sol.get("svLabel").asLiteral().getLexicalForm());
 	                }
+	                
+	                activity.setLabelTr(null);
 	                if (sol.get("trLabel") != null) {
 	                	activity.setLabelTr(sol.get("trLabel").asLiteral().getLexicalForm());
 	                }
@@ -1302,24 +1391,38 @@ public class DataStoring  {
 	        }
 		}
 
-		String languageSparql = "SELECT DISTINCT(?language) " + 
+		String languageSparql = "SELECT ?language (count(*) AS ?count) " + 
 			       "WHERE {" +
 //				   "?nace a <https://lod.stirdata.eu/nace/ont/Activity> . " +
                    "?nace a <http://www.w3.org/2004/02/skos/core#Concept> . " +
 //				   "?nace <http://www.w3.org/2004/02/skos/core#inScheme> <" + cc.getNaceScheme() + "> ." +
 				   "?nace a <https://w3id.org/stirdata/vocabulary/BusinessActivity> . " +
-				   "?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?label . BIND (lang(?label) AS ?language) } "; 
+				   "?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?label . BIND (lang(?label) AS ?language) } " +
+				   "GROUP BY ?language " + 
+				   "ORDER BY DESC(?count)" ;
 
+		cc.setNaceLanguages(null);
+		
         try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getNaceEndpoint(), languageSparql)) {
         	String languages = "";
         	
        		ResultSet rs = qe.execSelect();
        		while (rs.hasNext()) {
        			QuerySolution qs = rs.next();
+       			
+       			String l = qs.get("language").asLiteral().toString();
+       			if (l.equals("nb")) {
+       				l = "no";
+       			}
+       			
+       			if (l.equals("nn")) {
+       				continue;
+       			}
+       			
        			if (languages.length() > 0) {
        				languages += ",";
        			}
-       			languages += qs.get("language").asLiteral();
+       			languages += l;
             }
        		
        		cc.setNaceLanguages(languages);
@@ -1331,6 +1434,8 @@ public class DataStoring  {
 		activitiesDBRepository.flush();
 	}
 	
+
+
 	
 	public void copyCompanyTypesFromVirtuosoToRDBMS(CountryDB cc) throws IOException {
 
@@ -1358,6 +1463,7 @@ public class DataStoring  {
 		   "OPTIONAL { ?ct <http://www.w3.org/2004/02/skos/core#prefLabel> ?mtLabel . FILTER (lang(?mtLabel) = 'mt') } . " +
 		   "OPTIONAL { ?ct <http://www.w3.org/2004/02/skos/core#prefLabel> ?nlLabel . FILTER (lang(?nlLabel) = 'nl') } . " +
 		   "OPTIONAL { ?ct <http://www.w3.org/2004/02/skos/core#prefLabel> ?noLabel . FILTER (lang(?noLabel) = 'no') } . " +
+		   "OPTIONAL { ?ct <http://www.w3.org/2004/02/skos/core#prefLabel> ?nbLabel . FILTER (lang(?nbLabel) = 'nb') } . " +
 		   "OPTIONAL { ?ct <http://www.w3.org/2004/02/skos/core#prefLabel> ?plLabel . FILTER (lang(?plLabel) = 'pl') } . " +
 		   "OPTIONAL { ?ct <http://www.w3.org/2004/02/skos/core#prefLabel> ?ptLabel . FILTER (lang(?ptLabel) = 'pt') } . " +
 		   "OPTIONAL { ?ct <http://www.w3.org/2004/02/skos/core#prefLabel> ?roLabel . FILTER (lang(?roLabel) = 'ro') } . " +

@@ -442,9 +442,9 @@ public class Code implements Serializable {
     		return 1;
     	} else if (len == 2) {
     		return 2;
-    	} else if (len == 4 && code.charAt(2) == '.') {
+    	} else if (len == 3) {
     	    return 3;
-    	} else if (len == 5 && code.charAt(2) == '.') {
+    	} else if (len == 4) {
     		return 4;
     	}
     	
@@ -463,9 +463,9 @@ public class Code implements Serializable {
 		return namespaceMap.get(namespace) + code;
 	}
 	
-	public String toUx2NaceUri() {
-		return namespaceMap.get(namespace) + code.replaceAll("\\.", "");
-	}
+//	public String toUx2NaceUri() {
+//		return namespaceMap.get(namespace) + code.replaceAll("\\.", "");
+//	}
 	
 	public String toUri(String appendix) {
 		return namespaceMap.get(namespace) + appendix + "/" + code;
