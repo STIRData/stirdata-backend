@@ -136,7 +136,7 @@ public class QueryService {
         
     	List<QueryResponse> responseList = new ArrayList<>();
         
-    	System.out.println(nutsLauCodes);
+//    	System.out.println(nutsLauCodes);
     	
     	Map<CountryDB, PlaceSelection> countryPlaceMap;
     	if (nutsLauCodes != null) {
@@ -172,7 +172,8 @@ public class QueryService {
 
 //            System.out.println("NACELEAFURIS " +naceLeafUris);
             
-        	if ((nutsLeafUris != null && nutsLeafUris.size() == 0 && lauUris != null && lauUris.size() == 0) || (naceLeafUris != null && naceLeafUris.size() == 0)) {
+        	if ((nutsLeafUris != null && nutsLeafUris.size() == 0 && lauUris != null && lauUris.size() == 0) || 
+        			(naceLeafUris != null && naceLeafUris.size() == 0) || (!cc.isNace() && naceCodes != null)) {
         		pg.setPageSize(0);
         		qr.setLegalEntities(new ArrayList<>());
         		responseList.add(qr);
