@@ -100,8 +100,13 @@ public class QueryService {
             Model model = qe.execConstruct();
                 
             Map<String, Object> jn = (Map)JsonLDWriter.toJsonLDJavaAPI((RDFFormat.JSONLDVariant)RDFFormat.JSONLD_COMPACT_PRETTY.getVariant(), DatasetFactory.wrap(model).asDatasetGraph(), null, null, context);
-                
+//            jn.put("@context", "https://dev.stirdata.eu/api/data/context/stirdata.jsonld");
+            
             List<Map<String, Object>> graph = (List)jn.get("@graph");
+            if (graph == null) {
+            	graph = new ArrayList<>();
+            	graph.add(jn);
+            }
                 
             Map<String, Address> addresses = null;
             addresses = new HashMap<>();
