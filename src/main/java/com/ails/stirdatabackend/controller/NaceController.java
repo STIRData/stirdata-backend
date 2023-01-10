@@ -13,6 +13,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -56,8 +59,20 @@ public class NaceController {
 		}
 		
 		if (activities.size() > 0) {
-			res.setActivities(activities.stream().map(item -> GenericResponse.createFromActivity(item, language)).collect(Collectors.toList()));
+			List<GenericResponse> act = activities.stream().map(item -> GenericResponse.createFromActivity(item, language)).collect(Collectors.toList());
+			
+    		Collections.sort(act, new Comparator<GenericResponse> () {
+				@Override
+				public int compare(GenericResponse o1, GenericResponse o2) {
+					return o1.getActivity().get(0).getLabel().compareTo(o2.getActivity().get(0).getLabel());
+				}
+    			
+    		});
+    		
+    		res.setActivities(act);
+
 		}
+		
 		
         return ResponseEntity.ok(res);
     }
