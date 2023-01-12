@@ -11,6 +11,7 @@ import com.ails.stirdatabackend.payload.QueryResponse;
 import com.ails.stirdatabackend.service.NutsService;
 import org.springframework.web.bind.annotation.PathVariable;
 import com.ails.stirdatabackend.model.Code;
+import com.ails.stirdatabackend.payload.CodeLabel;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -140,16 +141,14 @@ public class NutsController {
 
 	@GetMapping(value = "/getByCode", produces = "application/json")
     public ResponseEntity<?> getNuts(@RequestParam String nutsCode) {
-		Map<String, String> responseMap = new HashMap<>();
 		PlaceDB place = nutsService.getByCode(new Code(nutsCode));
 		if (place == null) {
+			Map<String, String> responseMap = new HashMap<>();
 			responseMap.put("error", "Place does not exist with requested code");
 			return ResponseEntity.badRequest().body(responseMap);
 		}
-        String name = place.getLatinName() != null ? place.getLatinName() : place.getNationalName();
-		responseMap.put("code", nutsCode);
-		responseMap.put("label", name);
-        return ResponseEntity.ok(responseMap);
+        String label = place.getLatinName() != null ? place.getLatinName() : place.getNationalName();
+        return ResponseEntity.ok(new CodeLabel(nutsCode, label));
     }
 //    @GetMapping(value = "/getGeoJson", 
 //                produces = "application/json")

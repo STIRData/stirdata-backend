@@ -2,6 +2,7 @@ package com.ails.stirdatabackend.controller;
 
 import com.ails.stirdatabackend.model.ActivityDB;
 import com.ails.stirdatabackend.model.Code;
+import com.ails.stirdatabackend.payload.CodeLabel;
 import com.ails.stirdatabackend.payload.ComplexResponse;
 import com.ails.stirdatabackend.payload.GenericResponse;
 import com.ails.stirdatabackend.service.NaceService;
@@ -81,9 +82,9 @@ public class NaceController {
 
 	@GetMapping(value = "/getByCode", produces = "application/json")
     public ResponseEntity<?> getNuts(@RequestParam String naceCode, @RequestParam Optional<String> language) {
-		Map<String, String> responseMap = new HashMap<>();
 		ActivityDB activity = naceService.getByCode(new Code(naceCode));
 		if (activity == null) {
+			Map<String, String> responseMap = new HashMap<>();
 			responseMap.put("error", "Activity does not exist with requested code");
 			return ResponseEntity.badRequest().body(responseMap);
 		}
@@ -94,9 +95,7 @@ public class NaceController {
 		else {
 			label = activity.getLabel(null);
 		}
-		responseMap.put("code", naceCode);
-		responseMap.put("label", label);
-        return ResponseEntity.ok(responseMap);
+        return ResponseEntity.ok(new CodeLabel(naceCode, label));
     }
 
 }
