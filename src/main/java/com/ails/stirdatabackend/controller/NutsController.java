@@ -6,6 +6,11 @@ import com.ails.stirdatabackend.model.PlaceDB;
 import com.ails.stirdatabackend.payload.ComplexResponse;
 import com.ails.stirdatabackend.payload.GenericResponse;
 import com.ails.stirdatabackend.service.NutsService;
+import org.springframework.web.bind.annotation.PathVariable;
+import com.ails.stirdatabackend.model.Code;
+import java.util.HashMap;
+import java.util.Map;
+
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -107,6 +112,25 @@ public class NutsController {
         return ResponseEntity.ok(nutsService.getFilters());
     }
     
+    @GetMapping(value = "eurostat-filters", produces = "application/json")
+    public ResponseEntity<?> getEurostatFilters() {
+        
+        return ResponseEntity.ok(eurostatFilters);
+    }
+
+	@GetMapping(value = "/getByCode", produces = "application/json")
+    public ResponseEntity<?> getNuts(@RequestParam String nutsCode) {
+		Map<String, String> responseMap = new HashMap<>();
+		PlaceDB place = nutsService.getByCode(new Code(nutsCode));
+		if (place == null) {
+			responseMap.put("error", "Place does not exist with requested code");
+			return ResponseEntity.badRequest().body(responseMap);
+		}
+        String name = place.getLatinName() != null ? place.getLatinName() : place.getNationalName();
+		responseMap.put("code", nutsCode);
+		responseMap.put("label", name);
+        return ResponseEntity.ok(responseMap);
+    }
 //    @GetMapping(value = "/getGeoJson", 
 //                produces = "application/json")
 //    public ResponseEntity<?> getNutsGeoJSON(@RequestParam @NotNull String nutsUri,

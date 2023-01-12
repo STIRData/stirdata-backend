@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -60,6 +62,26 @@ public class NaceController {
 		}
 		
         return ResponseEntity.ok(res);
+    }
+
+	@GetMapping(value = "/getByCode", produces = "application/json")
+    public ResponseEntity<?> getNuts(@RequestParam String naceCode, @RequestParam Optional<String> language) {
+		Map<String, String> responseMap = new HashMap<>();
+		ActivityDB activity = naceService.getByCode(new Code(naceCode));
+		if (activity == null) {
+			responseMap.put("error", "Activity does not exist with requested code");
+			return ResponseEntity.badRequest().body(responseMap);
+		}
+        String label;
+		if (language.isPresent()) {
+			label = activity.getLabel(language.get());
+		}
+		else {
+			label = activity.getLabel(null);
+		}
+		responseMap.put("code", naceCode);
+		responseMap.put("label", label);
+        return ResponseEntity.ok(responseMap);
     }
 
 }
