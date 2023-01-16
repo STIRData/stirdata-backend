@@ -457,7 +457,39 @@ public class QueryService {
 				
 				ActivityDB activity = naceService.getByCode(Code.fromNaceUri((String)companyActivityObj, cc));
 				if (activity != null) {
-					lg.addCompanyActivity(new CodeLabel(activity.getCode().toString(), activity.getLabel(cc.getPreferredNaceLanguage()), (String)companyActivityObj));
+//					lg.addCompanyActivity(new CodeLabel(activity.getCode().toString(), activity.getLabel(cc.getPreferredNaceLanguage()), (String)companyActivityObj));
+					if (activity.getLevel() <= 4) {
+						activity = activity.getExactMatch() != null ? activity.getExactMatch() : activity; 
+						lg.addCompanyActivity(new CodeLabel(activity.getCode().toString(), activity.getLabel("en"), activity.getCode().toUri()));
+					} else {
+						List<CodeLabel> codeLabels = new ArrayList<>();
+						
+						CodeLabel res = new CodeLabel(activity.getCode().toString(), activity.getLabel(cc.getPreferredNaceLanguage()), (String)companyActivityObj);
+						codeLabels.add(res);
+						
+						while (activity.getLevel() > 4) {
+							activity = activity.getParent();
+							
+							if (activity.getLevel() > 4) {
+								CodeLabel res2 = new CodeLabel(activity.getCode().toString(), activity.getLabel(cc.getPreferredNaceLanguage()), activity.getCode().localNaceToUri(cc));
+								codeLabels.add(res2);
+								res = res2;
+							} else {
+								activity = activity.getExactMatch();
+								CodeLabel res2 = new CodeLabel(activity.getCode().toString(), activity.getLabel("en"), activity.getCode().toUri());
+								codeLabels.add(res2);
+								res = res2;
+							}
+						}
+
+						CodeLabel cl = codeLabels.get(codeLabels.size() - 1); 
+						lg.addCompanyActivity(cl);
+						for (int i = codeLabels.size() - 2; i >= 0; i--) {
+							cl.setParent(codeLabels.get(i));
+							cl = codeLabels.get(i);
+						}
+					}
+					
 				}
 				
 			} else if (companyActivityObj instanceof List) {
@@ -465,7 +497,40 @@ public class QueryService {
 					ActivityDB activity = naceService.getByCode(Code.fromNaceUri((String)s, cc));
 
 					if (activity != null) {
-						lg.addCompanyActivity(new CodeLabel(activity.getCode().toString(), activity.getLabel(cc.getPreferredNaceLanguage()), (String)s));
+//						lg.addCompanyActivity(new CodeLabel(activity.getCode().toString(), activity.getLabel(cc.getPreferredNaceLanguage()), (String)s));
+						if (activity.getLevel() <= 4) {
+							activity = activity.getExactMatch() != null ? activity.getExactMatch() : activity;
+							lg.addCompanyActivity(new CodeLabel(activity.getCode().toString(), activity.getLabel("en"), activity.getCode().localNaceToUri(cc)));
+						} else {
+							List<CodeLabel> codeLabels = new ArrayList<>();
+							
+//							activity = activity.getLevel4OrHigherNaceRev2Activity();
+							CodeLabel res = new CodeLabel(activity.getCode().toString(), activity.getLabel(cc.getPreferredNaceLanguage()), (String)s);
+//							lg.addCompanyActivity(res);
+							codeLabels.add(res);
+							
+							while (activity.getLevel() > 4) {
+								activity = activity.getParent();
+								
+								if (activity.getLevel() > 4) {
+									CodeLabel res2 = new CodeLabel(activity.getCode().toString(), activity.getLabel(cc.getPreferredNaceLanguage()), activity.getCode().localNaceToUri(cc));
+									codeLabels.add(res2);
+									res = res2;
+								} else {
+									activity = activity.getExactMatch();
+									CodeLabel res2 = new CodeLabel(activity.getCode().toString(), activity.getLabel("en"), activity.getCode().toUri());
+									codeLabels.add(res2);
+									res = res2;
+								}
+							}
+
+							CodeLabel cl = codeLabels.get(codeLabels.size() - 1); 
+							lg.addCompanyActivity(cl);
+							for (int i = codeLabels.size() - 2; i >= 0; i--) {
+								cl.setParent(codeLabels.get(i));
+								cl = codeLabels.get(i);
+							}
+						}
 					}
 
 				}
