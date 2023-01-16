@@ -485,7 +485,7 @@ public class QueryService {
 						CodeLabel cl = codeLabels.get(codeLabels.size() - 1); 
 						lg.addCompanyActivity(cl);
 						for (int i = codeLabels.size() - 2; i >= 0; i--) {
-							cl.setParent(codeLabels.get(i));
+							cl.setChild(codeLabels.get(i));
 							cl = codeLabels.get(i);
 						}
 					}
@@ -527,7 +527,7 @@ public class QueryService {
 							CodeLabel cl = codeLabels.get(codeLabels.size() - 1); 
 							lg.addCompanyActivity(cl);
 							for (int i = codeLabels.size() - 2; i >= 0; i--) {
-								cl.setParent(codeLabels.get(i));
+								cl.setChild(codeLabels.get(i));
 								cl = codeLabels.get(i);
 							}
 						}
