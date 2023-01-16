@@ -11,6 +11,8 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.time.DateUtils;
 
+import com.ails.stirdatabackend.payload.Country;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -461,13 +463,17 @@ public class Code implements Serializable {
 		return namespaceMap.get(namespace) + code;
 	}
 	
+	public String localNaceToUri(CountryDB cc) {
+		return cc.getNacePrefix() + code;
+	}
+	
 //	public String toUx2NaceUri() {
 //		return namespaceMap.get(namespace) + code.replaceAll("\\.", "");
 //	}
 	
-	public String toUri(String appendix) {
-		return namespaceMap.get(namespace) + appendix + "/" + code;
-	}
+//	public String toUri(String appendix) {
+//		return namespaceMap.get(namespace) + appendix + "/" + code;
+//	}
 
 	public String getStatDatasetUri() {
 		return statDatasetPrefix + this.statDataset;

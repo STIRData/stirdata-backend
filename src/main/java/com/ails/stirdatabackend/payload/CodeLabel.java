@@ -33,6 +33,8 @@ public class CodeLabel {
 	
 	public Boolean leaf;
 	
+	public CodeLabel parent;
+	
 	public CodeLabel(String code, String label) {
 		this.code = code;
 		this.label = label;

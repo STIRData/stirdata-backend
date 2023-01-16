@@ -116,8 +116,8 @@ public class ActivityDB {
 	@Column(name = "scheme")
 	private String scheme;
 
-//	@Column(name = "level", nullable = false)
-//	private int level;
+	@Column(name = "level", nullable = true)
+	private Integer level;
 	
 	public ActivityDB(Code code) {
 		setCode(code);

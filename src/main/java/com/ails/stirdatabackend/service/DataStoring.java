@@ -1108,7 +1108,7 @@ public class DataStoring  {
 	                }
 	                
 	                activity.setScheme("nace-rev2");
-//	                activity.setLevel(i);
+	                activity.setLevel(i);
 	                
 //	                System.out.println(activity.getCode());
 	                activitiesDBRepository.save(activity);
@@ -1378,7 +1378,7 @@ public class DataStoring  {
 	                }
 	                
 	                activity.setScheme(cc.getNaceNamespace());
-//	                activity.setLevel(i);
+	                activity.setLevel(i);
 	                
 //	                System.out.println(activity.getCode());
 	                try {
