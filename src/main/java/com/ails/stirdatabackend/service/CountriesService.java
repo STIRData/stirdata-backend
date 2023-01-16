@@ -530,9 +530,11 @@ public class CountriesService {
 //    	cc.setEntitySparql(country.getEntitySparql());
 //    	cc.setLegalNameSparql(country.getLegalNameSparql());
 //    	cc.setActiveSparql(country.getActiveSparql());
-//    	cc.setAddressSparql(country.getAddressSparql());
-//    	
-    	String nuts3Sparql = env.getProperty("sparql.nuts3." + cc.getCode());
+
+    	String addressSparql = env.getProperty("sparql.address." + cc.getCode());
+    	cc.setAddressSparql(addressSparql != null ? addressSparql : null);
+
+		String nuts3Sparql = env.getProperty("sparql.nuts3." + cc.getCode());
     	cc.setNuts3Sparql(nuts3Sparql != null ? nuts3Sparql : null);
 //    	
     	String lauSparql = env.getProperty("sparql.lau." + cc.getCode());
