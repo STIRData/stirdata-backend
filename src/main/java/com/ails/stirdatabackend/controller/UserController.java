@@ -1,12 +1,14 @@
 package com.ails.stirdatabackend.controller;
 
 import java.util.Optional;
-
+import java.util.Map;
 import javax.validation.Valid;
 
 import com.ails.stirdatabackend.model.User;
+import com.ails.stirdatabackend.model.UserLoginType;
 import com.ails.stirdatabackend.payload.AuthenticationResponse;
 import com.ails.stirdatabackend.payload.LoginRequestDTO;
+import com.ails.stirdatabackend.payload.ResultDTO;
 import com.ails.stirdatabackend.payload.Message;
 import com.ails.stirdatabackend.payload.UserRegistrationDTO;
 import com.ails.stirdatabackend.payload.UserResponse;
@@ -19,6 +21,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -77,6 +82,66 @@ public class UserController {
         catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }  
+    }
+
+    @PutMapping("/updateUserDetails")
+    public ResponseEntity<?> updateUserDetails(@AuthenticationPrincipal UserPrincipal currentUser, @RequestBody Map<String, String> userDetailsUpdate) {
+        try {
+            Optional<User> userOpt = userService.getUserById(currentUser.getId().toString());
+            if (!userOpt.isPresent()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+            }
+            User user = userOpt.get();
+
+            if (userDetailsUpdate.get("newPassword") != null && userDetailsUpdate.get("oldPassword") != null && user.getUserLoginType() == UserLoginType.CUSTOM) {
+                String oldPassword = userDetailsUpdate.get("oldPassword");
+                String newPassword = userDetailsUpdate.get("newPassword");
+                userOpt = userService.changeUserPassword(user, oldPassword, newPassword);
+                if (!userOpt.isPresent()) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultDTO.fail("Wrong password"));
+                }
+                user = userOpt.get();
+            }
+
+            if (userDetailsUpdate.get("email") != null && !userDetailsUpdate.get("email").equals(currentUser.getEmail())) {
+                if (userService.userExistsWithEmail(userDetailsUpdate.get("email"))) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultDTO.fail("Email already exists"));
+                }
+                user.setEmail(userDetailsUpdate.get("email"));
+            }
+            
+            if (userDetailsUpdate.get("firstName") != null) {
+                user.setFirstName(userDetailsUpdate.get("firstName"));
+            }
+            if (userDetailsUpdate.get("lastName") != null) {
+                user.setLastName(userDetailsUpdate.get("lastName"));
+            }
+            if (userDetailsUpdate.get("organization") != null) {
+                user.setOrganization(userDetailsUpdate.get("organization"));
+            }
+            
+            userService.saveUser(user);
+            return ResponseEntity.status(HttpStatus.OK).body(null);
+        }
+        catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }  
+    }
+
+    @PostMapping("/deleteAccount")
+    public ResponseEntity<?> deleteUserAccount(@AuthenticationPrincipal UserPrincipal currentUser) {
+        try{
+            Optional<User> userOpt = userService.getUserById(currentUser.getId().toString());
+            if (!userOpt.isPresent()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+            }
+            User user = userOpt.get();
+            userService.deleteUser(user);
+            return ResponseEntity.status(HttpStatus.OK).body(null);
+        }
+        catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        } 
     }
 
 

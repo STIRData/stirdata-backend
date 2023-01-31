@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import com.ails.stirdatabackend.model.ActivityDB;
 import com.ails.stirdatabackend.model.Code;
+import com.ails.stirdatabackend.model.CountryConfigurationsBean;
 import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.Dimension;
 import com.ails.stirdatabackend.model.PlaceDB;
@@ -72,7 +73,7 @@ public class StatisticsContoller {
     
     @Autowired
     @Qualifier("country-configurations")
-    private Map<String, CountryDB> countryConfigurations;
+    private CountryConfigurationsBean countryConfigurations;
     
 	@Operation(
 			summary = "Get statistics for selected place, activity, time",
@@ -299,7 +300,7 @@ public class StatisticsContoller {
 		}
 
 //		System.out.println("COUNTRY " + country);
-//		
+		
 //		System.out.println("PLACE " + placedbCodes);
 //		System.out.println("PARENT PLACE " + placeParent);
 //
@@ -316,7 +317,15 @@ public class StatisticsContoller {
 					
 				if (cplace) {
 					List<StatisticDB> placeStats = statisticsRepository.findByDimension(Dimension.DATA.toString());
-					places = iter(placeStats, null, null, null, null, language);
+					
+					List<StatisticDB> placeStats2 = new ArrayList<>();
+					for (StatisticDB s : placeStats) {
+						if (countryConfigurations.keySet().contains(s.getCountry())) {
+							placeStats2.add(s);
+						}
+					}
+					
+					places = iter(placeStats2, null, null, null, null, language);
 				}
 				
 			} else if (placedb.isEmpty() && founding == null && dissolution == null) {
@@ -335,7 +344,15 @@ public class StatisticsContoller {
 				
 				if (cplace) {
 					List<StatisticDB> placeStats = statisticsRepository.findByDimensionAndActivity(Dimension.NACE.toString(), activitydb.get(0));
-					places = iter(placeStats, null, null, null, null, language);
+					
+					List<StatisticDB> placeStats2 = new ArrayList<>();
+					for (StatisticDB s : placeStats) {
+						if (countryConfigurations.keySet().contains(s.getCountry())) {
+							placeStats2.add(s);
+						}
+					}
+					
+					places = iter(placeStats2, null, null, null, null, language);
 				}
 				
 			} else {
@@ -1013,28 +1030,28 @@ public class StatisticsContoller {
 
 
 	
-	private List<GenericResponse> mapGenericResponseFromList(List<StatisticResult> list, CountryDB cc, Dimension dimension) {
-		List<GenericResponse> res = new ArrayList<>();
-		   
-   		for (StatisticResult sr : list) {
-			GenericResponse gr;
-			if (dimension == Dimension.NUTS) {
-				PlaceDB placedb = placeRepository.findByCode(sr.getCode());
-				gr = GenericResponse.createFromPlace(placedb, null);
-			} else {
-				ActivityDB activitydb = activityRepository.findByCode(sr.getCode());
-				gr = GenericResponse.createFromActivity(activitydb, null);
-			}
-			if (sr.getCountry() != null) {
-				gr.setCountry(new CodeLabel(sr.getCountry(), cc.getLabel()));
-			}
-			gr.setCount(sr.getCount());
-			res.add(gr);
-			
-		}
-
-   		return res;
-	}
+//	private List<GenericResponse> mapGenericResponseFromList(List<StatisticResult> list, CountryDB cc, Dimension dimension) {
+//		List<GenericResponse> res = new ArrayList<>();
+//		   
+//   		for (StatisticResult sr : list) {
+//			GenericResponse gr;
+//			if (dimension == Dimension.NUTS) {
+//				PlaceDB placedb = placeRepository.findByCode(sr.getCode());
+//				gr = GenericResponse.createFromPlace(placedb, null);
+//			} else {
+//				ActivityDB activitydb = activityRepository.findByCode(sr.getCode());
+//				gr = GenericResponse.createFromActivity(activitydb, null);
+//			}
+//			if (sr.getCountry() != null) {
+//				gr.setCountry(new CodeLabel(sr.getCountry(), cc.getLabel()));
+//			}
+//			gr.setCount(sr.getCount());
+//			res.add(gr);
+//			
+//		}
+//
+//   		return res;
+//	}
 	   
 
 	

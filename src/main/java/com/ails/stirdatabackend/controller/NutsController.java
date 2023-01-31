@@ -1,11 +1,20 @@
 package com.ails.stirdatabackend.controller;
 
 import com.ails.stirdatabackend.model.Code;
+import com.ails.stirdatabackend.model.CountryConfigurationsBean;
 import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.PlaceDB;
 import com.ails.stirdatabackend.payload.ComplexResponse;
+import com.ails.stirdatabackend.payload.CubeResponse;
 import com.ails.stirdatabackend.payload.GenericResponse;
+import com.ails.stirdatabackend.payload.QueryResponse;
 import com.ails.stirdatabackend.service.NutsService;
+import org.springframework.web.bind.annotation.PathVariable;
+import com.ails.stirdatabackend.model.Code;
+import com.ails.stirdatabackend.payload.CodeLabel;
+import java.util.HashMap;
+import java.util.Map;
+
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -36,8 +45,17 @@ public class NutsController {
 
     @Autowired
     @Qualifier("country-configurations")
-    private Map<String, CountryDB> countryConfigurations;
+    private CountryConfigurationsBean countryConfigurations;
 
+    @Autowired
+    @Qualifier("filters")
+    private List<CubeResponse> filters;
+
+    @Autowired
+    @Qualifier("eurostat-filters")
+    private List<CubeResponse> eurostatFilters;
+
+    
 //    @Autowired
 //    @Qualifier("nuts-geojson-cache")
 //    private Cache geojsonCache;
@@ -81,7 +99,7 @@ public class NutsController {
 	    				// country supports no places
 	    			} else {
 	//	    			places = nutsService.getNextNutsLauLevelListDb(top);
-	    				places = nutsService.getNextDeepestListDb(top, lau);
+	    				places = nutsService.getNextDeepestListDb(top, lau && cc.isLau());
 	    			}
     			} else {
     				places = nutsService.getNextDeepestListDb(top, lau);
@@ -104,9 +122,34 @@ public class NutsController {
     @GetMapping(value = "filters", produces = "application/json")
     public ResponseEntity<?> getFilters() {
         
-        return ResponseEntity.ok(nutsService.getFilters());
+        return ResponseEntity.ok(filters);
     }
     
+    @GetMapping(value = "eurostat-filters", produces = "application/json")
+    public ResponseEntity<?> getEurostatFilters() {
+        
+        return ResponseEntity.ok(eurostatFilters);
+    }
+    
+//    @GetMapping("/resolve")
+//    public ResponseEntity<?> performQuery(@RequestParam(required = false) List<Code> place) {
+//    	
+//        List<QueryResponse> res = nutsService.resolve(place);
+//        return ResponseEntity.ok(res);
+//    }
+    
+
+	@GetMapping(value = "/getByCode", produces = "application/json")
+    public ResponseEntity<?> getNuts(@RequestParam String nutsCode) {
+		PlaceDB place = nutsService.getByCode(new Code(nutsCode));
+		if (place == null) {
+			Map<String, String> responseMap = new HashMap<>();
+			responseMap.put("error", "Place does not exist with requested code");
+			return ResponseEntity.badRequest().body(responseMap);
+		}
+        String label = place.getLatinName() != null ? place.getLatinName() : place.getNationalName();
+        return ResponseEntity.ok(new CodeLabel(nutsCode, label));
+    }
 //    @GetMapping(value = "/getGeoJson", 
 //                produces = "application/json")
 //    public ResponseEntity<?> getNutsGeoJSON(@RequestParam @NotNull String nutsUri,

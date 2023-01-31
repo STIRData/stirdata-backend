@@ -47,12 +47,22 @@ public class SavedViewService {
         return true;
     }
 
+    public void deleteUserSavedViews(ObjectId userId) {
+        List<SavedView> viewList = savedViewRepository.findByCreatorId(userId);
+        for (SavedView view : viewList) {
+            savedViewRepository.delete(view);
+        }
+
+
+    }
+
     public SavedView createView(ObjectId userId, SavedViewCreationDTO request) {
         SavedView view = new SavedView();
         view.setName(request.getName());
         view.setCreatorId(userId);
         view.setActivity(request.getActivity());
         view.setPlace(request.getPlace());
+        view.setFeature(request.getFeature());
         view.setStartDate(request.getStartDate());
         view.setEndDate(request.getEndDate());
         savedViewRepository.save(view);

@@ -40,6 +40,7 @@ import org.springframework.stereotype.Service;
 import org.apache.jena.riot.RDFFormat.JSONLDVariant;
 
 import com.ails.stirdatabackend.model.CountryConfiguration;
+import com.ails.stirdatabackend.model.CountryConfigurationsBean;
 import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.Dimension;
 import com.ails.stirdatabackend.model.ModelConfiguration;
@@ -68,7 +69,7 @@ public class DataService {
 
 	@Autowired
 	@Qualifier("country-configurations")
-    private Map<String, CountryDB> countryConfigurations;
+    private CountryConfigurationsBean countryConfigurations;
 
 	@Autowired
 	@Qualifier("model-jsonld-context")
@@ -104,7 +105,8 @@ public class DataService {
                 "  ?entity <http://www.w3.org/ns/legal#legalName> ?entityName . " +
                 "  ?entity <http://www.w3.org/ns/legal#companyActivity> ?nace . " +
         		"  ?entity <http://www.w3.org/ns/legal#registeredAddress> ?address . ?address ?ap ?ao . " + 
-                "  ?entity <https://schema.org/foundingDate> ?foundingDate . }" +	            		
+                "  ?entity <https://schema.org/foundingDate> ?foundingDate . " +	           		
+                "  ?entity <https://schema.org/leiCode> ?leiCode . } " +
         		" WHERE { " +
                 cc.getEntitySparql() + " " +
                 cc.getLegalNameSparql() + " " + 
@@ -112,6 +114,7 @@ public class DataService {
                 "OPTIONAL { " + cc.getAddressSparql() + " ?address ?ap ?ao . } " + 
 	            "OPTIONAL { " + cc.getNaceSparql() + " } " +
                 "OPTIONAL { " + cc.getFoundingDateSparql() + " } " +
+                "OPTIONAL { " + cc.getLeiCodeSparql() + " } " +
                 "VALUES ?entity { <" + uri + "> } } ";
 
         

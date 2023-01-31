@@ -34,13 +34,12 @@ public class CountryDB {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	int id;
 	
-	@Column(unique = true, nullable = false)
+	@Column(unique = true)
 	private String code;
 	
-	@Column(nullable = false)
 	private String label;
 	
-	@Column(nullable = false)
+	@Column(unique = true, nullable = false)
 	private String dcat;
 	
 	@Column(name = "conforms_to", columnDefinition="TEXT")
@@ -54,6 +53,9 @@ public class CountryDB {
 	
 	@Column(name = "last_updated")
 	private Date lastUpdated;
+
+	@Column(name = "last_accessed")
+	private Date lastAccessed;
 
 	@Column(name = "last_accessed_start")
 	private Date lastAccessedStart;
@@ -70,23 +72,23 @@ public class CountryDB {
 	@Column(name = "nace_endpoint", columnDefinition="TEXT")
 	private String naceEndpoint;
 	
-	@Column(name = "nace_scheme", columnDefinition="TEXT")
-	private String naceScheme;
+//	@Column(name = "nace_scheme", columnDefinition="TEXT")
+//	private String naceScheme;
 	
-	@Column(name = "nace_path_1", columnDefinition="TEXT")
-	private String nacePath1;
+//	@Column(name = "nace_path_1", columnDefinition="TEXT")
+//	private String nacePath1;
+//	
+//	@Column(name = "nace_path_2", columnDefinition="TEXT")
+//	private String nacePath2;
+//	
+//	@Column(name = "nace_path_3", columnDefinition="TEXT")
+//	private String nacePath3;
+//	
+//	@Column(name = "nace_path_4", columnDefinition="TEXT")
+//	private String nacePath4;
 	
-	@Column(name = "nace_path_2", columnDefinition="TEXT")
-	private String nacePath2;
-	
-	@Column(name = "nace_path_3", columnDefinition="TEXT")
-	private String nacePath3;
-	
-	@Column(name = "nace_path_4", columnDefinition="TEXT")
-	private String nacePath4;
-	
-	@Column(name = "nace_fixed_level")
-	private Integer naceFixedLevel;
+//	@Column(name = "nace_fixed_level")
+//	private Integer naceFixedLevel;
 
 	@Column(name = "nace_fixed_levels")
 	private String naceFixedLevels;
@@ -94,9 +96,13 @@ public class CountryDB {
 	@Column(name = "nace_levels")
 	private Integer naceLevels;
 
-	@Column(name = "nace_namespace")
-	private String naceNamespace;
+//	@Column(name = "nace_namespace")
+//	private String naceNamespace;
 
+	public String getNaceNamespace() {
+		return "nace-" + code.toLowerCase(); 
+	}
+	
 	@Column(name = "nace_languages")
 	private String naceLanguages;
 	
@@ -106,8 +112,8 @@ public class CountryDB {
 	@Column(name = "nace_prefix", columnDefinition="TEXT")
     private String nacePrefix;
 
-	@Column(name = "nace_named_graph", columnDefinition="TEXT")
-    private String naceNamedGraph;
+//	@Column(name = "nace_named_graph", columnDefinition="TEXT")
+//    private String naceNamedGraph;
 
 	@Column(name = "nuts_endpoint", columnDefinition="TEXT")
     private String nutsEndpoint;
@@ -168,19 +174,19 @@ public class CountryDB {
     private boolean foundingDate;
     
     @Column(name = "founding_date_from")
-    private String foundingDateFrom;
+    private java.sql.Date foundingDateFrom;
     
     @Column(name = "founding_date_to")
-    private String foundingDateTo;
+    private java.sql.Date foundingDateTo;
     
     @Column(name = "dissolution_date")
     private boolean dissolutionDate;
-    
+
     @Column(name = "dissolution_date_from")
-    private String dissolutionDateFrom;
-    
+    private java.sql.Date dissolutionDateFrom;
+
     @Column(name = "dissolution_date_to")
-    private String dissolutionDateTo;
+    private java.sql.Date dissolutionDateTo;
  
     @Column(name = "entity_sparql")
     private String entitySparql;
@@ -253,6 +259,9 @@ public class CountryDB {
 
     @Column(name = "license_uri")
     private String licenseUri;
+    
+    @Column(name = "lei_code_sparql")
+    private String leiCodeSparql;
 
 	@Transient
     private ModelConfiguration modelConfiguration;
@@ -262,6 +271,9 @@ public class CountryDB {
     
     @Transient
     private int[] naceEffectiveLevels;
+
+    @Transient
+    public boolean modified = false;
     
 //    @Transient
 //    private Set<Dimension> statistics;
@@ -308,6 +320,10 @@ public class CountryDB {
 
     public String getDissolutionDateSparql() {
     	return dissolutionDateSparql != null ? dissolutionDateSparql : modelConfiguration.getDissolutionDateSparql();
+    }
+    
+    public String getLeiCodeSparql() {
+    	return leiCodeSparql != null ? leiCodeSparql : modelConfiguration.getLeiCodeSparql();
     }
     
     public Date getStatsDate(Dimension dimension) {
@@ -443,7 +459,8 @@ public class CountryDB {
     
     public int[] getEffectiveNaceLevels() {
     	if (!naceEffectiveLevelsComputed) {
-    		if (naceFixedLevel != null) {
+//    		if (naceFixedLevel != null) {
+    		if (naceFixedLevels != null) {
     			String[] levels = naceFixedLevels.split(",");
     			
     			naceEffectiveLevels = new int[levels.length];

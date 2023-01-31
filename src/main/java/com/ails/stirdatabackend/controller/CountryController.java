@@ -17,30 +17,30 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 
-@RestController
-@RequestMapping("/api/countries")
-public class CountryController {
-
-    @Autowired
-    private CountriesService countriesService;
-
-//    @PostMapping(name = "/add", produces = "aplication/json")
-//	public ResponseEntity<?> add(@RequestBody Country country)  {
+//@RestController
+//@RequestMapping("/api/countries")
+//public class CountryController {
 //
-//    	boolean ok = countriesService.add(country);
+//    @Autowired
+//    private CountriesService countriesService;
 //
-//    	if (ok) {
-//    		return ResponseEntity.ok(new Message("Country " + country.getCode() + " already exists."));
-//    	} else {
-//    		return ResponseEntity.ok(new Message("Country " + country.getCode() + " added."));
-//    	}
-//    }
-
-	@PostMapping(value = "/reload")
-	public ResponseEntity<?> reload()  {
-
-		countriesService.reload();
-
-		return ResponseEntity.ok().build();
-	}
-}
+////    @PostMapping(name = "/add", produces = "aplication/json")
+////	public ResponseEntity<?> add(@RequestBody Country country)  {
+////
+////    	boolean ok = countriesService.add(country);
+////
+////    	if (ok) {
+////    		return ResponseEntity.ok(new Message("Country " + country.getCode() + " already exists."));
+////    	} else {
+////    		return ResponseEntity.ok(new Message("Country " + country.getCode() + " added."));
+////    	}
+////    }
+//
+//	@PostMapping(value = "/reload")
+//	public ResponseEntity<?> reload()  {
+//
+//		countriesService.reload();
+//
+//		return ResponseEntity.ok().build();
+//	}
+//}

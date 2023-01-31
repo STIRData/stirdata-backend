@@ -3,6 +3,7 @@ package com.ails.stirdatabackend.service;
 import com.ails.stirdatabackend.model.ActivityDB;
 import com.ails.stirdatabackend.model.Code;
 import com.ails.stirdatabackend.model.CompanyTypeDB;
+import com.ails.stirdatabackend.model.CountryConfigurationsBean;
 import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.PlaceDB;
 import com.ails.stirdatabackend.payload.Address;
@@ -59,7 +60,7 @@ public class QueryService {
 
 	@Autowired
 	@Qualifier("country-configurations")
-    private Map<String, CountryDB> countryConfigurations;
+    private CountryConfigurationsBean countryConfigurations;
 	
 	@Autowired
 	@Qualifier("model-jsonld-context")
@@ -78,7 +79,8 @@ public class QueryService {
                         "  ?entity <http://www.w3.org/ns/legal#companyType> ?companyType . " +
                         "  ?entity <http://www.w3.org/ns/legal#companyActivity> ?nace . " +
                 		"  ?entity <http://www.w3.org/ns/legal#registeredAddress> ?address . ?address ?ap ?ao . " + 
-                        "  ?entity <https://schema.org/foundingDate> ?foundingDate . }" +	           		
+                        "  ?entity <https://schema.org/foundingDate> ?foundingDate . " +	           		
+                        "  ?entity <https://schema.org/leiCode> ?leiCode . } " +
         		" WHERE { " +
                 cc.getEntitySparql() + " " +
                 "OPTIONAL { " + cc.getLegalNameSparql() + " } " + 
@@ -87,6 +89,7 @@ public class QueryService {
 	            "OPTIONAL { " + cc.getCompanyTypeSparql() + " } " +
 	            "OPTIONAL { " + cc.getNaceSparql() + " } " +
                 "OPTIONAL { " + cc.getFoundingDateSparql() + " } " +
+                "OPTIONAL { " + cc.getLeiCodeSparql() + " } " +
                 "VALUES ?entity { <" + uri + "> } } ";
 
        	LegalEntity entity = null;
@@ -97,8 +100,13 @@ public class QueryService {
             Model model = qe.execConstruct();
                 
             Map<String, Object> jn = (Map)JsonLDWriter.toJsonLDJavaAPI((RDFFormat.JSONLDVariant)RDFFormat.JSONLD_COMPACT_PRETTY.getVariant(), DatasetFactory.wrap(model).asDatasetGraph(), null, null, context);
-                
+//            jn.put("@context", "https://dev.stirdata.eu/api/data/context/stirdata.jsonld");
+            
             List<Map<String, Object>> graph = (List)jn.get("@graph");
+            if (graph == null) {
+            	graph = new ArrayList<>();
+            	graph.add(jn);
+            }
                 
             Map<String, Address> addresses = null;
             addresses = new HashMap<>();
@@ -128,6 +136,8 @@ public class QueryService {
         
     	List<QueryResponse> responseList = new ArrayList<>();
         
+//    	System.out.println(nutsLauCodes);
+    	
     	Map<CountryDB, PlaceSelection> countryPlaceMap;
     	if (nutsLauCodes != null) {
     		countryPlaceMap = nutsService.getEndpointsByNuts(nutsLauCodes);
@@ -143,10 +153,14 @@ public class QueryService {
         	CountryDB cc = ccEntry.getKey();
         	PlaceSelection places = ccEntry.getValue();
         	
+//        	System.out.println(places);
+//        	System.out.println(naceCodes);
+        	
         	List<String> naceLeafUris = cc.getNaceEndpoint() == null ? null : naceService.getLocalNaceLeafUris(cc, naceCodes);
         	List<String> nutsLeafUris = places == null ? null : nutsService.getLocalNutsLeafUrisDB(cc, places); 
         	List<String> lauUris = places == null ? null : nutsService.getLocalLauUris(cc, places);
         	
+//        	System.out.println("NUTSLEAFURIS " + nutsLeafUris);
 //        	int count = 0;
         	
             Page pg = new Page();
@@ -156,28 +170,27 @@ public class QueryService {
             qr.setCountry(new CodeLabel(cc.getCode(), cc.getLabel()));
             qr.setPage(pg);
 
-//            System.out.println(naceLeafUris);
+//            System.out.println("NACELEAFURIS " +naceLeafUris);
             
-        	if ((nutsLeafUris != null && nutsLeafUris.size() == 0 && lauUris != null && lauUris.size() == 0) || (naceLeafUris != null && naceLeafUris.size() == 0)) {
+        	if ((nutsLeafUris != null && nutsLeafUris.size() == 0 && lauUris != null && lauUris.size() == 0) || 
+        			(naceLeafUris != null && naceLeafUris.size() == 0) || (!cc.isNace() && naceCodes != null)) {
         		pg.setPageSize(0);
         		qr.setLegalEntities(new ArrayList<>());
         		responseList.add(qr);
         		continue;
         	}
         	
-
-        	
         	//could use statistics table instead of this if available
         	
 //        	System.out.println(countQuery);
-        	SparqlQuery sparql = SparqlQuery.buildCoreQuery(cc, true, true, nutsLeafUris, lauUris, naceLeafUris, founding, dissolution); 
-
+        	SparqlQuery sparql = SparqlQuery.buildCoreQuery(cc, true, true, nutsLeafUris, lauUris, naceLeafUris, founding, dissolution);
+        	
         	if (sparql != null)  {// if null it is an empty query
 	            if (page == 1) {
 	            	String countQuery = sparql.countSelectQuery();
 		            	
 //	            	System.out.println(QueryFactory.create(countQuery));
-	//              System.out.println(cc.getDataEndpoint());
+//	              System.out.println(cc.getDataEndpoint());
 		             
 	                try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), QueryFactory.create(countQuery, Syntax.syntaxARQ))) {
 	                    ResultSet rs = qe.execSelect();
@@ -414,6 +427,19 @@ public class QueryService {
 			}
 		}
 		
+		Object leiCode = map.get("leiCode");
+		if (leiCode != null) {
+    		if (leiCode instanceof String) {
+    			lg.setLeiCode((String)leiCode);
+    		} else if (legalNameObj instanceof List) {
+				for (Object s : (List)leiCode) {
+		    		if (s instanceof String) {
+		    			lg.setLeiCode((String)s);
+		    		}
+				}
+			}
+		}
+		
 		Object registeredAddressObj = map.get("registeredAddress");
 		if (registeredAddressObj != null) {
 			if (registeredAddressObj instanceof String) {
@@ -431,7 +457,39 @@ public class QueryService {
 				
 				ActivityDB activity = naceService.getByCode(Code.fromNaceUri((String)companyActivityObj, cc));
 				if (activity != null) {
-					lg.addCompanyActivity(new CodeLabel(activity.getCode().toString(), activity.getLabel(cc.getPreferredNaceLanguage()), (String)companyActivityObj));
+//					lg.addCompanyActivity(new CodeLabel(activity.getCode().toString(), activity.getLabel(cc.getPreferredNaceLanguage()), (String)companyActivityObj));
+					if (activity.getLevel() <= 4) {
+						activity = activity.getExactMatch() != null ? activity.getExactMatch() : activity; 
+						lg.addCompanyActivity(new CodeLabel(activity.getCode().toString(), activity.getLabel("en"), activity.getCode().toUri()));
+					} else {
+						List<CodeLabel> codeLabels = new ArrayList<>();
+						
+						CodeLabel res = new CodeLabel(activity.getCode().toString(), activity.getLabel(cc.getPreferredNaceLanguage()), (String)companyActivityObj);
+						codeLabels.add(res);
+						
+						while (activity.getLevel() > 4) {
+							activity = activity.getParent();
+							
+							if (activity.getLevel() > 4) {
+								CodeLabel res2 = new CodeLabel(activity.getCode().toString(), activity.getLabel(cc.getPreferredNaceLanguage()), activity.getCode().localNaceToUri(cc));
+								codeLabels.add(res2);
+								res = res2;
+							} else {
+								activity = activity.getExactMatch();
+								CodeLabel res2 = new CodeLabel(activity.getCode().toString(), activity.getLabel("en"), activity.getCode().toUri());
+								codeLabels.add(res2);
+								res = res2;
+							}
+						}
+
+						CodeLabel cl = codeLabels.get(codeLabels.size() - 1); 
+						lg.addCompanyActivity(cl);
+						for (int i = codeLabels.size() - 2; i >= 0; i--) {
+							cl.setChild(codeLabels.get(i));
+							cl = codeLabels.get(i);
+						}
+					}
+					
 				}
 				
 			} else if (companyActivityObj instanceof List) {
@@ -439,7 +497,40 @@ public class QueryService {
 					ActivityDB activity = naceService.getByCode(Code.fromNaceUri((String)s, cc));
 
 					if (activity != null) {
-						lg.addCompanyActivity(new CodeLabel(activity.getCode().toString(), activity.getLabel(cc.getPreferredNaceLanguage()), (String)s));
+//						lg.addCompanyActivity(new CodeLabel(activity.getCode().toString(), activity.getLabel(cc.getPreferredNaceLanguage()), (String)s));
+						if (activity.getLevel() <= 4) {
+							activity = activity.getExactMatch() != null ? activity.getExactMatch() : activity;
+							lg.addCompanyActivity(new CodeLabel(activity.getCode().toString(), activity.getLabel("en"), activity.getCode().localNaceToUri(cc)));
+						} else {
+							List<CodeLabel> codeLabels = new ArrayList<>();
+							
+//							activity = activity.getLevel4OrHigherNaceRev2Activity();
+							CodeLabel res = new CodeLabel(activity.getCode().toString(), activity.getLabel(cc.getPreferredNaceLanguage()), (String)s);
+//							lg.addCompanyActivity(res);
+							codeLabels.add(res);
+							
+							while (activity.getLevel() > 4) {
+								activity = activity.getParent();
+								
+								if (activity.getLevel() > 4) {
+									CodeLabel res2 = new CodeLabel(activity.getCode().toString(), activity.getLabel(cc.getPreferredNaceLanguage()), activity.getCode().localNaceToUri(cc));
+									codeLabels.add(res2);
+									res = res2;
+								} else {
+									activity = activity.getExactMatch();
+									CodeLabel res2 = new CodeLabel(activity.getCode().toString(), activity.getLabel("en"), activity.getCode().toUri());
+									codeLabels.add(res2);
+									res = res2;
+								}
+							}
+
+							CodeLabel cl = codeLabels.get(codeLabels.size() - 1); 
+							lg.addCompanyActivity(cl);
+							for (int i = codeLabels.size() - 2; i >= 0; i--) {
+								cl.setChild(codeLabels.get(i));
+								cl = codeLabels.get(i);
+							}
+						}
 					}
 
 				}

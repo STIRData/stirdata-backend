@@ -23,6 +23,7 @@ public class LegalEntity {
 	private List<Address> registeredAddresses;
 	private Date foundingDate;
 	private Date dissolutionDate;
+	private String leiCode;
 
 	public LegalEntity(String uri) {
 		this.uri = uri;
@@ -55,5 +56,5 @@ public class LegalEntity {
 		
 		registeredAddresses.add(address);
 	}
-	
+
 }

@@ -42,7 +42,7 @@ public class QueryController {
     	if (activity != null && activity.size() == 0) {
     		activity = null;
     	}
-    	
+
         List<QueryResponse> res = queryService.paginatedQuery(place, activity, founding, dissolution, page, details);
         return ResponseEntity.ok(res);
     }

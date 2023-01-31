@@ -44,28 +44,21 @@ public class GenericResponse {
 
 	private Integer count;
 
-//	public static GenericResponse createFromStatistic(Statistic st) {
-//		GenericResponse sr = new GenericResponse();
-//		sr.setCountry(st.getCountry());
-//		sr.setPlace(st.getPlace());
-//		sr.setActivity(st.getActivity());
-//		sr.setFromDate(st.getFromDate());
-//		sr.setToDate(st.getToDate());
-//		sr.setDateInterval(st.getDateInterval());
-//		sr.setCount(st.getCount());
-//
-//		return sr;
-//
-//	}
-
-	public void addPlace(String code, String label) {
+	private void addPlace(String code, String label) {
 		if (place == null) {
 			place = new ArrayList<>();
 		}
 		place.add(new CodeLabel(code, label));
 	}
 	
-	public void addPlace(String code, String label, String geometry) {
+	private void addPlace(String code, String label, Boolean leaf) {
+		if (place == null) {
+			place = new ArrayList<>();
+		}
+		place.add(new CodeLabel(code, label, leaf));
+	}
+	
+	private void addPlace(String code, String label, String geometry) {
 		if (place == null) {
 			place = new ArrayList<>();
 		}
@@ -74,11 +67,11 @@ public class GenericResponse {
 		place.add(cl);
 	}
 
-	public void addActivity(String code, String label) {
+	private void addActivity(String code, String label, Boolean leaf) {
 		if (activity == null) {
 			activity = new ArrayList<>();
 		}
-		activity.add(new CodeLabel(code, label));
+		activity.add(new CodeLabel(code, label, leaf));
 	}
 
 	public static GenericResponse createFromStatistic(StatisticDB st, CountryDB cc, List<PlaceDB> placedb, List<ActivityDB> activitydb, Code founding, Code dissolution, String lang) {
@@ -95,7 +88,8 @@ public class GenericResponse {
 		
 		if (placedb != null) {
 			for (PlaceDB pl : placedb) {
-				sr.addPlace(pl.getCode().toString(), pl.getLatinName() != null ? pl.getLatinName() : pl.getNationalName());
+				Code code = pl.getCode();
+				sr.addPlace(code.toString(), pl.getLatinName() != null ? pl.getLatinName() : pl.getNationalName(), code.isLau() || (!cc.isLau() && code.getNutsLevel() == 3));
 			}
 		}
 		
@@ -106,7 +100,7 @@ public class GenericResponse {
 
 		if (activitydb != null) {
 			for (ActivityDB ac : activitydb) {
-				sr.addActivity(ac.getCode().toString(), ac.getLabel(lang));
+				sr.addActivity(ac.getCode().toString(), ac.getLabel(lang), ac.getCode().isNaceRev2Leaf());
 			}
 		}
 		
@@ -139,7 +133,8 @@ public class GenericResponse {
 		
 		if (placedb != null) {
 			for (PlaceDB pl : placedb) {
-				sr.addPlace(pl.getCode().toString(), pl.getLatinName() != null ? pl.getLatinName() : pl.getNationalName());
+				Code code = pl.getCode();
+				sr.addPlace(code.toString(), pl.getLatinName() != null ? pl.getLatinName() : pl.getNationalName(), code.isLau() || (!cc.isLau() && code.getNutsLevel() == 3));
 			}
 		}
 		
@@ -150,7 +145,7 @@ public class GenericResponse {
 
 		if (activitydb != null) {
 			for (ActivityDB ac : activitydb) {
-				sr.addActivity(ac.getCode().toString(), ac.getLabel(lang));
+				sr.addActivity(ac.getCode().toString(), ac.getLabel(lang), ac.getCode().isNaceRev2Leaf());
 			}
 		}
 		
@@ -199,7 +194,8 @@ public class GenericResponse {
 		
 		if (placedb != null) {
 			for (PlaceDB pl : placedb) {
-				sr.addPlace(pl.getCode().toString(), pl.getLatinName() != null ? pl.getLatinName() : pl.getNationalName());
+				Code code = pl.getCode();
+				sr.addPlace(code.toString(), pl.getLatinName() != null ? pl.getLatinName() : pl.getNationalName(), code.isLau() || (!cc.isLau() && code.getNutsLevel() == 3));
 			}
 		}
 		
@@ -210,7 +206,7 @@ public class GenericResponse {
 
 		if (activitydb != null) {
 			for (ActivityDB ac : activitydb) {
-				sr.addActivity(ac.getCode().toString(), ac.getLabel(lang));
+				sr.addActivity(ac.getCode().toString(), ac.getLabel(lang), ac.getCode().isNaceRev2Leaf());
 			}
 		}
 		
@@ -244,9 +240,9 @@ public class GenericResponse {
 
 	}
 	
-	public static GenericResponse createFromActivity(ActivityDB activity, String lang) {
+	public static GenericResponse createFromActivity(ActivityDB ac, String lang) {
 		GenericResponse sr = new GenericResponse();
-		sr.addActivity(activity.getCode().toString(), activity.getLabel(lang));
+		sr.addActivity(ac.getCode().toString(), ac.getLabel(lang), ac.getCode().isNaceRev2Leaf());
 
 		return sr;
 

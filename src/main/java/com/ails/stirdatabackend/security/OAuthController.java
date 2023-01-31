@@ -34,13 +34,6 @@ public class OAuthController {
                 }
                 return  ResponseEntity.status(HttpStatus.OK).body(new AuthenticationResponse(res.getResult()));
 
-            } else if (provider.equals("solid")) {
-                ResultDTO<String> res = oAuthService.solidOauthVerify(oauthRequest.getToken());
-                if (res.isError()) {
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new Message(res.getError()));
-                }
-                return  ResponseEntity.status(HttpStatus.OK).body(new AuthenticationResponse(res.getResult()));
-
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(null);
             }
