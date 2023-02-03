@@ -65,6 +65,7 @@ public class SavedViewService {
         view.setFeature(request.getFeature());
         view.setStartDate(request.getStartDate());
         view.setEndDate(request.getEndDate());
+        view.setEurostat(request.getEurostat());
         savedViewRepository.save(view);
         return view;
     }
