@@ -33,3 +33,5 @@ build/
 .vscode/
 
 /.env
+run.sh
+.metals

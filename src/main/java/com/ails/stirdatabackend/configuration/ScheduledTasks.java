@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -37,6 +38,7 @@ import com.ails.stirdatabackend.service.DataStoring;
 import com.ails.stirdatabackend.service.StatisticsService;
 
 @Component
+@Profile("PRODUCTION")
 public class ScheduledTasks {
 
 	Logger logger = LoggerFactory.getLogger(ScheduledTasks.class);
@@ -124,7 +126,6 @@ public class ScheduledTasks {
 		}
 		
 	}
-    
 	@Scheduled(fixedRate = 86400000)
 //    @Scheduled(fixedRate = 40000)
 	public void updateStatistics() {
