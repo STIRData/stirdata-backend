@@ -595,10 +595,7 @@ public class StatisticsService {
 					
 					System.out.println("With NUTS " + iter.getCode());
 					
-					List<Code> nutsLauList = new ArrayList<>();
-					nutsLauList.add(iter.getCode());
-		
-		    		List<StatisticResult> nutsNace = statistics(cc, Dimension.NACE, null, nutsLauList, null, null, null, true, sc);
+		    		List<StatisticResult> nutsNace = statistics(cc, Dimension.NACE, null, Arrays.asList(new Code[] { iter.getCode() }), null, null, null, true, sc);
 					statisticsRepository.deleteAllByCountryAndDimensionAndPlace(cc.getCode(), Dimension.NUTSLAU_NACE, iter.getCode().toString());
 		    		
 	    			int counter = 0;

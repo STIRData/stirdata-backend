@@ -6,13 +6,13 @@
     <groupId>com.ails</groupId>
     <artifactId>stirdata-backend</artifactId>
     <version>0.0.1</version>
-
-    <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.5.0</version>
-        <relativePath/> <!-- lookup parent from repository -->
-    </parent>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+	<!--<version>2.1.6.RELEASE</version>--> <!-- Java 1.8 -->
+		<version>2.5.0</version> <!-- Java 17 -->
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
     <name>stirdata-backend</name>
     <description>Demo project for Spring Boot</description>
     <properties>
@@ -86,10 +86,6 @@
             <version>2.0.1.Final</version>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt</artifactId>
             <version>0.9.1</version>
@@ -130,6 +126,11 @@
     <build>
         <finalName>${project.artifactId}</finalName>
         <plugins>
+        <plugin>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-resources-plugin</artifactId>
+	<version>3.1.0</version>
+</plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
