@@ -24,6 +24,8 @@ public class LegalEntity {
 	private Date foundingDate;
 	private Date dissolutionDate;
 	private String leiCode;
+	
+	private List addOns;
 
 	public LegalEntity(String uri) {
 		this.uri = uri;

@@ -14,35 +14,35 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
-//@RestController
-//@RequestMapping("/api/addon")
-//public class AddOnController {
-//
-//    @Autowired
-//    private DataService dataService;
-//    
-//    @Autowired
-//	@Qualifier("country-addons")
-//    private Map<String, AddOn> addons; 
-//    
-//    @GetMapping("/entity/{addon}")
-//    public ResponseEntity<?> entity(@RequestParam(required = true) String uri, @PathVariable String addon) {
-//        
-//    	CountryDB cc = dataService.findCountry(uri);
-//    	
-//    	if (cc == null) {
-//    		return ResponseEntity.notFound().build();
-//    	}
-//    	
-//    	AddOn addOn = addons.get(addon + "-" + cc.getCode());
-//    	
-//    	if (addOn == null) {
-//    		return ResponseEntity.notFound().build();
-//    	}
-//    	
-//    	addOn.ask(uri);
-//
-//    	return ResponseEntity.ok().build();
-//    }
-//
-//}
+@RestController
+@RequestMapping("/api/addon")
+public class AddOnController {
+
+    @Autowired
+    private DataService dataService;
+    
+    @Autowired
+	@Qualifier("country-addons")
+    private Map<String, Map<String,AddOn>> addons; 
+    
+    @GetMapping("/{addon}")
+    public ResponseEntity<?> entity(@RequestParam(required = true) String uri, @PathVariable String addon) {
+        
+    	CountryDB cc = dataService.findCountry(uri);
+    	
+    	if (cc == null) {
+    		return ResponseEntity.notFound().build();
+    	}
+    	
+    	AddOn addOn = addons.get(cc.getCode()).get(addon);
+    	
+    	if (addOn == null) {
+    		return ResponseEntity.notFound().build();
+    	}
+    	
+    	Object res = addOn.ask(uri);
+
+    	return ResponseEntity.ok(res);
+    }
+
+}
