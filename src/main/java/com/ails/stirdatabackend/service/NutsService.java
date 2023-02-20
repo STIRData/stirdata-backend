@@ -380,6 +380,9 @@ public class NutsService {
 	    		for (Code stat : statCodes) {
 	    			List<Code> cs = getNutsCodesFromStat(stat, entry.getKey());
 	    		
+//	    			System.out.println("STAT " + stat + " " + entry.getKey());
+//	    			System.out.println(">>- " + cs);
+	    			
 	    			if (codes == null) {
 	    				codes = new HashSet<>();
 	    				codes.addAll(cs);

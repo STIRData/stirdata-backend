@@ -73,7 +73,7 @@ public class ScheduledTasks {
 	@Autowired
 	ApplicationContext context;
     
-	@Scheduled(fixedRate = 86400000)
+	@Scheduled(fixedRate = 604800000) // 7 days
 ////    @Scheduled(fixedRate = 60000)
 	public void updateCountries() {
 		logger.info("Running scheduled update countries task");
@@ -126,7 +126,8 @@ public class ScheduledTasks {
 		}
 		
 	}
-	@Scheduled(fixedRate = 86400000)
+	
+	@Scheduled(fixedRate = 604800000) // 7 days
 //    @Scheduled(fixedRate = 40000)
 	public void updateStatistics() {
 		logger.info("Running scheduled update statistics task. Pending countries: " + updatedCountries);

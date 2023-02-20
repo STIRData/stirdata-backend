@@ -3,6 +3,7 @@ package com.ails.stirdatabackend.controller;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -43,6 +44,7 @@ import com.ails.stirdatabackend.repository.StatisticsDBRepository;
 import com.ails.stirdatabackend.service.NaceService;
 import com.ails.stirdatabackend.service.NutsService;
 import com.ails.stirdatabackend.service.StatisticsService;
+import com.ails.stirdatabackend.service.NutsService.PlaceSelection;
 
 @RestController
 @RequestMapping("/api/statistics")
@@ -171,14 +173,20 @@ public class StatisticsContoller {
 		List<ActivityDB> activitydb = new ArrayList<>();
 		
 		if (place != null) {
+			List<Code> statCodes = new ArrayList<>();
+			
+			// assumes all places are in the same country
 			for (Code pl : place) {
-				if (!(pl.isNuts() || pl.isLau())) {
+				if (!(pl.isNuts() || pl.isLau() || pl.isStat())) {
 					return ResponseEntity.ok(sr);
 				} else {
 					if (pl.isNuts()) {
 						country = pl.getNutsCountry();
-					} else {
+					} else if (pl.isLau()) {
 						country = pl.getLauCountry();
+					} else if (pl.isStat()) {
+						statCodes.add(pl);
+						continue;
 					}
 					
 					if (!pl.isNutsCountry()) {
@@ -191,6 +199,27 @@ public class StatisticsContoller {
 					}
 				}
 			}
+			
+//	    	if (!statCodes.isEmpty()) {
+//
+//	    		Set<Code> codes = null;
+//
+//	    		// assume same level nuts for all statCodes !!!!
+//
+//	    		for (Code stat : statCodes) {
+//	    			List<Code> cs = nutsService.getNutsCodesFromStat(stat, countryConfigurations.get(country));
+//	    		
+//	    			if (codes == null) {
+//	    				codes = new HashSet<>();
+//	    				codes.addAll(cs);
+//	    			} else {
+//	    				codes.retainAll(cs);
+//	    			}
+//	    		}
+//	    		
+//    			placedb.clear();
+//    			placedb.addAll(codes);
+//	    	}
 		}
 		
 		if (activity != null) {

@@ -235,11 +235,13 @@ public class ApplicationConfiguration {
 	
 	@Bean(name = "country-addons")
 	@DependsOn("country-configurations")
-	public Map<String, AddOn> getAddons(@Qualifier("country-configurations") CountryConfigurationsBean countryConfigurations) {
-		Map<String, AddOn> map = new HashMap<>();
+	public Map<String, Map<String,AddOn>> getAddons(@Qualifier("country-configurations") CountryConfigurationsBean countryConfigurations) {
+		Map<String, Map<String,AddOn>> map = new HashMap<>();
 		
 		String addons = env.getProperty("app.add-ons");
-		System.out.println(addons);
+		
+		logger.info("Loading addons: " + addons);
+		
 		for (String addon : addons.split(",")) {
 			
 			String properties = env.getProperty("properties." + addon);
@@ -248,22 +250,40 @@ public class ApplicationConfiguration {
 				
 				AddOn ao = new AddOn();
 				ao.setCountry(country);
+				ao.setName(addon);
 				
 				if (env.getProperty("endpoint." + addon + "." + country) != null) {
+					ao.setLabel(env.getProperty("label." + addon + "." + country));
+					
+					ao.setOrderBy(env.getProperty("orderby." + addon + "." + country));
+
 					ao.setEndpoint(env.getProperty("endpoint." + addon + "." + country));
 					ao.setNamedGraph(env.getProperty("named-graph." + addon + "." + country));
 					
 					for (String prop : properties.split(",")) {
 						String sparql = env.getProperty("sparql." + addon + "." + prop + "." + country);
-						
+
 						if (prop.equals("entity")) {
 							ao.setEntitySparql(sparql);
 						} else {
-							ao.addProperty(prop, sparql);
+							
+							String label = env.getProperty("label." + addon + "." + prop + "." + country);
+
+							if (label == null) {
+								label = prop;
+							}
+							
+							ao.addProperty(prop, sparql, label);
 						}
 					}
 					
-					map.put(addon + "-" + country, ao);
+					Map<String,AddOn> addonMap = map.get(country);
+					if (addonMap == null) {
+						addonMap = new HashMap<>();
+						map.put(country, addonMap);
+					}
+					
+					addonMap.put(addon, ao);
 				}
 			}
 		}

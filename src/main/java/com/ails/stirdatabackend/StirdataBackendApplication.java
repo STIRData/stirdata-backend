@@ -181,7 +181,7 @@ public class StirdataBackendApplication implements CommandLineRunner {
 //    	cz.setLicense("Otevřené data ISVR", "https://dataor.justice.cz/files/ISVR_OpenData_Podminky_uziti.pdf");
 //    	cz.setNaceEnpoint("https://xn--obchodn-rejstk-6lbg94p.stirdata.opendata.cz/vsparql");
 //    	cz.setNaceScheme("https://obchodní-rejstřík.stirdata.opendata.cz/zdroj/číselníky/nace-cz", "nace-cz");
-    	cz.setNaceFixedLevels(1,2,3,4,5);
+//    	cz.setNaceFixedLevels(1,2,3,4,5);
 //    	cz.setNacePathSparql("skos:broader*/skos:exactMatch");
     	cz.setCompanyTypeEndpoint("https://xn--obchodn-rejstk-6lbg94p.stirdata.opendata.cz/vsparql");
     	
@@ -196,7 +196,7 @@ public class StirdataBackendApplication implements CommandLineRunner {
 //	    el.setNaceEnpoint("https://stirdata-semantic.ails.ece.ntua.gr/api/content/nace-el/sparql");
 //	    el.setNaceScheme("http://el.data.stirdata.eu/resource/nace/scheme/KAD2008", "kad2008");
 //	    el.setNaceFixedLevel(7);
-	    el.setNaceFixedLevels(7);
+//	    el.setNaceFixedLevels(7);
 
 	    
 //	    fi.setLabel("Finland");
@@ -369,97 +369,26 @@ public class StirdataBackendApplication implements CommandLineRunner {
 
 //		ds.deleteNACEFromRDBMS(countryConfigurations.get("UK"));
 
-//		ds.copyNACEFromVirtuosoToRDBMS(); // ok //rubik
-//		ds.copyNACEFromVirtuosoToRDBMS(countryConfigurations.get("FI")); //rubik
-//		ds.copyNACEFromVirtuosoToRDBMS(countryConfigurations.get("NO")); //rubik
-//		ds.copyNACEFromVirtuosoToRDBMS(countryConfigurations.get("UK")); //rubik Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:98.0
-//		ds.copyNACEFromVirtuosoToRDBMS(countryConfigurations.get("CZ")); //rubik
-//		ds.copyNACEFromVirtuosoToRDBMS(countryConfigurations.get("BE")); //rubik
-//		ds.copyNACEFromVirtuosoToRDBMS(countryConfigurations.get("MD")); //rubik
+//		ds.changeStatisticsNaceCodes(countryConfigurations.get("BE"));
+//		ds.changeStatisticsNaceCodes(countryConfigurations.get("CZ"));
+//		ds.changeStatisticsNaceCodes(countryConfigurations.get("EL"));
+//		ds.changeStatisticsNaceCodes(countryConfigurations.get("FI"));
+//		ds.changeStatisticsNaceCodes(countryConfigurations.get("FR"));
+//		ds.changeStatisticsNaceCodes(countryConfigurations.get("MD"));
+//		ds.changeStatisticsNaceCodes(countryConfigurations.get("NL"));
+//		ds.changeStatisticsNaceCodes(countryConfigurations.get("NO"));
+//		ds.changeStatisticsNaceCodes(countryConfigurations.get("UK"));
 		
-//		ds.copyNACEFromVirtuosoToRDBMS(countryConfigurations.get("FR")); //rubik
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.1; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.1
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.1; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.1
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.1; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.1
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.1; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.1
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.1; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.1
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.1; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.1
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.12; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.12
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.13; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.13
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.14; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.14
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.15; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.15
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.16; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.16
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.19; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id naf-rev2:01.19
-
-//		ds.copyNACEFromVirtuosoToRDBMS(countryConfigurations.get("EL"));
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:00; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:00
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:00.0; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:00.0
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:00.01; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:00.01
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:00.02; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:00.02
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:00.03; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:00.03
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:00.01; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:00.01
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:00.02; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:00.02
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:00.03; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:00.03
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:00.01.0; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:00.01.0
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:00.02.0; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:00.02.0
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:00.03.0; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:00.03.0
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:00.01.00; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:00.01.00
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:00.02.00; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:00.02.00
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:00.03.00; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:00.03.00
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:01.00.00; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:01.00.00
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id kad2008:46.69.20		
-//		ds.copyNACEFromVirtuosoToRDBMS(countryConfigurations.get("NL")); //rubik
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:33.21; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:33.21
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:33.22; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:33.22
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:33.23; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:33.23
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:33.24; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:33.24
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:33.29; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:33.29
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:35.20; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:35.20
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:46.68; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:46.68
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:86.91; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:86.91
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:86.92; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:86.92
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:93.14; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:93.14
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:93.15; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id nace-rev2:93.15
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:3322; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:3322
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:3322; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:3322
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:3322; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:3322
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:4668; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:4668
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:4668; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:4668
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:8691; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:8691
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:8691; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:8691
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:8691; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:8691
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:8691; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:8691
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:8692; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:8692
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:8692; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:8692
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:8692; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:8692
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:8692; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:8692
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:8692; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:8692
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:8692; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:8692
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:9314; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:9314
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:9314; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:9314
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:9314; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:9314
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:9314; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:9314
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:9314; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:9314
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:9314; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:9314
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:9314; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:9314
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:9315; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:9315
-//		Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:9315; nested exception is javax.persistence.EntityNotFoundException: Unable to find com.ails.stirdatabackend.model.ActivityDB with id sbi2008:9315
-//		System.out.println("NACE FINISHED");
+//		ds.copyNACEFromVirtuosoToRDBMS(); 
+//		ds.copyNACEFromVirtuosoToRDBMS(countryConfigurations.get("BE")); 
+//		ds.copyNACEFromVirtuosoToRDBMS(countryConfigurations.get("CZ")); 
+//		ds.copyNACEFromVirtuosoToRDBMS(countryConfigurations.get("EL")); 
+//		ds.copyNACEFromVirtuosoToRDBMS(countryConfigurations.get("FI")); 
+//		ds.copyNACEFromVirtuosoToRDBMS(countryConfigurations.get("FR")); 
+//		ds.copyNACEFromVirtuosoToRDBMS(countryConfigurations.get("MD")); 
+//		ds.copyNACEFromVirtuosoToRDBMS(countryConfigurations.get("NL")); 
+//		ds.copyNACEFromVirtuosoToRDBMS(countryConfigurations.get("NO")); 
+//		ds.copyNACEFromVirtuosoToRDBMS(countryConfigurations.get("UK")); 
 
 //		ds.copyStatisticsFromMongoToRDBMS();
 //		System.out.println("FINISHED");

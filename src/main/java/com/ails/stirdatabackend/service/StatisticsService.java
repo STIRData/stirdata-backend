@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -107,8 +108,7 @@ public class StatisticsService {
 //    }
     
 	public void computeStatistics(CountryDB cc, Collection<Dimension> stats, boolean force, UpdateLog log) {
-		Set<Dimension> dims = new HashSet<>();
-		
+		Set<Dimension> dims = new LinkedHashSet<>();
 		
 		if (stats.contains(Dimension.DATA)) {
 			dims.add(Dimension.DATA);
@@ -120,12 +120,15 @@ public class StatisticsService {
     		}
 
         	if (cc.isNace() && stats.contains(Dimension.NUTSLAU_NACE)) {
+        		dims.add(Dimension.NUTSLAU);
         		dims.add(Dimension.NUTSLAU_NACE);
         	}
         	if (cc.isFoundingDate() && stats.contains(Dimension.NUTSLAU_FOUNDING)) {
+        		dims.add(Dimension.NUTSLAU);
             	dims.add(Dimension.NUTSLAU_FOUNDING);
         	}
         	if (cc.isDissolutionDate() && stats.contains(Dimension.NUTSLAU_DISSOLUTION)) {
+        		dims.add(Dimension.NUTSLAU);
         		dims.add(Dimension.NUTSLAU_DISSOLUTION);
         	}
     	}
@@ -153,6 +156,9 @@ public class StatisticsService {
 
     	if (!force) {
     		
+    		boolean nutsLauComputed = false;
+    		boolean computeNutsLauX = false;
+    		
 			for (Statistic s : statisticsRepository.groupCountDimensionsByCountry(cc.getCode()) ) {
 				Dimension d = s.getDimension(); 	
 				
@@ -167,10 +173,22 @@ public class StatisticsService {
 //					System.out.println(ccDate.getTime().equals(cc.getLastUpdated()));
 						
 					if (ccDate.getTime().equals(cc.getLastUpdated())) {
-						dims.remove(d);
-						logger.info("Statistics for " + cc.getCode() + " / " + d + " already computed.");
+						if (d == Dimension.NUTSLAU) {
+							nutsLauComputed = true;
+						} else {
+							dims.remove(d);
+							logger.info("Statistics for " + cc.getCode() + " / " + d + " already computed.");
+						}
+					} else {
+						if (d == Dimension.NUTSLAU_DISSOLUTION || d == Dimension.NUTSLAU_FOUNDING || d == Dimension.NUTSLAU_NACE) {
+							computeNutsLauX = true;
+						}
 					}
 				}
+			}
+			
+			if (nutsLauComputed && !computeNutsLauX) {
+				dims.remove(Dimension.NUTSLAU);
 			}
     	}
     	
@@ -178,19 +196,37 @@ public class StatisticsService {
     	
 	}
 
-    private PlaceDB lookupPlace(Map<Code, PlaceDB> placeMap, Code code) {
-    	PlaceDB res = placeMap.get(code);
+    private Statistic lookupPlace(CountryDB cc, Map<Code, Statistic> placeMap, Code code) {
+//    	PlaceDB res = placeMap.get(code);
+//    	if (res == null) {
+//    		res = placeRepository.findByCode(code);
+//    		placeMap.put(code, res);
+//    	}
+//    	
+//    	return res;
+    	
+    	Statistic res = placeMap.get(code);
     	if (res == null) {
-    		res = placeRepository.findByCode(code);
-    		placeMap.put(code, res);
+    		List<Statistic> list = statisticsRepository.findByCountryAndDimensionAndPlace(cc.getCode(), Dimension.NUTSLAU, code.getCode());
+    		if (list.size() > 1) {
+    			logger.error("There are more than one entries for place " + code.getCode() + " in NUTSLAU statistics.");
+    		} 
+    		
+    		if (list.size() > 0) {
+    			res = list.get(0);
+    			placeMap.put(code, res);
+    		}
+    		
     	}
     	
     	return res;
+    	
     }
     
     private void computeAndSaveAllStatistics(CountryDB cc, Set<Dimension> dimensions, UpdateLog log) {
     	
-    	Map<Code, PlaceDB> placeMap = new HashMap<>();
+//    	Map<Code, PlaceDB> placeMap = new HashMap<>();
+    	Map<Code, Statistic> placeMap = new HashMap<>();
 		
 //    	logger.info("Statistics to compute " + dimensions);
     	
@@ -595,10 +631,7 @@ public class StatisticsService {
 					
 					System.out.println("With NUTS " + iter.getCode());
 					
-					List<Code> nutsLauList = new ArrayList<>();
-					nutsLauList.add(iter.getCode());
-		
-		    		List<StatisticResult> nutsNace = statistics(cc, Dimension.NACE, null, nutsLauList, null, null, null, true, sc);
+		    		List<StatisticResult> nutsNace = statistics(cc, Dimension.NACE, null, Arrays.asList(new Code[] { iter.getCode() }), null, null, null, true, sc);
 					statisticsRepository.deleteAllByCountryAndDimensionAndPlace(cc.getCode(), Dimension.NUTSLAU_NACE, iter.getCode().toString());
 		    		
 	    			int counter = 0;
@@ -668,7 +701,8 @@ public class StatisticsService {
 		    			}
 		    			
 		    			StatisticResult sr = listNace.get(i);
-		    			PlaceDB placedb = lookupPlace(placeMap, sr.getGroupByCode());
+//		    			PlaceDB placedb = lookupPlace(cc, placeMap, sr.getGroupByCode());
+		    			Statistic placedb = lookupPlace(cc, placeMap, sr.getGroupByCode());
 		    			if (placedb == null) {
 		    				continue;
 		    			} 
@@ -677,8 +711,11 @@ public class StatisticsService {
 		    			stat.setCountry(cc.getCode());
 		    			stat.setDimension(Dimension.NUTSLAU_NACE);
 		    			stat.setPlace(sr.getGroupByCode().toString());
-		    			if (placedb.getParent() != null) {
-		    				stat.setParentPlace(placedb.getParent().getCode().toString());
+//		    			if (placedb.getParent() != null) {
+//		    				stat.setParentPlace(placedb.getParent().getCode().toString());
+//		    			}
+		    			if (placedb.getParentPlace() != null) {
+		    				stat.setParentPlace(placedb.getParentPlace());
 		    			}
 		    			stat.setActivity(sr.getCode().toString());
 		    			if (sr.getParentCode() != null) {
@@ -907,7 +944,8 @@ public class StatisticsService {
 		    			
 		    			StatisticResult sr = listNace.get(i);
 		    			
-		    			PlaceDB placedb = lookupPlace(placeMap, sr.getGroupByCode());
+//		    			PlaceDB placedb = lookupPlace(placeMap, sr.getGroupByCode());
+		    			Statistic placedb = lookupPlace(cc, placeMap, sr.getGroupByCode());
 		    			if (placedb == null) {
 		    				continue;
 		    			}
@@ -917,8 +955,11 @@ public class StatisticsService {
 	        			stat.setCountry(cc.getCode());
 	        			stat.setDimension(Dimension.NUTSLAU_FOUNDING);
 	        			stat.setPlace(sr.getGroupByCode().toString());
-		    			if (placedb.getParent() != null) {
-		    				stat.setParentPlace(placedb.getParent().getCode().toString());
+//		    			if (placedb.getParent() != null) {
+//		    				stat.setParentPlace(placedb.getParent().getCode().toString());
+//		    			}
+		    			if (placedb.getParentPlace() != null) {
+		    				stat.setParentPlace(placedb.getParentPlace());
 		    			}
 	        			stat.setFromDate(sr.getCode().getDateFrom().toString());
 	        			stat.setToDate(sr.getCode().getDateTo().toString());
@@ -1151,7 +1192,8 @@ public class StatisticsService {
 		    			
 		    			StatisticResult sr = listNace.get(i);
 		    			
-		    			PlaceDB placedb = lookupPlace(placeMap, sr.getGroupByCode());
+//		    			PlaceDB placedb = lookupPlace(placeMap, sr.getGroupByCode());
+		    			Statistic placedb = lookupPlace(cc, placeMap, sr.getGroupByCode());
 		    			if (placedb == null) {
 		    				continue;
 		    			}
@@ -1161,9 +1203,12 @@ public class StatisticsService {
 	        			stat.setCountry(cc.getCode());
 	        			stat.setDimension(Dimension.NUTSLAU_DISSOLUTION);
 	        			stat.setPlace(sr.getGroupByCode().toString());
-		    			if (placedb.getParent() != null) {
-		    				stat.setParentPlace(placedb.getParent().getCode().toString());
-		    			}
+//		    			if (placedb.getParent() != null) {
+//		    				stat.setParentPlace(placedb.getParent().getCode().toString());
+//		    			}
+		    			if (placedb.getParentPlace() != null) {
+		    				stat.setParentPlace(placedb.getParentPlace());
+		    			}	        			
 	        			stat.setFromDate(sr.getCode().getDateFrom().toString());
 	        			stat.setToDate(sr.getCode().getDateTo().toString());
 	        			stat.setDateInterval(Code.previousDateLevel(sr.getCode().getDateInterval()));

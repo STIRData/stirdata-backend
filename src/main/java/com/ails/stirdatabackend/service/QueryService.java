@@ -1,6 +1,7 @@
 package com.ails.stirdatabackend.service;
 
 import com.ails.stirdatabackend.model.ActivityDB;
+import com.ails.stirdatabackend.model.AddOn;
 import com.ails.stirdatabackend.model.Code;
 import com.ails.stirdatabackend.model.CompanyTypeDB;
 import com.ails.stirdatabackend.model.CountryConfigurationsBean;
@@ -28,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -69,6 +71,10 @@ public class QueryService {
     @Value("${page.size}")
     private int pageSize;
 
+    @Autowired
+	@Qualifier("country-addons")
+    private Map<String, Map<String,AddOn>> addons;  
+    
     public LegalEntity lookupEntity(String uri) {
     	CountryDB cc = dataService.findCountry(uri);
         
@@ -127,6 +133,22 @@ public class QueryService {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
         }
+       	
+        Map<String,AddOn> countryAddons = addons.get(cc.getCode());
+        if (countryAddons != null) {
+        	List list = new ArrayList<>();
+        	for (Map.Entry<String, AddOn> entry : countryAddons.entrySet()) {
+        		Object res = entry.getValue().ask(uri);
+        		if (res != null) {
+        			list.add(res);
+        		}
+        	}
+        	
+        	if (!list.isEmpty()) {
+        		entity.setAddOns(list);
+        	}
+        }
+       	
         
         return entity;
     }
@@ -588,6 +610,9 @@ public class QueryService {
 		}
 
 		Object fullAddressObj = map.get("fullAddress");
+		
+		System.out.println(fullAddressObj);
+		
 		if (fullAddressObj != null) {
 			if (fullAddressObj instanceof String) {
 				address.setFullAddress((String)fullAddressObj);
