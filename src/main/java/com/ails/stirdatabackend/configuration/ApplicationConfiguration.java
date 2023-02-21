@@ -255,25 +255,27 @@ public class ApplicationConfiguration {
 				if (env.getProperty("endpoint." + addon + "." + country) != null) {
 					ao.setLabel(env.getProperty("label." + addon + "." + country));
 					
-					ao.setOrderBy(env.getProperty("orderby." + addon + "." + country));
+//					ao.setOrderBy(env.getProperty("orderby." + addon + "." + country));
 
 					ao.setEndpoint(env.getProperty("endpoint." + addon + "." + country));
 					ao.setNamedGraph(env.getProperty("named-graph." + addon + "." + country));
+					ao.setSparql(env.getProperty("sparql." + addon + "." + country));
 					
 					for (String prop : properties.split(",")) {
-						String sparql = env.getProperty("sparql." + addon + "." + prop + "." + country);
-
+						
+//						String sparql = env.getProperty("sparql." + addon + "." + prop + "." + country);
+//
 						if (prop.equals("entity")) {
-							ao.setEntitySparql(sparql);
+//							ao.setEntitySparql(sparql);
 						} else {
-							
+//							
 							String label = env.getProperty("label." + addon + "." + prop + "." + country);
 
 							if (label == null) {
 								label = prop;
 							}
-							
-							ao.addProperty(prop, sparql, label);
+//							
+							ao.addProperty(prop, null, label);
 						}
 					}
 					

@@ -207,7 +207,7 @@ public class StatisticsService {
     	
     	Statistic res = placeMap.get(code);
     	if (res == null) {
-    		List<Statistic> list = statisticsRepository.findByCountryAndDimensionAndPlace(cc.getCode(), Dimension.NUTSLAU, code.getCode());
+    		List<Statistic> list = statisticsRepository.findByCountryAndDimensionAndPlace(cc.getCode(), Dimension.NUTSLAU, code.toString());
     		if (list.size() > 1) {
     			logger.error("There are more than one entries for place " + code.getCode() + " in NUTSLAU statistics.");
     		} 

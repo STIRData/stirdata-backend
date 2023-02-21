@@ -8,6 +8,7 @@ import java.util.Map;
 
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
+import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.RDFNode;
@@ -26,9 +27,10 @@ public class AddOn {
 	private String country;
 	private String endpoint;
 	private String namedGraph;
-	private String orderBy;
+//	private String orderBy;
 	
-	private String entitySparql;
+	private String sparql;
+//	private String entitySparql;
 	
 	private Map<String, AddOnProperty> properties;
 	
@@ -41,20 +43,20 @@ public class AddOn {
 	}
 	
 	public Object ask(String entity) {
-		String sparql = "SELECT * " + (namedGraph != null ? "FROM <" + namedGraph + ">" : "") + "WHERE {" +
-			entitySparql + " " + " VALUES ?entity { <" + entity + "> } ";
-		
-		for (Map.Entry<String, AddOnProperty> entry : properties.entrySet()) {
-			AddOnProperty aop = entry.getValue();
-		
-			sparql += aop.getSparql() + " ";
-		}
-		
-		sparql += " }";
-		
-		if (orderBy != null) {
-			sparql += "ORDER BY " + orderBy;
-		}
+//		String sparql = "SELECT * " + (namedGraph != null ? "FROM <" + namedGraph + ">" : "") + "WHERE {" +
+//			entitySparql + " " + " VALUES ?entity { <" + entity + "> } ";
+//		
+//		for (Map.Entry<String, AddOnProperty> entry : properties.entrySet()) {
+//			AddOnProperty aop = entry.getValue();
+//		
+//			sparql += aop.getSparql() + " ";
+//		}
+//		
+//		sparql += " }";
+//		
+//		if (orderBy != null) {
+//			sparql += "ORDER BY " + orderBy;
+//		}
 		
 //		System.out.println(QueryFactory.create(sparql));
 		
@@ -64,26 +66,30 @@ public class AddOn {
 		res.put("label", label);
 		res.put("results", list);
 		
-    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(endpoint, sparql)) {
+		String ssparql = sparql.replaceAll("\\{@@ENTITY@@\\}", "<" + entity + ">"); 
+		
+//		System.out.println(QueryFactory.create(ssparql));
+//		System.out.println(namedGraph);
+//		
+    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(endpoint, ssparql, namedGraph)) {
             ResultSet rs = qe.execSelect();
             while (rs.hasNext()) {
                 QuerySolution sol = rs.next();
         
                 Map<String, String> result = new HashMap<>();
                 
-//                System.out.println(sol);
-                
                 for (Map.Entry<String, AddOnProperty> entry : properties.entrySet()) {
         			AddOnProperty aop = entry.getValue();
         			
-        			RDFNode solution = sol.get(name + "" + aop.getName().substring(0,1).toUpperCase() + aop.getName().substring(1));
-        			if (solution.isResource()) {
-        				result.put(aop.getLabel(), solution.toString());
-        			} else {
-        				result.put(aop.getLabel(), solution.asLiteral().getLexicalForm());
+        			RDFNode solution = sol.get(aop.getName());
+        			if (solution != null) {
+	        				
+	        			if (solution.isResource()) {
+	        				result.put(aop.getLabel(), solution.toString());
+	        			} else {
+	        				result.put(aop.getLabel(), solution.asLiteral().getLexicalForm());
+	        			}
         			}
-        			
-        			sparql += aop.getSparql() + " ";
         		}
                 
                 list.add(result);

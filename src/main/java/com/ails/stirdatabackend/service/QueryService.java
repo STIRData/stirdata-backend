@@ -104,7 +104,11 @@ public class QueryService {
        	
        	try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), QueryFactory.create(sparqlConstruct, Syntax.syntaxARQ))) {
             Model model = qe.execConstruct();
-                
+
+            if (model.size() == 0) {
+            	return null;
+            }
+            
             Map<String, Object> jn = (Map)JsonLDWriter.toJsonLDJavaAPI((RDFFormat.JSONLDVariant)RDFFormat.JSONLD_COMPACT_PRETTY.getVariant(), DatasetFactory.wrap(model).asDatasetGraph(), null, null, context);
 //            jn.put("@context", "https://dev.stirdata.eu/api/data/context/stirdata.jsonld");
             
