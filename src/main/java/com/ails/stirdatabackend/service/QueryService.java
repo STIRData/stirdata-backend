@@ -615,7 +615,7 @@ public class QueryService {
 
 		Object fullAddressObj = map.get("fullAddress");
 		
-		System.out.println(fullAddressObj);
+//		System.out.println(fullAddressObj);
 		
 		if (fullAddressObj != null) {
 			if (fullAddressObj instanceof String) {

@@ -64,6 +64,18 @@ public class AddOn {
 		List<Map<String,String>> list = new ArrayList<>();
 		
 		res.put("label", label);
+		
+		List<Object> fields = new ArrayList<>();
+		for (Map.Entry<String, AddOnProperty> entry : properties.entrySet()) {
+			AddOnProperty aop = entry.getValue();
+			
+			Map<String,Object> field = new HashMap<>();
+			field.put("name", aop.getName());
+			field.put("label", aop.getLabel());
+			fields.add(field);
+		}
+		res.put("fields", fields);
+		
 		res.put("results", list);
 		
 		String ssparql = sparql.replaceAll("\\{@@ENTITY@@\\}", "<" + entity + ">"); 
@@ -85,9 +97,9 @@ public class AddOn {
         			if (solution != null) {
 	        				
 	        			if (solution.isResource()) {
-	        				result.put(aop.getLabel(), solution.toString());
+	        				result.put(aop.getName(), solution.toString());
 	        			} else {
-	        				result.put(aop.getLabel(), solution.asLiteral().getLexicalForm());
+	        				result.put(aop.getName(), solution.asLiteral().getLexicalForm());
 	        			}
         			}
         		}
