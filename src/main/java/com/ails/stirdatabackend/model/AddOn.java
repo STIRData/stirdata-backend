@@ -2,9 +2,11 @@ package com.ails.stirdatabackend.model;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
@@ -60,29 +62,15 @@ public class AddOn {
 		
 //		System.out.println(QueryFactory.create(sparql));
 		
-		Map<String, Object> res = new HashMap<>();
 		List<Map<String,String>> list = new ArrayList<>();
-		
-		res.put("label", label);
-		
-		List<Object> fields = new ArrayList<>();
-		for (Map.Entry<String, AddOnProperty> entry : properties.entrySet()) {
-			AddOnProperty aop = entry.getValue();
-			
-			Map<String,Object> field = new HashMap<>();
-			field.put("name", aop.getName());
-			field.put("label", aop.getLabel());
-			fields.add(field);
-		}
-		res.put("fields", fields);
-		
-		res.put("results", list);
-		
+
 		String ssparql = sparql.replaceAll("\\{@@ENTITY@@\\}", "<" + entity + ">"); 
 		
 //		System.out.println(QueryFactory.create(ssparql));
 //		System.out.println(namedGraph);
 //		
+		Set<String> usedProps = new HashSet<>();
+		
     	try (QueryExecution qe = QueryExecutionFactory.sparqlService(endpoint, ssparql, namedGraph)) {
             ResultSet rs = qe.execSelect();
             while (rs.hasNext()) {
@@ -96,6 +84,8 @@ public class AddOn {
         			RDFNode solution = sol.get(aop.getName());
         			if (solution != null) {
 	        				
+        				usedProps.add(aop.getName());
+        				
 	        			if (solution.isResource()) {
 	        				result.put(aop.getName(), solution.toString());
 	        			} else {
@@ -108,6 +98,29 @@ public class AddOn {
             }
         }
     	
+    	Map<String, Object> res = null;
+    	
+    	if (list.size() > 0) {
+			res = new HashMap<>();
+	
+			res.put("label", label);
+			
+			List<Object> fields = new ArrayList<>();
+			for (Map.Entry<String, AddOnProperty> entry : properties.entrySet()) {
+				AddOnProperty aop = entry.getValue();
+				
+				if (usedProps.contains(aop.getName())) {
+					Map<String,Object> field = new HashMap<>();
+					field.put("name", aop.getName());
+					field.put("label", aop.getLabel());
+					fields.add(field);
+				}
+			}
+			res.put("fields", fields);
+			
+			res.put("results", list);
+    	}	
+		
     	return res;
 	}
 	

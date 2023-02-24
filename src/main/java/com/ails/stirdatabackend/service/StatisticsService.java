@@ -984,7 +984,7 @@ public class StatisticsService {
 				
 				statisticsRepository.deleteAllByCountryAndDimensionAndNotReferenceDate(cc.getCode(), Dimension.NUTSLAU_FOUNDING, cc.getLastUpdated());
 
-				logger.info("Computing " + Dimension.NUTSLAU_FOUNDING + " statistics for " + cc.getCode() + " completed.");
+				logger.info("Computing " + Dimension.NUTSLAU_FOUNDING + " statistics for " + cc.getCode() + " completed. " + cc.getLastUpdated());
 
 				if (log != null) {
 		        	action.completed();
@@ -1232,7 +1232,7 @@ public class StatisticsService {
 				
 				statisticsRepository.deleteAllByCountryAndDimensionAndNotReferenceDate(cc.getCode(), Dimension.NUTSLAU_DISSOLUTION, cc.getLastUpdated());
 
-				logger.info("Computing " + Dimension.NUTSLAU_DISSOLUTION + " statistics for " + cc.getCode() + " completed.");
+				logger.info("Computing " + Dimension.NUTSLAU_DISSOLUTION + " statistics for " + cc.getCode() + " completed. " + cc.getLastUpdated());
 				
 				if (log != null) {
 		        	action.completed();
@@ -1392,7 +1392,7 @@ public class StatisticsService {
 				
 				statisticsRepository.deleteAllByCountryAndDimensionAndNotReferenceDate(cc.getCode(), Dimension.NACE_FOUNDING, cc.getLastUpdated());
 
-				logger.info("Computing " + Dimension.NACE_FOUNDING + " statistics for " + cc.getCode() + " completed.");
+				logger.info("Computing " + Dimension.NACE_FOUNDING + " statistics for " + cc.getCode() + " completed. " + cc.getLastUpdated());
 				
 				if (log != null) {
 		        	action.completed();
@@ -1499,7 +1499,7 @@ public class StatisticsService {
 				
 				statisticsRepository.deleteAllByCountryAndDimensionAndNotReferenceDate(cc.getCode(), Dimension.NACE_DISSOLUTION, cc.getLastUpdated());
 
-				logger.info("Computing " + Dimension.NACE_DISSOLUTION + " statistics for " + cc.getCode() + " completed.");
+				logger.info("Computing " + Dimension.NACE_DISSOLUTION + " statistics for " + cc.getCode() + " completed. " + cc.getLastUpdated());
 				
 				if (log != null) {
 		        	action.completed();
@@ -1952,7 +1952,7 @@ public class StatisticsService {
 	            			}
 	            		}
 	            		
-//	               		System.out.println("\t" + code.getCode() + " " + count + " " +  (System.currentTimeMillis() - start));
+//	               		System.out.println("\t" + code.getCode() + " " + count);
 	            	}
 		        } catch (QueryExceptionHTTP ex) {
 		        	System.out.println(ex.getMessage());
