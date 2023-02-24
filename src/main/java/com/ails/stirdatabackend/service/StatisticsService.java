@@ -981,10 +981,10 @@ public class StatisticsService {
 	        		statisticsRepository.saveAll(list);
 	
 				}			
-				
-				statisticsRepository.deleteAllByCountryAndDimensionAndNotReferenceDate(cc.getCode(), Dimension.NUTSLAU_FOUNDING, cc.getLastUpdated());
 
 				logger.info("Computing " + Dimension.NUTSLAU_FOUNDING + " statistics for " + cc.getCode() + " completed. " + cc.getLastUpdated());
+
+				statisticsRepository.deleteAllByCountryAndDimensionAndNotReferenceDate(cc.getCode(), Dimension.NUTSLAU_FOUNDING, cc.getLastUpdated());
 
 				if (log != null) {
 		        	action.completed();
@@ -1230,10 +1230,10 @@ public class StatisticsService {
 	
 				}		    		
 				
+				logger.info("Computing " + Dimension.NUTSLAU_DISSOLUTION + " statistics for " + cc.getCode() + " completed. " + cc.getLastUpdated());
+
 				statisticsRepository.deleteAllByCountryAndDimensionAndNotReferenceDate(cc.getCode(), Dimension.NUTSLAU_DISSOLUTION, cc.getLastUpdated());
 
-				logger.info("Computing " + Dimension.NUTSLAU_DISSOLUTION + " statistics for " + cc.getCode() + " completed. " + cc.getLastUpdated());
-				
 				if (log != null) {
 		        	action.completed();
 		        	updateLogRepository.save(log);
