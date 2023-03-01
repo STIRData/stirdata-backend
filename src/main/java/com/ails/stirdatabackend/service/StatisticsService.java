@@ -736,9 +736,9 @@ public class StatisticsService {
 	
 				}			
 				
-				statisticsRepository.deleteAllByCountryAndDimensionAndNotReferenceDate(cc.getCode(), Dimension.NUTSLAU_NACE, cc.getLastUpdated());
-				
 				logger.info("Computing " + Dimension.NUTSLAU_NACE + " statistics for " + cc.getCode() + " completed.");
+				
+				statisticsRepository.deleteAllByCountryAndDimensionAndNotReferenceDate(cc.getCode(), Dimension.NUTSLAU_NACE, cc.getLastUpdated());
 
 				if (log != null) {
 		        	action.completed();

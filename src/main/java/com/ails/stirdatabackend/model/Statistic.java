@@ -16,7 +16,7 @@ import lombok.Setter;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Getter
 @Setter
-@NoArgsConstructor
+//@NoArgsConstructor
 @Document(collection = "statistics")
 public class Statistic {
 	   @Id
@@ -55,4 +55,5 @@ public class Statistic {
 	   @Indexed(name = "referenceDate", direction = IndexDirection.ASCENDING)
 	   private Date referenceDate;
 	   
+	   public Statistic() { }
 }

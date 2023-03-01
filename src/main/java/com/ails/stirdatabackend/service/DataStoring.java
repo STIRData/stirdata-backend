@@ -594,18 +594,29 @@ public class DataStoring  {
 				if (s.getActivity() != null) {
 					sdb.setActivity(activitydb);
 	//				sdb.setActivity(new Code(s.getActivity()));
+				} else {
+					sdb.setActivity(null);
 				}
+				
 				if (s.getParentActivity() != null) {
 					sdb.setParentActivity(new ActivityDB(new Code(s.getParentActivity())));
 	//				sdb.setParentActivity(new Code(s.getParentActivity()));
-				}				
-				if (s.getPlace() != null) {
-					sdb.setPlace(new PlaceDB(new Code(s.getPlace())));
-	//				sdb.setPlace(new Code(s.getPlace()));
+				} else {
+					sdb.setParentActivity(null);
 				}
+				
+				if (s.getPlace() != null) {
+					sdb.setPlace(placedb);
+	//				sdb.setPlace(new Code(s.getPlace()));
+				} else {
+					sdb.setPlace(null);
+				}
+				
 				if (s.getParentPlace() != null) {
 					sdb.setParentPlace(new PlaceDB(new Code(s.getParentPlace())));
 	//				sdb.setParentPlace(new Code(s.getParentPlace()));
+				} else {
+					sdb.setParentPlace(null);
 				}
 
 				if (foundingFromDate != null) {
@@ -615,10 +626,20 @@ public class DataStoring  {
 					
 					if (s.getParentFromDate() != null) {
 						sdb.setParentFoundingFromDate(java.sql.Date.valueOf(s.getParentFromDate()));
+					} else {
+						sdb.setParentFoundingFromDate(null);
 					}
 					if (s.getParentToDate() != null) {
 						sdb.setParentFoundingToDate(java.sql.Date.valueOf(s.getParentToDate()));
+					} else {
+						sdb.setParentFoundingToDate(null);
 					}
+				} else {
+					sdb.setFoundingFromDate(null);
+					sdb.setFoundingToDate(null);
+					sdb.setFoundingDateInterval(null);
+					sdb.setParentFoundingFromDate(null);
+					sdb.setParentFoundingToDate(null);
 				}
 				
 				if (dissolutionFromDate != null) {
@@ -628,10 +649,20 @@ public class DataStoring  {
 					
 					if (s.getParentFromDate() != null) {
 						sdb.setParentDissolutionFromDate(java.sql.Date.valueOf(s.getParentFromDate()));
+					} else {
+						sdb.setParentDissolutionFromDate(null);
 					}
 					if (s.getParentToDate() != null) {
 						sdb.setParentDissolutionToDate(java.sql.Date.valueOf(s.getParentToDate()));
+					} else {
+						sdb.setParentDissolutionToDate(null);
 					}
+				} else {
+					sdb.setDissolutionFromDate(null);
+					sdb.setDissolutionToDate(null);
+					sdb.setDissolutionDateInterval(null);
+					sdb.setParentDissolutionFromDate(null);
+					sdb.setParentDissolutionToDate(null);
 				}
 
 				sdb.setUpdated(s.getUpdated());
