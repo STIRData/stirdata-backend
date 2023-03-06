@@ -81,7 +81,7 @@ public class NaceController {
     }
 
 	@GetMapping(value = "/getByCode", produces = "application/json")
-    public ResponseEntity<?> getNuts(@RequestParam String naceCode, @RequestParam Optional<String> language) {
+    public ResponseEntity<?> getNaceByCode(@RequestParam String naceCode, @RequestParam Optional<String> language) {
 		ActivityDB activity = naceService.getByCode(new Code(naceCode));
 		if (activity == null) {
 			Map<String, String> responseMap = new HashMap<>();
