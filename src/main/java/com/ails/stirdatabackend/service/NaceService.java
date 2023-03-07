@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -78,6 +79,17 @@ public class NaceService {
     	
     	return parents;
     }
+
+	public Optional<ActivityDB> getNaceRev2InitialAncestor(Code code) {
+		ActivityDB activity = activitiesRepository.findByCode(code);
+		if (activity == null) {
+			return Optional.empty();
+		}
+		while (activity.getParent() != null) {
+			activity = activity.getParent();
+		}
+		return Optional.of(activity);
+	}
     
     public List<ActivityDB> getNextNaceLevelListDb(Code parent) {
 
