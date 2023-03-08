@@ -415,6 +415,12 @@ public class StatisticsContoller {
 			
 			Code defaultDate = Code.createDateCode(defaultFromDate, new Date(new java.util.Date().getTime()), Code.date1Y).normalizeDate(defaultFromDate);
 		    
+//			System.out.println(cc);
+//			System.out.println(placedb);
+//			System.out.println(activitydb);
+//			System.out.println(founding);
+//			System.out.println(dissolution);
+			
 			/////////////////////
 			if (!placedb.isEmpty() && !activitydb.isEmpty()) {
 				
@@ -800,15 +806,14 @@ public class StatisticsContoller {
 	
 				
 				if (cactivity) {
-					
 					if (cc.getStatsDate(Dimension.NACE) != null && founding == null && dissolution == null) {
 						List<StatisticDB> activityStats = statisticsRepository.findByCountryAndDimensionAndParentActivityIsNull(country, Dimension.NACE.toString());
 						activities = iter(activityStats, null, null, founding, dissolution, language);
 					} else if (cc.getStatsDate(Dimension.NACE_FOUNDING) != null && founding != null && dissolution == null) {
-						List<StatisticDB> activityStats = statisticsRepository.findByCountryAndDimensionAndParentActivityIsNullAndFoundingDateRange(country, Dimension.NACE_FOUNDING.toString(), founding.getDateFrom(), founding.getDateTo(), Code.date1M, dateRangeName(founding.getDateInterval()));
+						List<StatisticDB> activityStats = statisticsRepository.findByCountryAndDimensionAndParentActivityIsNullAndFoundingDateRange2(country, Dimension.NACE_FOUNDING.toString(), founding.getDateFrom(), founding.getDateTo(), Code.date1M);
 						activities = iterFounding(activityStats, null, null, null, dissolution, language);
 					} else if (cc.getStatsDate(Dimension.NACE_DISSOLUTION) != null && founding == null && dissolution != null) {
-						List<StatisticDB> activityStats = statisticsRepository.findByCountryAndDimensionAndParentActivityIsNullAndDissolutionDateRange(country, Dimension.NACE_DISSOLUTION.toString(), dissolution.getDateFrom(), dissolution.getDateTo(), Code.date1M, dateRangeName(dissolution.getDateInterval()));
+						List<StatisticDB> activityStats = statisticsRepository.findByCountryAndDimensionAndParentActivityIsNullAndDissolutionDateRange2(country, Dimension.NACE_DISSOLUTION.toString(), dissolution.getDateFrom(), dissolution.getDateTo(), Code.date1M);
 						activities = iterDissolution(activityStats, null, null, founding, null, language);
 					} else {
 						List<StatisticDB> activityStats = mapResults(statisticsService.statistics(cc, Dimension.NACE, null, null, null, founding, dissolution, false), Dimension.NACE);
@@ -823,10 +828,10 @@ public class StatisticsContoller {
 						List<StatisticDB> placeStats = statisticsRepository.findByCountryAndDimensionAndParentPlaceIsNull(country, Dimension.NUTSLAU.toString());
 						places = iter(placeStats, null, null, founding, dissolution, language);
 					} else if (cc.getStatsDate(Dimension.NUTSLAU_FOUNDING) != null && founding != null && dissolution == null) {
-						List<StatisticDB> placeStats = statisticsRepository.findByCountryAndDimensionAndParentPlaceIsNullAndFoundingDateRange(country, Dimension.NUTSLAU_FOUNDING.toString(), founding.getDateFrom(), founding.getDateTo(), Code.date1M, dateRangeName(founding.getDateInterval()));
+						List<StatisticDB> placeStats = statisticsRepository.findByCountryAndDimensionAndParentPlaceIsNullAndFoundingDateRange2(country, Dimension.NUTSLAU_FOUNDING.toString(), founding.getDateFrom(), founding.getDateTo(), Code.date1M);
 						places = iterFounding(placeStats, null, null, null, dissolution, language);
 					} else if (cc.getStatsDate(Dimension.NUTSLAU_DISSOLUTION) != null && founding == null && dissolution != null) {
-						List<StatisticDB> placeStats = statisticsRepository.findByCountryAndDimensionAndParentPlaceIsNullAndDissolutionDateRange(country, Dimension.NUTSLAU_DISSOLUTION.toString(), dissolution.getDateFrom(), dissolution.getDateTo(), Code.date1M, dateRangeName(dissolution.getDateInterval()));
+						List<StatisticDB> placeStats = statisticsRepository.findByCountryAndDimensionAndParentPlaceIsNullAndDissolutionDateRange2(country, Dimension.NUTSLAU_DISSOLUTION.toString(), dissolution.getDateFrom(), dissolution.getDateTo(), Code.date1M);
 						places = iterDissolution(placeStats, null, null, founding, null, language);
 					} else {
 						List<StatisticDB> placeStats = mapResults(statisticsService.statistics(cc, Dimension.NUTSLAU, null, null, null, founding, dissolution, false), Dimension.NUTSLAU);
