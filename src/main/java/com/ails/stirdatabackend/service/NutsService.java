@@ -705,7 +705,7 @@ public class NutsService {
 
     	String countries = "";
     	if (ccList != null) {
-	    	for (CountryDB cc : ccList) {
+	    	for (CountryDB cc : new HashSet<>(ccList)) {
 	    		if (countries.length() > 0) {
 	    			countries += "  ";
 	    		}

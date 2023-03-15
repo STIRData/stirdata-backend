@@ -244,7 +244,7 @@ public class QueryService {
 	                }
 	            }
 	            
-	//            System.out.println(companies);
+//	            System.out.println(companies);
 	
 	            if (!companies.isEmpty()) {
 	            	

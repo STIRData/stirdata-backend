@@ -2,6 +2,7 @@ package com.ails.stirdatabackend.service;
 
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 
 import org.apache.jena.datatypes.xsd.XSDDateTime;
@@ -160,7 +161,7 @@ public class SparqlQuery {
 	        	sparql += cc.getNuts3Sparql() + " ";
 	        	
 	            sparql += " VALUES ?nuts3 { ";
-	            for (String uri : nuts3) {
+	            for (String uri : new HashSet<>(nuts3)) {
 	                sparql += "<" + uri + "> ";
 	            }
 	            sparql += "} ";
@@ -174,7 +175,7 @@ public class SparqlQuery {
 	        	sparql += cc.getLauSparql() + " ";
 	        	
 	            sparql += " VALUES ?lau { ";
-	            for (String uri : lau) {
+	            for (String uri : new HashSet<>(lau)) {
 	                sparql += "<" + uri + "> ";
 	            }
 	            sparql += "} ";
@@ -189,7 +190,7 @@ public class SparqlQuery {
         	sparql += cc.getNuts3Sparql() + " ";
         	
             sparql += " VALUES ?nuts3 { ";
-            for (String uri : nuts3) {
+            for (String uri : new HashSet<>(nuts3)) {
                 sparql += "<" + uri + "> ";
             }
             sparql += "} ";
@@ -199,7 +200,7 @@ public class SparqlQuery {
             sparql += cc.getLauSparql() + " ";
         	
             sparql += " VALUES ?lau { ";
-            for (String uri : lau) {
+            for (String uri : new HashSet<>(lau)) {
                 sparql += "<" + uri + "> ";
             }
             sparql += "} ";
@@ -220,14 +221,14 @@ public class SparqlQuery {
 	        		sparql += " ?nace " + cc.getNacePathSparql() + " ?naceroot .";
 	        		
 		            sparql += " VALUES ?naceroot { ";
-		            for (String uri : nace) {
+		            for (String uri : new HashSet<>(nace)) {
 		                sparql += "<" + uri + "> ";
 		            }
 		            sparql += "} ";
 	        		
 	        	} else {
 		            sparql += " VALUES ?nace { ";
-		            for (String uri : nace) {
+		            for (String uri : new HashSet<>(nace)) {
 		                sparql += "<" + uri + "> ";
 		            }
 		            sparql += "} ";
@@ -319,14 +320,14 @@ public class SparqlQuery {
         		sparql += " ?nace " + cc.getNacePathSparql() + " ?naceroot .";
         		
 	            sparql += " VALUES ?naceroot { ";
-	            for (String uri : nace) {
+	            for (String uri : new HashSet<>(nace)) {
 	                sparql += "<" + uri + "> ";
 	            }
 	            sparql += "} ";
         		
         	} else {
 	            sparql += " VALUES ?nace { ";
-	            for (String uri : nace) {
+	            for (String uri : new HashSet<>(nace)) {
 	                sparql += "<" + uri + "> ";
 	            }
 	            sparql += "} ";
@@ -398,14 +399,14 @@ public class SparqlQuery {
         		sparql += " ?nace " + cc.getNacePathSparql() + " ?naceroot .";
         		
 	            sparql += " VALUES ?naceroot { ";
-	            for (String uri : nace) {
+	            for (String uri : new HashSet<>(nace)) {
 	                sparql += "<" + uri + "> ";
 	            }
 	            sparql += "} ";
         		
         	} else {
 	            sparql += " VALUES ?nace { ";
-	            for (String uri : nace) {
+	            for (String uri : new HashSet<>(nace)) {
 	                sparql += "<" + uri + "> ";
 	            }
 	            sparql += "} ";
