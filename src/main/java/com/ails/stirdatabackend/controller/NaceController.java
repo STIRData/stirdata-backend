@@ -81,7 +81,7 @@ public class NaceController {
     }
 
 	@GetMapping(value = "/getByCode", produces = "application/json")
-    public ResponseEntity<?> getNuts(@RequestParam String naceCode, @RequestParam Optional<String> language) {
+    public ResponseEntity<?> getNaceByCode(@RequestParam String naceCode, @RequestParam Optional<String> language) {
 		ActivityDB activity = naceService.getByCode(new Code(naceCode));
 		if (activity == null) {
 			Map<String, String> responseMap = new HashMap<>();
@@ -98,4 +98,16 @@ public class NaceController {
         return ResponseEntity.ok(new CodeLabel(naceCode, label));
     }
 
+	@GetMapping(value = "getTopLevelParent", produces = "application/json")
+	public ResponseEntity<?> getNaceTopLevelParent(@RequestParam String naceCode) {
+		Optional<ActivityDB> activity = naceService.getNaceRev2InitialAncestor(new Code(naceCode));
+		if (activity.isPresent()) {
+			return ResponseEntity.ok(new CodeLabel(activity.get().getCode().getCode(), activity.get().getLabel(null)));
+		}
+		else {
+			Map<String, String> responseMap = new HashMap<>();
+			responseMap.put("error", "Activity does not exist with requested code");
+			return ResponseEntity.badRequest().body(responseMap);
+		}
+	}
 }
