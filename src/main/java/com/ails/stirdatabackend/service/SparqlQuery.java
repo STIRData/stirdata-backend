@@ -273,7 +273,7 @@ public class SparqlQuery {
         return cq;
     }
 
-    public static SparqlQuery buildCoreQueryGroupPlace(CountryDB cc, boolean active, boolean name, Collection<String> nuts3, Collection<String> lau, Collection<String> nace, Code foundingDate, Code dissolutionDate) {
+    public static SparqlQuery buildCoreQueryGroupPlace(CountryDB cc, boolean active, boolean name, Collection<String> nuts3, Collection<String> lau, boolean includeNutsLau, Collection<String> nace, Code foundingDate, Code dissolutionDate) {
         
 //    	System.out.println(nuts3);
     	SparqlQuery cq = new SparqlQuery(cc.getDataNamedGraph());
@@ -296,18 +296,28 @@ public class SparqlQuery {
         if (nuts3 != null && (lau == null || lau.size() == 0)) {
         	if (nuts3.size() > 0) {
 	        	sparql += cc.getNuts3Sparql() + " ";
+	        	
+	        	if (includeNutsLau) {
+	              sparql += " VALUES ?nuts3 { ";
+	              for (String uri : nuts3) {
+	                  sparql += "<" + uri + "> ";
+	              }
+	              sparql += "} ";
+	        	}
         	}
         	
-        	
-//            sparql += " VALUES ?nuts3 { ";
-//            for (String uri : nuts3) {
-//                sparql += "<" + uri + "> ";
-//            }
-//            sparql += "} ";
-            	
+           	
         } else if ((nuts3 == null || nuts3.size() == 0) && lau != null) {            
         	if (lau.size() > 0) {
 	        	sparql += cc.getLauSparql() + " ";
+	        	
+	        	if (includeNutsLau) {
+	              sparql += " VALUES ?lau { ";
+	              for (String uri : lau) {
+	                  sparql += "<" + uri + "> ";
+	              }
+	              sparql += "} ";
+	        	}
         	}            
         }
 
@@ -370,83 +380,83 @@ public class SparqlQuery {
     }
 
     
-    public static SparqlQuery buildCoreQueryGroupPlace(CountryDB cc, boolean active, boolean nuts3, boolean lau, List<String> nace, Code foundingDate, Code dissolutionDate) {
-        
-    	SparqlQuery cq = new SparqlQuery(cc.getDataNamedGraph());
-    	
-        String sparql = "";
-        
-        sparql += cc.getEntitySparql() + " "; 
-        
-        if (active && cc.isDissolutionDate()) {
-        	if (dissolutionDate == null || (dissolutionDate.getDateFrom() == null && dissolutionDate.getDateTo() == null)) {
-	        	sparql += cc.getActiveSparql() + " ";
-	        }
-        }
-        
-        if (nuts3) {
-	        sparql += cc.getNuts3Sparql() + " ";
-        } else if (lau) {            
-        	sparql += cc.getLauSparql() + " ";
-        }
-
-        
-        if (nace != null) {
-        	sparql += cc.getNaceSparql() + " ";
-        	
-        	if (cc.getNacePathSparql() != null) {
-        	
-        		sparql += " ?nace " + cc.getNacePathSparql() + " ?naceroot .";
-        		
-	            sparql += " VALUES ?naceroot { ";
-	            for (String uri : new HashSet<>(nace)) {
-	                sparql += "<" + uri + "> ";
-	            }
-	            sparql += "} ";
-        		
-        	} else {
-	            sparql += " VALUES ?nace { ";
-	            for (String uri : new HashSet<>(nace)) {
-	                sparql += "<" + uri + "> ";
-	            }
-	            sparql += "} ";
-        	}
-            
-//            cq.setNace(true);
-        }
-        
-
-        // Date filter (if requested)
-        
-        if (foundingDate != null && (foundingDate.getDateFrom() != null || foundingDate.getDateTo() != null)) {
-            sparql += cc.getFoundingDateSparql() + " ";
-
-            if (foundingDate.getDateFrom() != null && foundingDate.getDateTo() == null) {
-                sparql += "FILTER( ?foundingDate >= \"" + foundingDate.getDateFrom() + "\"^^xsd:date) ";
-            } else if (foundingDate.getDateFrom() == null && foundingDate.getDateTo() != null) {
-                sparql += "FILTER( ?foundingDate <= \"" + foundingDate.getDateTo() + "\"^^xsd:date) ";
-            } else {
-                sparql += "FILTER( ?foundingDate >= \"" + foundingDate.getDateFrom() + "\"^^xsd:date && ?foundingDate <= \"" + foundingDate.getDateTo() + "\"^^xsd:date) ";
-
-            }
-        }
-        
-        if (dissolutionDate != null && (dissolutionDate.getDateFrom() != null || dissolutionDate.getDateTo() != null)) {
-            sparql += cc.getDissolutionDateSparql() + " ";
-
-            if (dissolutionDate.getDateFrom() != null && dissolutionDate.getDateTo() == null) {
-                sparql += "FILTER( ?dissolutionDate >= \"" + dissolutionDate.getDateFrom() + "\"^^xsd:date) ";
-            } else if (dissolutionDate.getDateFrom() == null && dissolutionDate.getDateTo() != null) {
-                sparql += "FILTER( ?dissolutionDate < \"" + dissolutionDate.getDateTo() + "\"^^xsd:date) ";
-            } else {
-                sparql += "FILTER( ?dissolutionDate >= \"" + dissolutionDate.getDateFrom() + "\"^^xsd:date && ?dissolutionDate < \"" + dissolutionDate.getDateTo() + "\"^^xsd:date) ";
-            }
-        }
-        
-        cq.setWhere(sparql);
-        
-        return cq;
-    }
+//    public static SparqlQuery buildCoreQueryGroupPlace(CountryDB cc, boolean active, boolean nuts3, boolean lau, List<String> nace, Code foundingDate, Code dissolutionDate) {
+//        
+//    	SparqlQuery cq = new SparqlQuery(cc.getDataNamedGraph());
+//    	
+//        String sparql = "";
+//        
+//        sparql += cc.getEntitySparql() + " "; 
+//        
+//        if (active && cc.isDissolutionDate()) {
+//        	if (dissolutionDate == null || (dissolutionDate.getDateFrom() == null && dissolutionDate.getDateTo() == null)) {
+//	        	sparql += cc.getActiveSparql() + " ";
+//	        }
+//        }
+//        
+//        if (nuts3) {
+//	        sparql += cc.getNuts3Sparql() + " ";
+//        } else if (lau) {            
+//        	sparql += cc.getLauSparql() + " ";
+//        }
+//
+//        
+//        if (nace != null) {
+//        	sparql += cc.getNaceSparql() + " ";
+//        	
+//        	if (cc.getNacePathSparql() != null) {
+//        	
+//        		sparql += " ?nace " + cc.getNacePathSparql() + " ?naceroot .";
+//        		
+//	            sparql += " VALUES ?naceroot { ";
+//	            for (String uri : new HashSet<>(nace)) {
+//	                sparql += "<" + uri + "> ";
+//	            }
+//	            sparql += "} ";
+//        		
+//        	} else {
+//	            sparql += " VALUES ?nace { ";
+//	            for (String uri : new HashSet<>(nace)) {
+//	                sparql += "<" + uri + "> ";
+//	            }
+//	            sparql += "} ";
+//        	}
+//            
+////            cq.setNace(true);
+//        }
+//        
+//
+//        // Date filter (if requested)
+//        
+//        if (foundingDate != null && (foundingDate.getDateFrom() != null || foundingDate.getDateTo() != null)) {
+//            sparql += cc.getFoundingDateSparql() + " ";
+//
+//            if (foundingDate.getDateFrom() != null && foundingDate.getDateTo() == null) {
+//                sparql += "FILTER( ?foundingDate >= \"" + foundingDate.getDateFrom() + "\"^^xsd:date) ";
+//            } else if (foundingDate.getDateFrom() == null && foundingDate.getDateTo() != null) {
+//                sparql += "FILTER( ?foundingDate <= \"" + foundingDate.getDateTo() + "\"^^xsd:date) ";
+//            } else {
+//                sparql += "FILTER( ?foundingDate >= \"" + foundingDate.getDateFrom() + "\"^^xsd:date && ?foundingDate <= \"" + foundingDate.getDateTo() + "\"^^xsd:date) ";
+//
+//            }
+//        }
+//        
+//        if (dissolutionDate != null && (dissolutionDate.getDateFrom() != null || dissolutionDate.getDateTo() != null)) {
+//            sparql += cc.getDissolutionDateSparql() + " ";
+//
+//            if (dissolutionDate.getDateFrom() != null && dissolutionDate.getDateTo() == null) {
+//                sparql += "FILTER( ?dissolutionDate >= \"" + dissolutionDate.getDateFrom() + "\"^^xsd:date) ";
+//            } else if (dissolutionDate.getDateFrom() == null && dissolutionDate.getDateTo() != null) {
+//                sparql += "FILTER( ?dissolutionDate < \"" + dissolutionDate.getDateTo() + "\"^^xsd:date) ";
+//            } else {
+//                sparql += "FILTER( ?dissolutionDate >= \"" + dissolutionDate.getDateFrom() + "\"^^xsd:date && ?dissolutionDate < \"" + dissolutionDate.getDateTo() + "\"^^xsd:date) ";
+//            }
+//        }
+//        
+//        cq.setWhere(sparql);
+//        
+//        return cq;
+//    }
     
  }
     
