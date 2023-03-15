@@ -24,6 +24,7 @@ public class LegalEntity {
 	private Date foundingDate;
 	private Date dissolutionDate;
 	private String leiCode;
+	private List<String> sameAs;
 	
 	private List addOns;
 
@@ -57,6 +58,14 @@ public class LegalEntity {
 		}
 		
 		registeredAddresses.add(address);
+	}
+	
+	public void addSameAs(String sameAs) {
+		if (this.sameAs == null) {
+			this.sameAs = new ArrayList<>();
+		}
+		
+		this.sameAs.add(sameAs);
 	}
 
 }

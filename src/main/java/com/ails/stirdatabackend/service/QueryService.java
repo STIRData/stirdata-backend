@@ -14,14 +14,11 @@ import com.ails.stirdatabackend.payload.LegalEntity;
 import com.ails.stirdatabackend.payload.Page;
 import com.ails.stirdatabackend.payload.QueryResponse;
 import com.ails.stirdatabackend.service.NutsService.PlaceSelection;
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.jsonldjava.core.JsonLdError;
 
 import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.riot.JsonLDWriteContext;
-import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFFormat;
 import org.apache.jena.riot.writer.JsonLDWriter;
 import org.slf4j.Logger;
@@ -29,12 +26,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -86,7 +81,8 @@ public class QueryService {
                         "  ?entity <http://www.w3.org/ns/legal#companyActivity> ?nace . " +
                 		"  ?entity <http://www.w3.org/ns/legal#registeredAddress> ?address . ?address ?ap ?ao . " + 
                         "  ?entity <https://schema.org/foundingDate> ?foundingDate . " +	           		
-                        "  ?entity <https://schema.org/leiCode> ?leiCode . } " +
+                        "  ?entity <https://schema.org/leiCode> ?leiCode . " +
+                        "  ?entity <https://schema.org/sameAs> ?sameAs . } " +
         		" WHERE { " +
                 cc.getEntitySparql() + " " +
                 "OPTIONAL { " + cc.getLegalNameSparql() + " } " + 
@@ -96,6 +92,7 @@ public class QueryService {
 	            "OPTIONAL { " + cc.getNaceSparql() + " } " +
                 "OPTIONAL { " + cc.getFoundingDateSparql() + " } " +
                 "OPTIONAL { " + cc.getLeiCodeSparql() + " } " +
+                "OPTIONAL { " + cc.getSameAsSparql() + " } " +
                 "VALUES ?entity { <" + uri + "> } } ";
 
        	LegalEntity entity = null;
@@ -457,10 +454,24 @@ public class QueryService {
 		if (leiCode != null) {
     		if (leiCode instanceof String) {
     			lg.setLeiCode((String)leiCode);
-    		} else if (legalNameObj instanceof List) {
+    		} else if (leiCode instanceof List) {
 				for (Object s : (List)leiCode) {
 		    		if (s instanceof String) {
-		    			lg.setLeiCode((String)s);
+		    			lg.setLeiCode((String)s); 
+		    		}
+				}
+			}
+		}
+		
+		Object sameAs = map.get("sameAs");
+		if (sameAs != null) {
+    		if (sameAs instanceof Map) {
+    			lg.addSameAs((String)((Map)sameAs).get("@id"));    			
+    		} else if (sameAs instanceof List) {
+				for (Object s : (List)sameAs) {
+		    		if (s instanceof Map) {
+		    			lg.addSameAs((String)((Map)s).get("@id"));    			
+
 		    		}
 				}
 			}

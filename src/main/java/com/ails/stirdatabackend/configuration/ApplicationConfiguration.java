@@ -177,6 +177,7 @@ public class ApplicationConfiguration {
 		    String foundingDateSparql = env.getProperty("sparql.foundingDate." + m); 
 		    String dissolutionDateSparql = env.getProperty("sparql.dissolutionDate." + m);
 		    String leiCodeSparql = env.getProperty("sparql.leiCode." + m);
+		    String sameAsSparql = env.getProperty("sparql.sameAs." + m);
 
 		    mc.setEntitySparql(entitySparql);
 	    	mc.setLegalNameSparql(legalNameSparql);	
@@ -190,6 +191,7 @@ public class ApplicationConfiguration {
 	    	mc.setFoundingDateSparql(foundingDateSparql);
 	    	mc.setDissolutionDateSparql(dissolutionDateSparql);
 	    	mc.setLeiCodeSparql(leiCodeSparql);
+	    	mc.setSameAsSparql(sameAsSparql);
 	    	
 			map.put(mc.getUrl(), mc);
 		}

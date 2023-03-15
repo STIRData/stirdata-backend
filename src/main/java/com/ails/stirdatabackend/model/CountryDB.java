@@ -263,6 +263,9 @@ public class CountryDB {
     @Column(name = "lei_code_sparql")
     private String leiCodeSparql;
 
+    @Column(name = "same_as_sparql")
+    private String sameAsSparql;
+    
 	@Transient
     private ModelConfiguration modelConfiguration;
 	
@@ -324,6 +327,10 @@ public class CountryDB {
     
     public String getLeiCodeSparql() {
     	return leiCodeSparql != null ? leiCodeSparql : modelConfiguration.getLeiCodeSparql();
+    }
+    
+    public String getSameAsSparql() {
+    	return sameAsSparql != null ? sameAsSparql : modelConfiguration.getSameAsSparql();
     }
     
     public Date getStatsDate(Dimension dimension) {

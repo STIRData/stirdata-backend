@@ -48,6 +48,9 @@
     },
     "leiCode" : {
       "@id" : "https://schema.org/leiCode"
-    }
+    },
+    "sameAs" : {
+      "@id" : "https://schema.org/sameAs"
+    }    
   }
 }
