@@ -266,6 +266,9 @@ public class StatisticsContoller {
 				iparents.add(nutsService.getParents(placedb.get(i)));
 			}
 			
+			String s = placedb + "";
+			try {
+			
 			loop:
 			for (int i = 1; i < placedb.size();) {
 				boolean removed = false;
@@ -287,6 +290,12 @@ public class StatisticsContoller {
 					i++;
 				}
 			}
+			
+		} catch (Exception ex) {
+			System.out.println("PARENT input " + s);
+			throw ex;
+		}
+			
 		}
 		
 //		System.out.println("B1P-- " + country);
@@ -331,7 +340,10 @@ public class StatisticsContoller {
 			for (int i = 0; i < activitydb.size(); i++) {
 				iparents.add(naceService.getParents(activitydb.get(i)));
 			}
-			
+
+			String s = activitydb + "";
+			try {
+				
 			loop:
 			for (int i = 1; i < activitydb.size();) {
 				boolean removed = false;
@@ -353,9 +365,15 @@ public class StatisticsContoller {
 					i++;
 				}
 			}
+			
+			} catch (Exception ex) {
+				System.out.println("ACTIVITY input " + s);
+				throw ex;
+			}
 		}
 
 //		System.out.println("BA-- " + activitydb);
+		
 		
 		//find common activity parent
 		if (activitydb.size() > 1) {
