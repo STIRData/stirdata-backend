@@ -806,7 +806,7 @@ public class DataStoring  {
 			   "?nuts <http://www.w3.org/2004/02/skos/core#inScheme> <https://w3id.org/stirdata/resource/nuts/scheme/NUTS2021> ." +
 			   "?nuts <http://www.w3.org/2004/02/skos/core#prefLabel> ?prefLabel . " +
 			   "?nuts <" + SDVocabulary.level + "> " + i + " . " +
-			   "?nuts <https://w3id.org/stirdata/vocabulary/iso31661Alpha2Code> \"" + cc.getCode() + "\" . " +
+			   "?nuts <https://w3id.org/stirdata/vocabulary/iso31661Alpha2Code> \"" + cc.getIsoCode() + "\" . " +
 			   "OPTIONAL { ?nuts <http://www.w3.org/2004/02/skos/core#altLabel> ?altLabel } " +
 			   "OPTIONAL { ?nuts <http://www.opengis.net/ont/geosparql#sfWithin> ?broader } " +
 			   "OPTIONAL { ?nuts <http://www.opengis.net/ont/geosparql#hasGeometry> [ <http://www.opengis.net/ont/geosparql#asGeoJSON> ?geo60M ; <http://www.opengis.net/ont/geosparql#hasSpatialResolution> \"1:60000000\" ] } " +
@@ -942,7 +942,7 @@ public class DataStoring  {
 //				   "?lau a <https://lod.stirdata.eu/nuts/ont/LAURegion> . " +
 				   "?lau <http://www.w3.org/2004/02/skos/core#inScheme> <https://w3id.org/stirdata/resource/lau/scheme/LAU2021> ." +
 				   "?lau <http://www.w3.org/2004/02/skos/core#prefLabel> ?prefLabel . " +
-				   "?lau <https://w3id.org/stirdata/vocabulary/iso31661Alpha2Code> \"" + cc.getCode() + "\" . " +
+				   "?lau <https://w3id.org/stirdata/vocabulary/iso31661Alpha2Code> \"" + cc.getIsoCode() + "\" . " +
 				   "OPTIONAL { ?lau <http://www.w3.org/2004/02/skos/core#altLabel> ?altLabel } " +
 				   "OPTIONAL { ?lau <http://www.opengis.net/ont/geosparql#sfWithin> ?broader } " +
 //				   "OPTIONAL { ?lau <http://www.opengis.net/ont/geosparql#hasGeometry> [ <http://www.opengis.net/ont/geosparql#asGeoJSON> ?geo1M ; <http://www.opengis.net/ont/geosparql#hasSpatialResolution> \"1:1000000\" ] } " +

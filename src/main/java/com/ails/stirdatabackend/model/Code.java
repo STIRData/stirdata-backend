@@ -151,7 +151,7 @@ public class Code implements Serializable {
 					
 					String[] values = statValue.split("~");
 					
-					if (values.length > 1) {
+					if (values.length > 0) {
 						statOtherValues = new HashMap<>();
 						for (String val : values) {
 							Matcher m2 = statValuePattern.matcher(val);

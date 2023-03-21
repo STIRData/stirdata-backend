@@ -709,7 +709,7 @@ public class NutsService {
 	    		if (countries.length() > 0) {
 	    			countries += "  ";
 	    		}
-	    		countries += "\"" + cc.getCode() + "\"";
+	    		countries += "\"" + cc.getIsoCode() + "\"";
 	    	}
     	}
     	
@@ -759,7 +759,7 @@ public class NutsService {
 
     	List<Code> res = new ArrayList<>();
     	
-		String sparql = "SELECT DISTINCT(?area) WHERE { " +
+		String sparql = "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> SELECT DISTINCT(?area) WHERE { " +
 		      "?obs a <http://purl.org/linked-data/cube#Observation> . " +
 		      "?obs <http://purl.org/linked-data/cube#dataSet> <" + stat.getStatDatasetUri() + "> . " +
 		      "?obs <https://w3id.org/stirdata/vocabulary/stat/geo>/<http://www.w3.org/2004/02/skos/core#exactMatch> ?area . " +
@@ -767,15 +767,15 @@ public class NutsService {
 		       otherValues +
 		      "?obs <" + stat.getStatPropertyUri() + "> ?value . " +
 		      "?obs <" + Code.statPropertyPrefix + "unit> <" + Code.statValuePrefix + stat.getStatValue() + "> . " +
-	          (stat.getStatMinValue() != null ? "FILTER (?value >= " + stat.getStatMinValue() + ") " : "") +
-		      (stat.getStatMaxValue() != null ? "FILTER (?value <= " + stat.getStatMaxValue() + ") " : "") +
-		      "?area <https://w3id.org/stirdata/vocabulary/iso31661Alpha2Code> \"" + cc.getCode() + "\" . " + 
-		      "{ SELECT (max(?time) AS ?maxtime) WHERE { " +
+	          (stat.getStatMinValue() != null ? "FILTER (xsd:double(?value) >= " + stat.getStatMinValue() + ") " : "") +
+		      (stat.getStatMaxValue() != null ? "FILTER (xsd:double(?value) <= " + stat.getStatMaxValue() + ") " : "") +
+		      "?area <https://w3id.org/stirdata/vocabulary/iso31661Alpha2Code> \"" + cc.getIsoCode() + "\" . " + 
+		      "{ SELECT (max(?time) AS ?maxTime) WHERE { " +
 		      "  ?obs a <http://purl.org/linked-data/cube#Observation> . " +
 		      "  ?obs <http://purl.org/linked-data/cube#dataSet> <" + stat.getStatDatasetUri() + "> . " +
 		      "  ?obs <https://w3id.org/stirdata/vocabulary/stat/geo>/<http://www.w3.org/2004/02/skos/core#exactMatch> ?area . " +
-		      "  ?obs <https://w3id.org/stirdata/vocabulary/stat/time> ?maxTime . " +
-		      "  ?area <https://w3id.org/stirdata/vocabulary/iso31661Alpha2Code> \"" + cc.getCode()  + "\" ." + 
+		      "  ?obs <https://w3id.org/stirdata/vocabulary/stat/time> ?time . " +
+		      "  ?area <https://w3id.org/stirdata/vocabulary/iso31661Alpha2Code> \"" + cc.getIsoCode()  + "\" ." + 
 		      "} } " +
 		      "}";
 		

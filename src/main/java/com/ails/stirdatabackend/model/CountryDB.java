@@ -483,4 +483,18 @@ public class CountryDB {
     	
     }
     
+    public String getIsoCode() {
+    	if (code == null) {
+    		return code;
+    	}
+    	
+    	if (code.equals("EL")) {
+    		return "GR";
+    	} else if (code.equals("UK")) {
+        		return "GB";
+    	} else {
+    		return code;
+    	}
+    }
+    
 }
