@@ -751,9 +751,11 @@ public class NutsService {
     public List<Code> getNutsCodesFromEuroStat(Code stat, CountryDB cc) {
 
     	String otherValues = "";
-    	for (Map.Entry<String, String> entry : stat.getStatOtherValues().entrySet()) {
-    		otherValues += "?obs <" + Code.statPropertyPrefix + entry.getKey() + "> <" + Code.statValuePrefix + entry.getKey() + "/" + entry.getValue() + "> . "; 
-	    }
+    	if (stat.getStatOtherValues() != null) {
+	    	for (Map.Entry<String, String> entry : stat.getStatOtherValues().entrySet()) {
+	    		otherValues += "?obs <" + Code.statPropertyPrefix + entry.getKey() + "> <" + Code.statValuePrefix + entry.getKey() + "/" + entry.getValue() + "> . "; 
+		    }
+    	}
 
     	List<Code> res = new ArrayList<>();
     	

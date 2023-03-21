@@ -271,7 +271,6 @@ public class StatisticsContoller {
 			
 			loop:
 			for (int i = 1; i < placedb.size();) {
-				boolean removed = false;
 				for (int j = 0; j < i; ) {
 					if (iparents.get(i).contains(placedb.get(j))) {
 						placedb.remove(i);
@@ -280,15 +279,13 @@ public class StatisticsContoller {
 					} else if (iparents.get(j).contains(placedb.get(i))) {
 						placedb.remove(j);
 						iparents.remove(j);
-						removed = true;
+						i--;
 					} else {
 						j++;
 					}
 				}
 				
-				if (!removed) {
-					i++;
-				}
+				i++;
 			}
 			
 		} catch (Exception ex) {
@@ -341,12 +338,12 @@ public class StatisticsContoller {
 				iparents.add(naceService.getParents(activitydb.get(i)));
 			}
 
+			
 			String s = activitydb + "";
 			try {
 				
 			loop:
 			for (int i = 1; i < activitydb.size();) {
-				boolean removed = false;
 				for (int j = 0; j < i; ) {
 					if (iparents.get(i).contains(activitydb.get(j))) {
 						activitydb.remove(i);
@@ -355,15 +352,13 @@ public class StatisticsContoller {
 					} else if (iparents.get(j).contains(activitydb.get(i))) {
 						activitydb.remove(j);
 						iparents.remove(j);
-						removed = true;
+					    i--;
 					} else {
 						j++;
 					}
 				}
 				
-				if (!removed) {
-					i++;
-				}
+				i++;
 			}
 			
 			} catch (Exception ex) {
@@ -372,9 +367,6 @@ public class StatisticsContoller {
 			}
 		}
 
-//		System.out.println("BA-- " + activitydb);
-		
-		
 		//find common activity parent
 		if (activitydb.size() > 1) {
 			
