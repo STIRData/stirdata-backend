@@ -374,21 +374,53 @@ public class NutsService {
 
 	    	for (Map.Entry<CountryDB, PlaceSelection> entry : res.entrySet()) {
 	    		Set<Code> codes = null;
-
-	    		// assume same level nuts for all statCodes !!!!
+	    		
+    			List<List<Code>> allStatCodes = new ArrayList<>();
+    			List<Integer> allStatLevels = new ArrayList<>();
+    			boolean emptyStat = false;
+    			int maxStatLevel = -1;
 
 	    		for (Code stat : statCodes) {
-	    			List<Code> cs = getNutsCodesFromStat(stat, entry.getKey());
+    				List<Code> cs = getNutsCodesFromStat(stat, entry.getKey());
+    				allStatCodes.add(cs);
+    				
+    				if (!cs.isEmpty()) {
+    					int level = cs.get(0).getNutsLevel();
+						allStatLevels.add(level);
+						maxStatLevel = Math.max(maxStatLevel, level);
+    				} else {
+    					allStatLevels.add(-1);
+    					emptyStat = true;
+    				}
+	    		}
 	    		
-//	    			System.out.println("STAT " + stat + " " + entry.getKey());
-//	    			System.out.println(">>- " + cs);
-	    			
-	    			if (codes == null) {
-	    				codes = new HashSet<>();
-	    				codes.addAll(cs);
-	    			} else {
-	    				codes.retainAll(cs);
-	    			}
+    			if (emptyStat) {
+    				codes = new HashSet<>();
+	    		} else {
+    				for (int i = 0; i < allStatCodes.size(); i++) {
+    					List<Code> currentStatCodes = allStatCodes.get(i);
+    					int currentLevel = allStatLevels.get(i);
+
+    					List<Code> actualStatCodes;
+    					
+    					if (currentLevel < maxStatLevel) {
+    						actualStatCodes = new ArrayList<>();
+    						for (Code c : currentStatCodes) {
+    							for (PlaceDB ch : getChildren(getByCode(c), maxStatLevel)) {
+    								actualStatCodes.add(ch.getCode());
+    							}
+    						}	
+    					} else {
+    						actualStatCodes = currentStatCodes;
+    					}
+    					
+    		    		if (codes == null) {
+    		    			codes = new HashSet<>();
+    		    			codes.addAll(actualStatCodes);
+    		    		} else {
+    		    			codes.retainAll(actualStatCodes);
+    					}
+    				}
 	    		}
 	    		
     			entry.getValue().setNutsStat(codes);
@@ -415,7 +447,20 @@ public class NutsService {
     	return parents;
     }
     
-    
+    public List<PlaceDB> getChildren(PlaceDB place, int atLevel) {
+    	int startLevel = place.getLevel();
+
+    	if (atLevel - startLevel == 1) {
+    		return placesRepository.findNUTSChildren1(place);
+    	} else if (atLevel - startLevel == 2) {
+    		return placesRepository.findNUTSChildren2(place);
+    	} else if (atLevel - startLevel == 3) {
+    		return placesRepository.findNUTSChildren3(place);
+    	} else {
+    		return new ArrayList<>();
+    	}
+    }
+   
 //    public PlaceNode buildPlaceTree(CountryDB cc, boolean lau) {
 //    	PlaceNode res = new PlaceNode();
 //    	

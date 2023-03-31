@@ -23,7 +23,6 @@ public interface PlacesDBRepository extends JpaRepository<PlaceDB, String> {
 	  
 	  public List<PlaceDB> findByCodeIn(List<Code> codes);
 
-
       @Query("SELECT s FROM PlaceDB s, PlaceDB s1, PlaceDB s2 WHERE s.level = '3' and s.type = 'NUTS' and s.parent = s1 and s1.parent = s2 and s2.parent = ?1")
       public List<PlaceDB> findNUTS0NUTS3Leaves(PlaceDB nuts0);
 
@@ -47,5 +46,16 @@ public interface PlacesDBRepository extends JpaRepository<PlaceDB, String> {
 
 	@Query("SELECT new com.ails.stirdatabackend.model.StatisticDB(COUNT(s), s.parent) FROM PlaceDB s WHERE s.extraRegio = false GROUP BY s.parent")
     public List<StatisticDB> groupByParentPlace();
+	
+    @Query("SELECT s FROM PlaceDB s WHERE s.type = 'NUTS' and s.parent = ?1")
+    public List<PlaceDB> findNUTSChildren1(PlaceDB nuts);
+
+    @Query("SELECT s FROM PlaceDB s, PlaceDB s1 WHERE s.type = 'NUTS' and s.parent = s1 and s1.parent = ?1")
+    public List<PlaceDB> findNUTSChildren2(PlaceDB nuts);
+
+    @Query("SELECT s FROM PlaceDB s, PlaceDB s1, PlaceDB s2 WHERE s.type = 'NUTS' and s.parent = s1 and s1.parent = s2 and s2.parent = ?1")
+    public List<PlaceDB> findNUTSChildren3(PlaceDB nuts);
+
+
 
 }

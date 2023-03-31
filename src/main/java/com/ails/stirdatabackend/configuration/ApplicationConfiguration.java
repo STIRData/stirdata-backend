@@ -20,6 +20,7 @@ import com.ails.stirdatabackend.vocs.DCTVocabulary;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 
+import org.apache.http.HttpHost;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QuerySolution;
@@ -71,6 +72,12 @@ public class ApplicationConfiguration {
 	@Value("${statistics.default.from-date}")
 	private String fromDate;
 
+	@Value("${elastic.host}")
+	private String elasticHost;
+	
+	@Value("${elastic.port}")
+	private int elasticPort;
+	
 	@Autowired
 	private CountriesDBRepository countriesRepository;
 
@@ -114,6 +121,11 @@ public class ApplicationConfiguration {
 	
 	@Autowired
 	private Environment env;
+	
+	@Bean(name = "elastic-host") 
+	public HttpHost getElasticHost() {
+		return new HttpHost(elasticHost, elasticPort, "http");
+	}
 	
 	@Bean(name = "endpoint-nace-eu")
 	public String getNaceEndpointEU() {

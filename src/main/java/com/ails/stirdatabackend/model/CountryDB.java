@@ -266,6 +266,12 @@ public class CountryDB {
     @Column(name = "same_as_sparql")
     private String sameAsSparql;
     
+    @Column(name = "last_indexed")
+    private Date lastIndexed;
+
+    @Column(name = "index_name")
+    private String indexName;
+
 	@Transient
     private ModelConfiguration modelConfiguration;
 	

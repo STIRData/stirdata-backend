@@ -1,5 +1,6 @@
 package com.ails.stirdatabackend.service;
 
+import java.awt.geom.AffineTransform;
 import java.sql.Date;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.http.HttpHost;
 import org.apache.jena.datatypes.xsd.XSDDateTime;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
@@ -25,14 +27,30 @@ import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.sparql.engine.http.QueryExceptionHTTP;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.core.CountRequest;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.aggregations.Aggregation;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.metrics.Max;
+import org.elasticsearch.search.aggregations.metrics.Min;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ails.stirdatabackend.controller.StatisticsContoller;
 import com.ails.stirdatabackend.model.ActivityDB;
 import com.ails.stirdatabackend.model.Code;
 import com.ails.stirdatabackend.model.CountryConfigurationsBean;
@@ -50,12 +68,14 @@ import com.ails.stirdatabackend.repository.PlacesDBRepository;
 import com.ails.stirdatabackend.repository.StatisticsRepository;
 import com.ails.stirdatabackend.repository.UpdateLogRepository;
 import com.ails.stirdatabackend.service.NutsService.PlaceSelection;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 @Service
-public class StatisticsService {
+public class StatisticsServiceIndexed {
 	
-	private final static Logger logger = LoggerFactory.getLogger(StatisticsService.class);
+	private final static Logger logger = LoggerFactory.getLogger(StatisticsServiceIndexed.class);
 	
     @Autowired
     @Qualifier("country-configurations")
@@ -75,9 +95,6 @@ public class StatisticsService {
     private StatisticsRepository statisticsRepository;
 
     @Autowired
-    private StatisticsServiceIndexed statisticsServiceIndexed;
-
-    @Autowired
     private CountriesDBRepository countriesDBRepository;
 
     @Autowired
@@ -85,8 +102,10 @@ public class StatisticsService {
     
     private int batchSize = 500;
     
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("YYYY-MM-dd");
-
+    @Autowired
+    @Qualifier("elastic-host") 
+    private HttpHost elasticHost;
+    
     public void computeStatistics(CountryDB cc, Collection<Dimension> stats) {
 		UpdateLog log = new UpdateLog();
 		
@@ -102,10 +121,6 @@ public class StatisticsService {
 			updateLogRepository.save(log);
 		}
     }
-    
-//    public void computeStatistics(CountryDB cc, Collection<Dimension> stats, UpdateLog log) {
-//    	computeStatistics(cc, stats, false, log);
-//    }
     
 	public void computeStatistics(CountryDB cc, Collection<Dimension> stats, boolean force, UpdateLog log) {
 		Set<Dimension> dims = new LinkedHashSet<>();
@@ -441,7 +456,7 @@ public class StatisticsService {
 
 				logger.info("Computing " + Dimension.FOUNDING + " statistics for " + cc.getCode());
 	    		
-		   		StatisticsHelper sh = new StatisticsHelper(cc, Dimension.FOUNDING, null, false, null);
+		   		StatisticsHelper sh = new StatisticsHelper(cc, Dimension.FOUNDING, null, null);
 		   		sh.minMaxDates(cc, Dimension.FOUNDING, null, null);
 	
 		   		Code root = Code.createDateCode(defaultFromDate, new java.sql.Date(sh.maxDate.getTime().getTime()), Code.date10Y);
@@ -498,7 +513,7 @@ public class StatisticsService {
 
 				logger.info("Computing " + Dimension.DISSOLUTION + " statistics for " + cc.getCode());
 				
-		   		StatisticsHelper sh = new StatisticsHelper(cc, Dimension.DISSOLUTION, null, false, null);
+		   		StatisticsHelper sh = new StatisticsHelper(cc, Dimension.DISSOLUTION, null, null);
 		   		sh.minMaxDates(cc, Dimension.DISSOLUTION, null, null);
 	
 		   		Code root = Code.createDateCode(defaultFromDate, new java.sql.Date(sh.maxDate.getTime().getTime()), Code.date10Y);
@@ -851,7 +866,7 @@ public class StatisticsService {
 					List<Code> nutsLauList = new ArrayList<>();
 					nutsLauList.add(iter.getCode());
 	
-			   		StatisticsHelper sh = new StatisticsHelper(cc, Dimension.FOUNDING, nutsLauList, false, null);
+			   		StatisticsHelper sh = new StatisticsHelper(cc, Dimension.FOUNDING, nutsLauList, null);
 			   		sh.minMaxDates(cc, Dimension.FOUNDING, null, null);
 			   		if (!sh.hasMinMaxDate()) {
 			   			continue;
@@ -912,7 +927,7 @@ public class StatisticsService {
 					
 					System.out.println("With NUTS3/LAU " + ilist);
 					
-			   		StatisticsHelper sh = new StatisticsHelper(cc, Dimension.FOUNDING, ilist, false, null);
+			   		StatisticsHelper sh = new StatisticsHelper(cc, Dimension.FOUNDING, ilist, null);
 			   		sh.minMaxDates(cc, Dimension.FOUNDING, null, null);
 			   		if (!sh.hasMinMaxDate()) {
 			   			continue;
@@ -1100,7 +1115,7 @@ public class StatisticsService {
 					List<Code> nutsLauList = new ArrayList<>();
 					nutsLauList.add(iter.getCode());
 					
-			   		StatisticsHelper sh = new StatisticsHelper(cc, Dimension.DISSOLUTION, nutsLauList, false, null);
+			   		StatisticsHelper sh = new StatisticsHelper(cc, Dimension.DISSOLUTION, nutsLauList, null);
 			   		sh.minMaxDates(cc, Dimension.DISSOLUTION, null, null);
 			   		if (!sh.hasMinMaxDate()) {
 			   			continue;
@@ -1161,7 +1176,7 @@ public class StatisticsService {
 					
 					System.out.println("With NUTS3/LAU " + ilist);
 					
-			   		StatisticsHelper sh = new StatisticsHelper(cc, Dimension.DISSOLUTION, ilist, false, null);
+			   		StatisticsHelper sh = new StatisticsHelper(cc, Dimension.DISSOLUTION, ilist, null);
 			   		sh.minMaxDates(cc, Dimension.DISSOLUTION, null, null);
 			   		if (!sh.hasMinMaxDate()) {
 			   			continue;
@@ -1336,7 +1351,7 @@ public class StatisticsService {
 					List<Code> naceList = new ArrayList<>();
 					naceList.add(iter.getCode());
 	
-			   		StatisticsHelper sh = new StatisticsHelper(cc, Dimension.FOUNDING, null, false, naceList);
+			   		StatisticsHelper sh = new StatisticsHelper(cc, Dimension.FOUNDING, null, naceList);
 			   		sh.minMaxDates(cc, Dimension.FOUNDING, null, null);
 			   		if (!sh.hasMinMaxDate()) {
 			   			continue;
@@ -1443,7 +1458,7 @@ public class StatisticsService {
 					List<Code> naceList = new ArrayList<>();
 					naceList.add(iter.getCode());
 	
-			   		StatisticsHelper sh = new StatisticsHelper(cc, Dimension.DISSOLUTION, null, false, naceList);
+			   		StatisticsHelper sh = new StatisticsHelper(cc, Dimension.DISSOLUTION, null, naceList);
 			   		sh.minMaxDates(cc, Dimension.DISSOLUTION, null, null);
 			   		if (!sh.hasMinMaxDate()) {
 			   			continue;
@@ -1537,172 +1552,164 @@ public class StatisticsService {
 
 		private static final long serialVersionUID = 1L;
 		
-		private CountryDB cc;
-		private PlaceNode pn;
-		private Map<Code, Code> parentMap;
-		private Set<PlaceNode> leaves;
-		
-//		private List<Code> lauWithParent;
-		private List<Code> nuts3WithParent;
+//		private CountryDB cc;
+//		private PlaceNode pn;
+//		private Map<Code, Code> parentMap;
+//		private Set<PlaceNode> leaves;
+//		
+////		private List<Code> lauWithParent;
+//		private List<Code> nuts3WithParent;
    		
    		public StatisticsCache(CountryDB cc) {
    			super();
-   			this.cc = cc;
-   			
-//   			if (cc.isNace() || cc.isLau()) {
-//   				parentMap = new HashMap<>();
-//   				pn = nutsService.buildPlaceTree(cc, false);
-//   				
-//   				List<PlaceNode> nodes = new ArrayList<>();
-//   				nodes.add(pn);
-//   				for (int i = 0; i < nodes.size(); i++) {
-//   					PlaceNode current = nodes.get(i);
-//   					if (current.getNext() != null) {
-//   						for (PlaceNode node : current.getNext()) {
-//   							if (current.getNode() != null) {
-//   								parentMap.put(node.getNode().getCode(), current.getNode().getCode());
-//   							} else {
-//   								parentMap.put(node.getNode().getCode(), null);
-//   							}
-//   							nodes.add(node);
-//   						}
-//   					}
-//   				}
-//   				
-////  				for (Map.Entry<Code, Code> entry : parentMap.entrySet()) {
-////   					System.out.println(entry.getKey() + " " + entry.getValue());
-////   				}
+//   			this.cc = cc;
+   		}
+   		
+//   		public Code getPlaceParent(Code code) {
+//   			return parentMap.get(code);
+//   		}
+//   		
+//   		public List<String> nacelookup(Code naceCode) {
+//
+//   			List<String> leaves = get(naceCode);
+//   			if (leaves == null) {
+//   				leaves = naceService.getLocalNaceLeafUris(cc,  naceCode);
+//   				put(naceCode, leaves);
 //   			}
-   		}
-   		
-   		public Code getPlaceParent(Code code) {
-   			return parentMap.get(code);
-   		}
-   		
-   		public List<String> nacelookup(Code naceCode) {
-
-   			List<String> leaves = get(naceCode);
-   			if (leaves == null) {
-   				leaves = naceService.getLocalNaceLeafUris(cc,  naceCode);
-   				put(naceCode, leaves);
-   			}
-   			
-   			return leaves;
-   		}
+//   			
+//   			return leaves;
+//   		}
    	}
    	
+   	
+   	static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+   	
    	private class StatisticsHelper {
-   		public List<String> naceLeafUris;
-	    public List<String> nutsLeafUris;
-	    public List<String> lauUris;
-	    
-	    public boolean nuts3Roots;
-	    public boolean lauRoots;
-	    
-	    public boolean includeNutsLau;
-	    
+   		public List<Code> nutsLauCodes;
+   		public List<Code> naceCodes;
+   		public Set<Code> statNutsLauCodes;
+
 	    Calendar minDate;
 	    Calendar maxDate;
 	    
-	    public StatisticsHelper(CountryDB cc, List<Code> naceCodes) {
-	    	naceLeafUris = naceService.getLocalNaceLeafUris(cc, naceCodes);
-	    }
+   		public StatisticsHelper(CountryDB cc, Dimension dimension, List<Code> nutsLauCodes, List<Code> naceCodes) {
+   			this.naceCodes = naceCodes;
+   			
+    		if (nutsLauCodes != null) {
 
-   		public StatisticsHelper(CountryDB cc, Dimension dimension, List<Code> nutsLauCodes, boolean includeNutsLau, List<Code> naceCodes) {
-   	    	Map<CountryDB, PlaceSelection> countryPlaceMap;
-   	    	if (nutsLauCodes != null) {
-   	    		countryPlaceMap = nutsService.getEndpointsByNuts(nutsLauCodes);
-   	    	} else {
-   	    		countryPlaceMap = nutsService.getEndpointsByNuts(); 
-   	    	}
-   	    	
-   	    	PlaceSelection places = countryPlaceMap.get(cc);
+    			List<List<Code>> allStatCodes = new ArrayList<>();
+    			List<Integer> allStatLevels = new ArrayList<>();
+    			boolean emptyStat = false;
+    			int maxStatLevel = -1;
+    			
+	    		for (Code code : nutsLauCodes) { 
+	    			
+	    			if (!code.isStat()) {
+	    				if (this.nutsLauCodes == null) {
+	    					this.nutsLauCodes = new ArrayList<>();
+	    				}
+	    				this.nutsLauCodes.add(code);
+	    			} else {
+	    				List<Code> cs = nutsService.getNutsCodesFromStat(code, cc);
+	    				allStatCodes.add(cs);
+	    				
+	    				if (!cs.isEmpty()) {
+	    					int level = cs.get(0).getNutsLevel();
+    						allStatLevels.add(level);
+    						maxStatLevel = Math.max(maxStatLevel, level);
+	    				} else {
+	    					allStatLevels.add(-1);
+	    					emptyStat = true;
+	    				}
+	    			}
+	    		}
+	    		
+	    		if (!allStatCodes.isEmpty()) {
+	    			if (emptyStat) {
+	    				statNutsLauCodes = new HashSet<>();
+	    			} else {
+	    				for (int i = 0; i < allStatCodes.size(); i++) {
+	    					List<Code> currentStatCodes = allStatCodes.get(i);
+	    					int currentLevel = allStatLevels.get(i);
 
-   	    	this.includeNutsLau = includeNutsLau;
-   	    	
-//   	    if (dimension == Dimension.NUTSLAU) {
-   	        	naceLeafUris = naceService.getLocalNaceLeafUris(cc, naceCodes);
-//   	    } else if (dimension == Dimension.NACE) {
-   		        nutsLeafUris = places == null ? null : nutsService.getLocalNutsLeafUrisDB(cc, places); 
-   		        lauUris = places == null ? null : nutsService.getLocalLauUris(cc, places);
-// 	        } 
-   		        
-   		    if (places != null) {
-		        if (places.getNuts3() != null) {
-	   		        nuts3Roots = places.getNuts3().size() > 0;
-	   		        for (Code c : places.getNuts3()) {
-	   		        	if (c.getNutsLevel() != 3) {
-	   		        		nuts3Roots = false;
-	   		        		break;
-	   		        	}
-	   		        }
-		        }
-		        
-		        if (places.getLau() != null) {
-	   		        lauRoots = places.getLau().size() > 0;
-	   		        for (Code c : places.getLau()) {
-	   		        	if (!c.isLau()) {
-	   		        		lauRoots = false;
-	   		        		break;
-	   		        	}
-	   		        }
-		        }
-   		    } else {
-   		    	nuts3Roots = false;
-   		    	lauRoots = false;
-   		    }
+	    					List<Code> actualStatCodes;
+	    					
+	    					if (currentLevel < maxStatLevel) {
+	    						actualStatCodes = new ArrayList<>();
+	    						for (Code c : currentStatCodes) {
+	    							for (PlaceDB ch : nutsService.getChildren(nutsService.getByCode(c), maxStatLevel)) {
+	    								actualStatCodes.add(ch.getCode());
+	    							}
+	    						}	
+	    					} else {
+	    						actualStatCodes = currentStatCodes;
+	    					}
+	    					
+	    		    		if (statNutsLauCodes == null) {
+	    		    			statNutsLauCodes = new HashSet<>();
+	    		    			statNutsLauCodes.addAll(actualStatCodes);
+	    		    		} else {
+	    		    			statNutsLauCodes.retainAll(actualStatCodes);
+	    					}
+	    				}
+		    			
+	    			}
+	    		}
+	    	}
    		}
 
-
    		public void minMaxDates(CountryDB cc, Dimension dimension, Code foundingDate, Code dissolutionDate) {
-   		    SparqlQuery sparql;
+   		    ElasticQuery elastic = null;
 	    	
-   	    	Calendar[] minMaxDate = null; 
-   	    	
-   	    	if (lauUris != null && lauUris.size() > 1000) { // split if too many laus
-   	    		for (int i = 0; i < (lauUris.size() / 1000) + 1; i++) {
-//   	    			System.out.println(i + " " + (lauUris.size() / 1000));
-   	    			List<String> plauUris = new ArrayList<>();
-   	    			
-   	    			if (i*1000 < lauUris.size()) {
-	   	    			for (int j = i*1000; j < Math.min(lauUris.size(), i*1000 + 1000); j++) {
-	   	    				plauUris.add(lauUris.get(j));   	    			
-	   	    			}
-	   	    			
-	   	    			if (dimension == Dimension.FOUNDING) {
-	   	    				sparql = SparqlQuery.buildCoreQuery(cc, true, false, nutsLeafUris, plauUris, naceLeafUris, null, dissolutionDate);
-	   	    				minMaxDate = sparql.minMaxFoundingDate(cc); 
-	   	    			} else if (dimension == Dimension.DISSOLUTION) {
-	   	    				sparql = SparqlQuery.buildCoreQuery(cc, false, false, nutsLeafUris, plauUris, naceLeafUris, foundingDate, null);
-	   	    				minMaxDate = sparql.minMaxDissolutionDate(cc);
-	   	    			}
-	   	    			
-	   	    			if (minDate == null || minDate.after(minMaxDate[0])) {
-	   	    				minDate = minMaxDate[0];
-	   	    			}
-	   	    			
-	   	    			if (maxDate == null || maxDate.before(minMaxDate[1])) {
-	   	    				maxDate = minMaxDate[1];
-	   	    			}
-   	    			}
-   	    			
-//   	    			System.out.println(" MIN " + minDate);
-//   	    			System.out.println(" MAX " + maxDate);
-   	    		}
-   			
-   	    	} else {
-   	   			if (dimension == Dimension.FOUNDING) {
-   	   				sparql = SparqlQuery.buildCoreQuery(cc, true, false, nutsLeafUris, lauUris, naceLeafUris, null, dissolutionDate);
-   	   				minMaxDate = sparql.minMaxFoundingDate(cc); 
-   	   			} else if (dimension == Dimension.DISSOLUTION) {
-   	   				sparql = SparqlQuery.buildCoreQuery(cc, false, false, nutsLeafUris, lauUris, naceLeafUris, foundingDate, null);
-   	   				minMaxDate = sparql.minMaxDissolutionDate(cc);
-   	   			}   
+	    	SearchRequest searchRequest = new SearchRequest(cc.getIndexName());
+	    	
+   			if (dimension == Dimension.FOUNDING) {
+   				
+   				elastic = ElasticQuery.buildCoreQuery(cc, true, null, nutsLauCodes, statNutsLauCodes, null, naceCodes, null, dissolutionDate);
 
-   	    	}
-   			
-			minDate = minMaxDate[0];
-   			maxDate = minMaxDate[1];
+    	    	searchRequest.source(new SearchSourceBuilder()
+    	    			.query(elastic.getQuery())
+    	    			.aggregation(AggregationBuilders.min("min-date").field("founding-date"))
+    	    			.aggregation(AggregationBuilders.max("max-date").field("founding-date")));
+
+   			} else if (dimension == Dimension.DISSOLUTION) {
+   				elastic = ElasticQuery.buildCoreQuery(cc, true, null, nutsLauCodes, statNutsLauCodes, null, naceCodes, foundingDate, null);
+
+    	    	searchRequest.source(new SearchSourceBuilder()
+    	    			.query(elastic.getQuery())
+    	    			.aggregation(AggregationBuilders.min("min-date").field("dissolution-date"))
+    	    			.aggregation(AggregationBuilders.max("max-date").field("dissolution-date")));
+
+   			}   
+
+   	    	try (RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(elasticHost))) {
+   	    			
+// 	   	    	System.out.println(elastic.getQuery());
+
+   	   			Aggregations aggs = client.search(searchRequest, RequestOptions.DEFAULT).getAggregations();
+   	    			
+//   	   			System.out.println(((Min)aggs.get("min-date")).getValueAsString());
+//   	   			System.out.println(((Max)aggs.get("max-date")).getValueAsString());
+   	   		
+   	   			try {
+	   	   			minDate = Calendar.getInstance();
+	   	   			minDate.setTime(sdf.parse(((Min)aggs.get("min-date")).getValueAsString()));
+   				} catch (Exception ex) {
+//   					ex.printStackTrace();
+   		 			minDate = null;
+   		 		}
+
+   	   			try {
+	   	   			maxDate = Calendar.getInstance();
+	   	   			maxDate.setTime(sdf.parse(((Max)aggs.get("max-date")).getValueAsString()));
+   				} catch (Exception ex) {
+//   					ex.printStackTrace();
+   		 			maxDate = null;
+   		 		}
+
+			} catch (Exception ex) {
+	 			ex.printStackTrace();
+	 		}
    			
 //   			System.out.println(" MIN " + minDate);
 //   			System.out.println(" MAX " + maxDate);
@@ -1713,97 +1720,25 @@ public class StatisticsService {
    		}
    	}
 
-   	//called by controller
    	public List<StatisticResult> statistics(CountryDB cc, Dimension dimension, Code root, List<Code> nutsLauCodes, boolean includeNutsLau, List<Code> naceCodes, Code foundingDate, Code dissolutionDate, boolean allLevels) {
-   		
-   		if (cc.getLastIndexed() != null && cc.getLastIndexed().after(cc.getLastUpdated())) {
-   			return statisticsServiceIndexed.statistics(cc, dimension, root, nutsLauCodes, includeNutsLau, naceCodes, foundingDate, dissolutionDate, allLevels);
-   		} else {
-   			return statistics(cc, dimension, root, nutsLauCodes, includeNutsLau, naceCodes, foundingDate, dissolutionDate, allLevels, null);
-   		}
+   		return statistics(cc, dimension, root, nutsLauCodes, includeNutsLau, naceCodes, foundingDate, dissolutionDate, allLevels, null);
    	}
    	
-   	//called by controller
-   	public List<StatisticResult> dateStatistics(CountryDB cc, Dimension dimension, Code root, List<Code> nutsLauCodes, boolean includeNutsLau, List<Code> naceCodes, Code foundingDate, Code dissolutionDate, boolean allLevels) {
-   		if (cc.getLastIndexed() != null && cc.getLastIndexed().after(cc.getLastUpdated())) {
-   			return statisticsServiceIndexed.dateStatistics(cc, dimension, root, nutsLauCodes, includeNutsLau, naceCodes, foundingDate, dissolutionDate, allLevels);
-   		} else {
-	   		StatisticsHelper sh = new StatisticsHelper(cc, dimension, nutsLauCodes, includeNutsLau, naceCodes);
-	   		sh.minMaxDates(cc, dimension, foundingDate, dissolutionDate);
-	
-	   		if (root == null) {
-	   			root = Code.createDateCode(new java.sql.Date(sh.minDate.getTime().getTime()), new java.sql.Date(sh.maxDate.getTime().getTime()), Code.date10Y);
-	   		}
-	   		
-	   		return dateStatistics(cc, dimension, root, nutsLauCodes, naceCodes, foundingDate, dissolutionDate, allLevels, sh);
-   		}
-   	}
-   	
-    //called by controller
-    public StatisticResult singleStatistic(CountryDB cc, List<Code> nutsLauCodes, boolean includeNutsLau, List<Code> naceCodes, Code foundingDate, Code dissolutionDate) {
-   		if (cc.getLastIndexed() != null && cc.getLastIndexed().after(cc.getLastUpdated())) {
-   			return statisticsServiceIndexed.singleStatistic(cc, nutsLauCodes, naceCodes, foundingDate, dissolutionDate);
-   		} else {
-	        StatisticResult res = null;
-	
-	   		StatisticsHelper sh = new StatisticsHelper(cc, null, nutsLauCodes, includeNutsLau, naceCodes);
-
-	   		String query = SparqlQuery.buildCoreQuery(cc, true, false, sh.nutsLeafUris, sh.lauUris, sh.naceLeafUris, foundingDate, dissolutionDate).countSelectQuery() ;
-	//	    System.out.println(query);
-	        
-	        int tries = 0;
-	        while (tries < 4) {
-	        	tries++;
-	        	
-		        try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), query)) {
-		        	ResultSet rs = qe.execSelect();
-		        	
-		        	while (rs.hasNext()) {
-		        		QuerySolution sol = rs.next();
-		
-		        		int count = sol.get("count").asLiteral().getInt();
-		        		if (count > 0) {
-		        			StatisticResult sr = new StatisticResult();
-		        			sr.setCountry(cc.getCode());
-		        			sr.setCount(count);
-		        			sr.setComputed(new java.util.Date());
-		        			res = sr;
-		        		}
-		        	}
-		        } catch (QueryExceptionHTTP ex) {
-		        	System.out.println(ex.getMessage());
-		        	System.out.println(ex.getResponse());
-		        	System.out.println(ex.getResponseCode());
-		        	System.out.println(ex.getResponseMessage());
-		        	try {
-						Thread.sleep(500);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}	        	
-		        	continue;
-		        }
-		        
-		        break;
-	        }
-	    
-	    	return res;
-   		}
-    }
-    
    	public List<StatisticResult> statistics(CountryDB cc, Dimension dimension, Code root, List<Code> nutsLauCodes, boolean includeNutsLau, List<Code> naceCodes, Code foundingDate, Code dissolutionDate, boolean allLevels, StatisticsCache sc) {
+   		
+//   		System.out.println(">>>>>" + nutsLauCodes);
    		List<StatisticResult> res  = new ArrayList<StatisticResult>();
    		
    		if (!hasMore(dimension, root)) {
 	   		return res; 
    		}
 
-   		StatisticsHelper sh = new StatisticsHelper(cc, dimension, nutsLauCodes, includeNutsLau, naceCodes);
+   		StatisticsHelper sh = new StatisticsHelper(cc, dimension, nutsLauCodes, naceCodes);
    		
 		statistics(cc, dimension, root, sh, foundingDate, dissolutionDate, res, sc);
 		
    		if (allLevels) {
-   			if (sh.nuts3Roots || sh.lauRoots) {
+//   			if (sh.nuts3Roots || sh.lauRoots) {
    				Set<Code> used = new HashSet<>();
    				used.add(root);
 
@@ -1812,30 +1747,36 @@ public class StatisticsService {
 	    				statistics(cc, dimension, res.get(i).getCode(), sh, foundingDate, dissolutionDate, res, sc);
 	    			}
 	    		}
-   			} else {
-	    		for (int i = 0; i < res.size(); i++) {
-	    			statistics(cc, dimension, res.get(i).getCode(), sh, foundingDate, dissolutionDate, res, sc);
-	    		}
-   			}
+//   			} else {
+//	    		for (int i = 0; i < res.size(); i++) {
+//	    			statistics(cc, dimension, res.get(i).getCode(), sh, foundingDate, dissolutionDate, res, sc);
+//	    		}
+//   			}
 		}
 		   		
    		return res;
    	}
    	
+   	public List<StatisticResult> dateStatistics(CountryDB cc, Dimension dimension, Code root, List<Code> nutsLauCodes, boolean includeNutsLau, List<Code> naceCodes, Code foundingDate, Code dissolutionDate, boolean allLevels) {
+   		StatisticsHelper sh = new StatisticsHelper(cc, dimension, nutsLauCodes, naceCodes);
+   		sh.minMaxDates(cc, dimension, foundingDate, dissolutionDate);
+
+   		if (root == null) {
+   			root = Code.createDateCode(new java.sql.Date(sh.minDate.getTime().getTime()), new java.sql.Date(sh.maxDate.getTime().getTime()), Code.date10Y);
+   		}
+   		
+   		System.out.println(root);
+   		return dateStatistics(cc, dimension, root, nutsLauCodes, naceCodes, foundingDate, dissolutionDate, allLevels, sh);
+   	}
+   		
+    
    	public List<StatisticResult> dateStatistics(CountryDB cc, Dimension dimension, Code root, List<Code> nutsLauCodes, List<Code> naceCodes, Code foundingDate, Code dissolutionDate, boolean allLevels, StatisticsHelper sh) {
    		List<StatisticResult> res  = new ArrayList<StatisticResult>();
 
-//   		StatisticsHelper sh = new StatisticsHelper(cc, dimension, nutsLauCodes, naceCodes);
-//   		sh.minMaxDates(cc, dimension, foundingDate, dissolutionDate);
-//
-//   		if (root == null) {
-//   			root = Code.createDateCode(new java.sql.Date(sh.minDate.getTime().getTime()), new java.sql.Date(sh.maxDate.getTime().getTime()), Code.date10Y);
-//   		}
-   		
 		dateStatistics(cc, dimension, root, sh, foundingDate, dissolutionDate, res);
     		
    		if (allLevels) {
-   			if (sh.nuts3Roots || sh.lauRoots) {
+//   			if (sh.nuts3Roots || sh.lauRoots) {
    				Set<Code> used = new HashSet<>();
    				used.add(root);
 
@@ -1844,11 +1785,11 @@ public class StatisticsService {
 	    				dateStatistics(cc, dimension, res.get(i).getCode(), sh, foundingDate, dissolutionDate, res);
 	    			}
 	    		}
-   			} else {
-	    		for (int i = 0; i < res.size(); i++) {
-	    			dateStatistics(cc, dimension, res.get(i).getCode(), sh, foundingDate, dissolutionDate, res);
-	    		}
-   			}
+//   			} else {
+//	    		for (int i = 0; i < res.size(); i++) {
+//	    			dateStatistics(cc, dimension, res.get(i).getCode(), sh, foundingDate, dissolutionDate, res);
+//	    		}
+//   			}
 		}
    		
    		return res;
@@ -1865,7 +1806,7 @@ public class StatisticsService {
    	
 //   	private static int c = 0;
     private void statistics(CountryDB cc, Dimension dimension, Code root, StatisticsHelper sh, Code foundingDate, Code dissolutionDate, List<StatisticResult> res, StatisticsCache sc) {
-//    	System.out.println(">>> " + root + " " + dimension);
+//    	System.out.println(">>> ELASTIC MS " + root + " " + dimension);
 	    List<Code> iterCodes = null;
 	    
         if (dimension == Dimension.NUTSLAU) {
@@ -1874,162 +1815,91 @@ public class StatisticsService {
         } else if (dimension == Dimension.NACE) {
         	List<ActivityDB> activities = naceService.getNextNaceLevelListDb(root);
         	iterCodes = activities.stream().map(item -> item.getCode()).collect(Collectors.toList());;
-        	
         } 
         
 //        System.out.println(">>> >> " + iterCodes);
     	for (Code code : iterCodes) {
 //    		System.out.println("CODE " + code + " " + code.isNuts() + " " + code.isLau());
-    		System.out.println("> " + code);
-    		SparqlQuery sparql = null; 
-    		
-    		String query = null;
+//    		System.out.println("> " + code);
+    		ElasticQuery elastic = null; 
     		
     		if (dimension == Dimension.NUTSLAU) {
-	        	if (code.isNuts()) {
-	        		
-	        		Set<String> nutsUris = new HashSet<>();
-	        		nutsUris.addAll(nutsService.getNutsLocalNuts3LeafUrisDB(cc, code));
-	        		if (sh.nutsLeafUris != null) {
-	        			nutsUris.retainAll(sh.nutsLeafUris);
-	        		}
-	        		
-	        		if (nutsUris.isEmpty()) {
-	        			continue;
-	        		}
-	        		
-	        		sparql = SparqlQuery.buildCoreQuery(cc, true, false, nutsUris, sh.lauUris, sh.naceLeafUris, foundingDate, dissolutionDate);
-	        		
-	        	} else if (code.isLau()) {
-
-	        		Set<String> lauUris  = new HashSet<>();
-	        		lauUris.add(nutsService.getLocalLauUri(cc, code));
-	        		if (sh.lauRoots) {
-	        			lauUris.addAll(sh.lauUris);
-	        		}
-	        		
-	        		if (lauUris.isEmpty()) {
-	        			continue;
-	        		}
-	        		
-	        		sparql = SparqlQuery.buildCoreQuery(cc, true, false, sh.nutsLeafUris, lauUris, sh.naceLeafUris, foundingDate, dissolutionDate);
-	        	}
-	        	
-	        	query = sparql.countSelectQuery() ;
+        		elastic = ElasticQuery.buildCoreQuery(cc, true, code, sh.nutsLauCodes, sh.statNutsLauCodes, null, sh.naceCodes, foundingDate, dissolutionDate);
 	        } else if (dimension == Dimension.NACE) {
-//	        	List<String> naceLeafUris = (sc == null) ? naceService.getLocalNaceLeafUris(cc, code) : sc.nacelookup(code);
-	        	
-        		Set<String> naceUris  = new HashSet<>();
-        		naceUris.addAll((sc == null) ? naceService.getLocalNaceLeafUris(cc, code) : sc.nacelookup(code));
-        		if (sh.naceLeafUris != null) {
-        			naceUris.retainAll(sh.naceLeafUris);
-        		}
-        		
-            	if (naceUris.isEmpty()) {
-            		continue;
-            	}
-            	
-//            	System.out.println(sh.nuts3Roots + " " + sh.lauRoots);
-//            	System.out.println(sh.nutsLeafUris);
-//            	System.out.println(sh.lauUris);
-            	if ((sh.nuts3Roots || sh.lauRoots) && !sh.includeNutsLau) {
-            		sparql = SparqlQuery.buildCoreQueryGroupPlace(cc, true, false, sh.nutsLeafUris, sh.lauUris, sh.includeNutsLau, naceUris, foundingDate, dissolutionDate);
-            		if (sh.nuts3Roots) {
-            			query = sparql.countSelectQueryGroupByNuts3();
-            		} else {
-            			query = sparql.countSelectQueryGroupByLau();
-            		}
-            	} else {
-            		sparql = SparqlQuery.buildCoreQuery(cc, true, false, sh.nutsLeafUris, sh.lauUris, naceUris, foundingDate, dissolutionDate);
-            		query = sparql.countSelectQuery() ;
-            	}
+           		elastic = ElasticQuery.buildCoreQuery(cc, true, null, sh.nutsLauCodes, sh.statNutsLauCodes, code, sh.naceCodes, foundingDate, dissolutionDate);
 	        }
 	  
-//    		String query = sparql.countSelectQuery() ;
-	
 //	        System.out.println(uri);
-//	        System.out.println(cc.getDataEndpoint());
-//	        System.out.println(QueryFactory.create(query));
 //    		System.out.println(query);
 //	        long start = System.currentTimeMillis();
 	        
-	        int tries = 0;
-	        while (tries < 4) {
-	        	tries++;
-	        	
-		        try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), query)) {
-	            	ResultSet rs = qe.execSelect();
-	            	
-	            	while (rs.hasNext()) {
-	            		QuerySolution sol = rs.next();
-	
-//	            		System.out.println(sol);
-	            		int count = sol.get("count").asLiteral().getInt();
-	            		
-	            		if (count > 0) {
-	            			StatisticResult sr = new StatisticResult();
-	            			sr.setCountry(cc.getCode());
-	            			sr.setCode(code);
-	            			sr.setParentCode(root);
-	            			sr.setCount(count);
-	            			sr.setComputed(new java.util.Date());
+    		if (elastic == null) {
+       			continue;
+       		}
+    		
+    		try (RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(elasticHost))) {
+    			
+    	    	CountRequest searchRequest = new CountRequest(cc.getIndexName());
 
-	            			if (sh.nuts3Roots) {
-	            				if (sol.get("nuts3") != null) {
-	            					sr.setGroupByCode(nutsService.getNutsCodeFromLocalUri(cc, sol.get("nuts3").asResource().toString()));
-	            				}
-	            			} else if (sh.lauRoots) {
-	            				if (sol.get("lau") != null) {
-	            					sr.setGroupByCode(nutsService.getLauCodeFromLocalUri(cc, sol.get("lau").asResource().toString()));
-	            				}
-	            			} 
-		            		
-	            			res.add(sr);
-	            			
-	            		}
-	            		
-//	               		System.out.println("\t" + code.getCode() + " " + count);
-	            	}
-		        } catch (QueryExceptionHTTP ex) {
-		        	System.out.println(ex.getMessage());
-		        	System.out.println(ex.getResponse());
-		        	System.out.println(ex.getResponseCode());
-		        	System.out.println(ex.getResponseMessage());
-		        	try {
-						Thread.sleep(500);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-		        	continue;
-		        }	        
-		        
-	        	break;
-	        }
+    	    	searchRequest.source(new SearchSourceBuilder().query(elastic.getQuery()));
+
+    			long count = client.count(searchRequest, RequestOptions.DEFAULT).getCount();
+    				
+    			if (count > 0) {
+	    			StatisticResult sr = new StatisticResult();
+	    			sr.setCountry(cc.getCode());
+	    			sr.setCode(code);
+	    			sr.setParentCode(root);
+	    			sr.setCount((int)count);
+	    			sr.setComputed(new java.util.Date());
+	        		
+	    			res.add(sr);
+    			}
+    		} catch (Exception ex) {
+    			ex.printStackTrace();
+    		}
+
         }        	        
     }
     
-//    public static void main(String[] args) {
-//    	Date date = Date.valueOf("2020-07-31");
-//    	
-//    	Calendar cal = Calendar.getInstance();
-//    	cal.setTime(new Date(date.getTime()));
-//
-//    	System.out.println(cal.getTime());
-//
-//    	System.out.println();
-//    	System.out.println(round(cal, Code.date1M, false).getTime());
-//    	System.out.println(round(cal, Code.date1M, true).getTime());
-//    	System.out.println();
-//    	System.out.println(round(cal, Code.date3M, false).getTime());
-//    	System.out.println(round(cal, Code.date3M, true).getTime());
-//    	System.out.println();
-//    	System.out.println(round(cal, Code.date1Y, false).getTime());
-//    	System.out.println(round(cal, Code.date1Y, true).getTime());
-//    	System.out.println();
-//    	System.out.println(round(cal, Code.date10Y, false).getTime());
-//    	System.out.println(round(cal, Code.date10Y, true).getTime());
-//    }
+
+    
+    public StatisticResult singleStatistic(CountryDB cc, List<Code> nutsLauCodes,  List<Code> naceCodes, Code foundingDate, Code dissolutionDate) {
+
+    	StatisticsHelper sh = new StatisticsHelper(cc, null, nutsLauCodes, naceCodes);
+
+   		ElasticQuery elastic = ElasticQuery.buildCoreQuery(cc, true, null, sh.nutsLauCodes, sh.statNutsLauCodes, null, sh.naceCodes, foundingDate, dissolutionDate) ;
+        
+   		if (elastic == null) {
+			StatisticResult sr = new StatisticResult();
+			sr.setCountry(cc.getCode());
+			sr.setCount(0);
+			sr.setComputed(new java.util.Date());
+			return sr;
+   		}
+   		
+   		try (RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(elasticHost))) {
+			
+	    	CountRequest searchRequest = new CountRequest(cc.getIndexName());
+
+	    	searchRequest.source(new SearchSourceBuilder().query(elastic.getQuery()));
+
+			long count = client.count(searchRequest, RequestOptions.DEFAULT).getCount();
+				
+//    		if (count > 0) {
+    			StatisticResult sr = new StatisticResult();
+    			sr.setCountry(cc.getCode());
+    			sr.setCount((int)count);
+    			sr.setComputed(new java.util.Date());
+    			return sr;
+//    		}
+    		
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+   		
+   		return null;
+    }
     
     private void dateStatistics(CountryDB cc, Dimension dimension, Code root, StatisticsHelper sh, Code foundingDate, Code dissolutionDate,  List<StatisticResult> res) {
 //    	System.out.println(">> " + root + " " + dimension);
@@ -2097,97 +1967,51 @@ public class StatisticsService {
    	   			toDate.add(Calendar.DAY_OF_MONTH, -1);
    			}
    			
-   			SparqlQuery sparql = null;
-   			String query = null;
+   			ElasticQuery elastic = null;
+
    			if (dimension == Dimension.FOUNDING) {
-   				if ((sh.nuts3Roots || sh.lauRoots) && !sh.includeNutsLau) {
-            		sparql = SparqlQuery.buildCoreQueryGroupPlace(cc, true, false, sh.nutsLeafUris, sh.lauUris, sh.includeNutsLau, sh.naceLeafUris, Code.createDateCode(new java.sql.Date(fromDate.getTime().getTime()), new java.sql.Date(toDate.getTime().getTime())), dissolutionDate);
-            		if (sh.nuts3Roots) {
-            			query = sparql.countSelectQueryGroupByNuts3();
-            		} else {
-            			query = sparql.countSelectQueryGroupByLau();
-            		}
-            	} else {
-            		sparql = SparqlQuery.buildCoreQuery(cc, true, false, sh.nutsLeafUris, sh.lauUris, sh.naceLeafUris, Code.createDateCode(new java.sql.Date(fromDate.getTime().getTime()), new java.sql.Date(toDate.getTime().getTime())), dissolutionDate);
-            		query = sparql.countSelectQuery() ;
-            	}
-   				
-   				
-   				 
+   				elastic = ElasticQuery.buildCoreQuery(cc, true, null, sh.nutsLauCodes, sh.statNutsLauCodes, null, sh.naceCodes, Code.createDateCode(new java.sql.Date(fromDate.getTime().getTime()), new java.sql.Date(toDate.getTime().getTime())), dissolutionDate);
    			} else if (dimension == Dimension.DISSOLUTION) {
-   				if ((sh.nuts3Roots || sh.lauRoots) && !sh.includeNutsLau) {
-            		sparql = SparqlQuery.buildCoreQueryGroupPlace(cc, false, false, sh.nutsLeafUris, sh.lauUris, sh.includeNutsLau, sh.naceLeafUris, foundingDate, Code.createDateCode(new java.sql.Date(fromDate.getTime().getTime()), new java.sql.Date(toDate.getTime().getTime())));
-            		if (sh.nuts3Roots) {
-            			query = sparql.countSelectQueryGroupByNuts3();
-            		} else {
-            			query = sparql.countSelectQueryGroupByLau();
-            		}
-            	} else {
-            		sparql = SparqlQuery.buildCoreQuery(cc, false, false, sh.nutsLeafUris, sh.lauUris, sh.naceLeafUris, foundingDate, Code.createDateCode(new java.sql.Date(fromDate.getTime().getTime()), new java.sql.Date(toDate.getTime().getTime())));
-            		query = sparql.countSelectQuery() ;
-            	}
+   				elastic = ElasticQuery.buildCoreQuery(cc, false, null, sh.nutsLauCodes, sh.statNutsLauCodes, null, sh.naceCodes, foundingDate, Code.createDateCode(new java.sql.Date(fromDate.getTime().getTime()), new java.sql.Date(toDate.getTime().getTime())));
    			}
    			
-	
+    		if (elastic == null) {
+       			continue;
+       		}
+   			
 //	        System.out.println(dateFormat.format(startDate.getTime()) + " - " + dateFormat.format(endDate.getTime()) + " " + resInterval);
 //	        System.out.println(query);
 	
-	        int tries = 0;
-	        while (tries < 4) {
-	        	tries++;
-		        
-	            try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), query)) {
-	            	ResultSet rs = qe.execSelect();
-	            	
-	            	while (rs.hasNext()) {
-	            		QuerySolution sol = rs.next();
-	
-	            		int count = sol.get("count").asLiteral().getInt();
-	            		
-	            		if (count > 0) {
-	            			StatisticResult sr = new StatisticResult();
-	            			sr.setCountry(cc.getCode());
-	            			if (toDate.after(sh.maxDate)) {
-	            				sr.setCode(Code.createDateCode(new java.sql.Date(fromDate.getTime().getTime()).toString(), new java.sql.Date(sh.maxDate.getTime().getTime()).toString(), nextInterval));
-	            			} else {
-	            				sr.setCode(Code.createDateCode(new java.sql.Date(fromDate.getTime().getTime()).toString(), new java.sql.Date(toDate.getTime().getTime()).toString(), nextInterval));
-	            			}
-	            			sr.setCount(count);
-	            			if (!root.getDateInterval().equals(Code.date10Y)) {
-	            				sr.setParentCode(root);
-	            			}
-	            			sr.setComputed(new java.util.Date());
+    		try (RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(elasticHost))) {
+    			
+    	    	CountRequest searchRequest = new CountRequest(cc.getIndexName());
 
-	            			if (sh.nuts3Roots) {
-	            				if (sol.get("nuts3") != null) {
-	            					sr.setGroupByCode(nutsService.getNutsCodeFromLocalUri(cc, sol.get("nuts3").asResource().toString()));
-	            				}
-	            			} else if (sh.lauRoots) {
-	            				if (sol.get("lau") != null) {
-	            					sr.setGroupByCode(nutsService.getLauCodeFromLocalUri(cc, sol.get("lau").asResource().toString()));
-	            				}
-	            			} 
-		            			
-//	            			System.out.println("\t\t" + Code.createDateCode(new Date(fromDate.getTime().getTime()).toString(), new Date(toDate.getTime().getTime()).toString(), nextInterval));
-	            			res.add(sr);
-	            		}
-	            	}
-		        } catch (QueryExceptionHTTP ex) {
-		        	System.out.println(ex.getMessage());
-		        	System.out.println(ex.getResponse());
-		        	System.out.println(ex.getResponseCode());
-		        	System.out.println(ex.getResponseMessage());
-		        	try {
-						Thread.sleep(500);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}		        	
-		        	continue;
-		        }
-	            
-	            break;
-	        }
+    	    	searchRequest.source(new SearchSourceBuilder().query(elastic.getQuery()));
+
+    			long count = client.count(searchRequest, RequestOptions.DEFAULT).getCount();
+    				
+//    			System.out.println(count);
+    			
+        		if (count > 0) {
+        			StatisticResult sr = new StatisticResult();
+        			sr.setCountry(cc.getCode());
+        			if (toDate.after(sh.maxDate)) {
+        				sr.setCode(Code.createDateCode(new java.sql.Date(fromDate.getTime().getTime()).toString(), new java.sql.Date(sh.maxDate.getTime().getTime()).toString(), nextInterval));
+        			} else {
+        				sr.setCode(Code.createDateCode(new java.sql.Date(fromDate.getTime().getTime()).toString(), new java.sql.Date(toDate.getTime().getTime()).toString(), nextInterval));
+        			}
+        			sr.setCount((int)count);
+        			if (!root.getDateInterval().equals(Code.date10Y)) {
+        				sr.setParentCode(root);
+        			}
+        			sr.setComputed(new java.util.Date());
+
+        			res.add(sr);
+        		}
+    		} catch (Exception ex) {
+    			ex.printStackTrace();
+    		}
+    		
             
             fromDate = toDate;
             fromDate.add(Calendar.DAY_OF_MONTH, 1);
@@ -2195,6 +2019,7 @@ public class StatisticsService {
 
     }        
     
+
     private static Calendar round(Calendar idate, String accuracy, boolean up) {
 
     	Calendar date = Calendar.getInstance();
