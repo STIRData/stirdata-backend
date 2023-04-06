@@ -4,21 +4,23 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.RangeQueryBuilder;
 
 import com.ails.stirdatabackend.model.Code;
 import com.ails.stirdatabackend.model.CountryDB;
 
+import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.ExistsQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
+import co.elastic.clients.elasticsearch._types.query_dsl.RangeQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.TermQuery;
+import co.elastic.clients.json.JsonData;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
 public class ElasticQuery {
-	private QueryBuilder query;
+	private BoolQuery.Builder query;
     
     public ElasticQuery() {
     }
@@ -32,21 +34,21 @@ public class ElasticQuery {
     	
     	ElasticQuery cq = new ElasticQuery();
 
-		BoolQueryBuilder bool = QueryBuilders.boolQuery();
+		BoolQuery.Builder bool = QueryBuilders.bool();
 		
 		cq.query = bool;
 		
         if (active && cc.isDissolutionDate()) {
         	if (dissolutionDate == null || (dissolutionDate.getDateFrom() == null && dissolutionDate.getDateTo() == null)) {
-        		bool.mustNot(QueryBuilders.existsQuery("dissolution-date"));
+        		bool.mustNot(ExistsQuery.of(q -> q.field("dissolution-date"))._toQuery());
 	        }
         }
         
         if (nutsLauCode != null || nutsLauCodes != null || statNutsLauCodes != null) {
-        	BoolQueryBuilder placeQuery = QueryBuilders.boolQuery();
+        	BoolQuery.Builder placeQuery = QueryBuilders.bool();
 
             if (nutsLauCode != null) {
-            	placeQuery.must(QueryBuilders.termQuery("admin-unit", nutsLauCode.toUri()));
+            	placeQuery.must(TermQuery.of(q -> q.field("admin-unit").value(nutsLauCode.toUri()))._toQuery());
             }
             
         	if (nutsLauCodes != null) {
@@ -57,12 +59,12 @@ public class ElasticQuery {
 		        		s.add(c.toUri());
 		        	}
 		        	
-		        	BoolQueryBuilder inPlaceQuery = QueryBuilders.boolQuery();
+		        	BoolQuery.Builder inPlaceQuery = QueryBuilders.bool();
 		            for (String uri : s) {
-		            	inPlaceQuery.should(QueryBuilders.termQuery("admin-unit", uri));
+		            	inPlaceQuery.should(TermQuery.of(q -> q.field("admin-unit").value(uri))._toQuery());
 		            }
 		            
-		            placeQuery.must(inPlaceQuery);
+		            placeQuery.must(inPlaceQuery.build()._toQuery());
         		} else {
         			return null;
         		}
@@ -76,29 +78,31 @@ public class ElasticQuery {
 		        		s.add(c.toUri());
 		        	}
 		        	
-		        	BoolQueryBuilder inPlaceQuery = QueryBuilders.boolQuery();
+		        	BoolQuery.Builder inPlaceQuery = QueryBuilders.bool();
 		            for (String uri : s) {
-		            	inPlaceQuery.should(QueryBuilders.termQuery("admin-unit", uri));
+		            	inPlaceQuery.should(TermQuery.of(q -> q.field("admin-unit").value(uri))._toQuery());
 		            }
 		            
-		            placeQuery.must(inPlaceQuery);
+		            placeQuery.must(inPlaceQuery.build()._toQuery());
 	        	} else {
 	        		return null;
 	        	}
         	}
         	
-        	if (placeQuery.hasClauses()) {
-	            bool.must(placeQuery);
+        	BoolQuery pq = placeQuery.build();
+        	
+        	if (pq.must().size() > 0) {
+	            bool.must(pq._toQuery());
         	} else {
         		return null;
         	}
         }
         
         if (naceCode != null || naceCodes != null) {
-    		BoolQueryBuilder activityQuery = QueryBuilders.boolQuery();
+    		BoolQuery.Builder activityQuery = QueryBuilders.bool();
         	
             if (naceCode != null) {
-            	activityQuery.must(QueryBuilders.termQuery("activity", naceCode.toUri()));
+            	activityQuery.must(TermQuery.of(q -> q.field("activity").value(naceCode.toUri()))._toQuery());
             }
 
         	if (naceCodes != null) {
@@ -108,50 +112,58 @@ public class ElasticQuery {
 		        		s.add(c.toUri());
 		        	}
 		        	
-		        	BoolQueryBuilder inActivityQuery = QueryBuilders.boolQuery();
+		        	BoolQuery.Builder inActivityQuery = QueryBuilders.bool();
 		            for (String uri : s) {
-		            	inActivityQuery.should(QueryBuilders.termQuery("activity", uri));
+		            	inActivityQuery.should(TermQuery.of(q -> q.field("activity").value(uri))._toQuery());
 		            }
 		            
-		            activityQuery.must(inActivityQuery);
+		            activityQuery.must(inActivityQuery.build()._toQuery());
 	        	} else {
 	        		return null;
 	        	}
         	}
         	
-        	if (activityQuery.hasClauses()) {
-	            bool.must(activityQuery);
+        	BoolQuery aq = activityQuery.build();
+        	
+        	if (aq.must().size() > 0) {
+	            bool.must(aq._toQuery());
         	} else {
         		return null;
         	}
         }
 
         if (foundingDate != null && (foundingDate.getDateFrom() != null || foundingDate.getDateTo() != null)) {
-            RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery("founding-date");
+//            RangeQuery.Builder rangeQuery = QueryBuilders.range("founding-date");
+        	RangeQuery.Builder rangeQuery = QueryBuilders.range();
             
             if (foundingDate.getDateFrom() != null) {
-            	rangeQuery.from(foundingDate.getDateFrom().toString(), true);
+            	rangeQuery.field("founding-date").gte(JsonData.of(foundingDate.getDateFrom()));
+//            	rangeQuery.from(foundingDate.getDateFrom().toString(), true);
             }
 
             if (foundingDate.getDateTo() != null) {
-            	rangeQuery.to(foundingDate.getDateTo().toString(),true);
+            	rangeQuery.field("founding-date").lte(JsonData.of(foundingDate.getDateTo()));
+//            	rangeQuery.to(foundingDate.getDateTo().toString(),true);
             }
             
-            bool.must(rangeQuery);
+            bool.must(rangeQuery.build()._toQuery());
         }
         
         if (dissolutionDate != null && (dissolutionDate.getDateFrom() != null || dissolutionDate.getDateTo() != null)) {
-            RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery("dissolution-date");
+//            RangeQuery.Builder rangeQuery = QueryBuilders.rangeQuery("dissolution-date");
+            RangeQuery.Builder rangeQuery = QueryBuilders.range();
             
             if (dissolutionDate.getDateFrom() != null) {
-            	rangeQuery.from(dissolutionDate.getDateFrom().toString(), true);
+//            	rangeQuery.from(dissolutionDate.getDateFrom().toString(), true);
+            	rangeQuery.field("dissolution-date").gte(JsonData.of(dissolutionDate.getDateFrom()));
             }
 
             if (dissolutionDate.getDateTo() != null) {
-            	rangeQuery.to(dissolutionDate.getDateTo().toString(),true);
+//            	rangeQuery.to(dissolutionDate.getDateTo().toString(),true);
+            	rangeQuery.field("dissolution-date").lte(JsonData.of(dissolutionDate.getDateTo()));
             }
             
-            bool.must(rangeQuery);
+            bool.must(rangeQuery.build()._toQuery());
         }
         
 //        System.out.println(cq.getQuery());

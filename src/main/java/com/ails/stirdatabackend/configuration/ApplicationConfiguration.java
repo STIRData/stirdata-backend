@@ -17,16 +17,30 @@ import com.ails.stirdatabackend.service.CountriesService;
 import com.ails.stirdatabackend.vocs.DCATVocabulary;
 import com.ails.stirdatabackend.vocs.DCTVocabulary;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
+import co.elastic.clients.transport.ElasticsearchTransport;
+import co.elastic.clients.transport.rest_client.RestClientTransport;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 
 import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustAllStrategy;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.riot.JsonLDWriteContext;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +59,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.IDN;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,6 +70,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import javax.net.ssl.SSLContext;
 
 @Configuration
 //@EnableScheduling
@@ -77,7 +96,16 @@ public class ApplicationConfiguration {
 	
 	@Value("${elastic.port}")
 	private int elasticPort;
-	
+
+	@Value("${elastic.protocol}")
+	private String elasticProtocol;
+
+	@Value("${elastic.username}")
+	private String elasticUsername;
+
+	@Value("${elastic.password}")
+	private String elasticPassword;
+
 	@Autowired
 	private CountriesDBRepository countriesRepository;
 
@@ -122,9 +150,45 @@ public class ApplicationConfiguration {
 	@Autowired
 	private Environment env;
 	
-	@Bean(name = "elastic-host") 
-	public HttpHost getElasticHost() {
-		return new HttpHost(elasticHost, elasticPort, "http");
+//	@Bean(name = "elastic-host") 
+//	public HttpHost getElasticHost() {
+//		return new HttpHost(elasticHost, elasticPort, "http");
+//	}
+	
+	@Bean(name = "elastic-client")
+	public ElasticsearchClient getElasticClient() {
+		RestClientBuilder builder = RestClient.builder(new HttpHost(elasticHost, elasticPort, elasticProtocol));
+		
+		if (elasticUsername != null) {
+			final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+			credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(elasticUsername, elasticPassword));
+			
+			builder.setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
+	            @Override
+	            public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
+	//                return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+	            	
+					try {
+		        		SSLContextBuilder builder = new SSLContextBuilder();
+		        		builder.loadTrustMaterial(null, new TrustAllStrategy());
+		        		SSLContext sslContext = builder.build();
+	
+		        		return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider).setSSLContext(sslContext).setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+					} catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
+						e.printStackTrace();
+						
+						return null;
+					}
+	            }
+	        });
+		}
+		
+	
+		RestClient restClient = builder.build();
+		
+		ElasticsearchTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper());
+	
+		return new ElasticsearchClient(transport);
 	}
 	
 	@Bean(name = "endpoint-nace-eu")

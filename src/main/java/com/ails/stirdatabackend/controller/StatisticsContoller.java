@@ -5,16 +5,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import org.apache.http.HttpHost;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Bean;
-import org.springframework.data.repository.query.Param;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,7 +31,6 @@ import com.ails.stirdatabackend.model.PlaceDB;
 import com.ails.stirdatabackend.model.StatisticDB;
 import com.ails.stirdatabackend.model.StatisticResult;
 import com.ails.stirdatabackend.payload.GenericResponse;
-import com.ails.stirdatabackend.payload.CodeLabel;
 import com.ails.stirdatabackend.payload.ComplexResponse;
 import com.ails.stirdatabackend.repository.ActivitiesDBRepository;
 import com.ails.stirdatabackend.repository.PlacesDBRepository;
@@ -46,8 +38,6 @@ import com.ails.stirdatabackend.repository.StatisticsDBRepository;
 import com.ails.stirdatabackend.service.NaceService;
 import com.ails.stirdatabackend.service.NutsService;
 import com.ails.stirdatabackend.service.StatisticsService;
-import com.ails.stirdatabackend.service.StatisticsServiceIndexed;
-import com.ails.stirdatabackend.service.NutsService.PlaceSelection;
 
 @RestController
 @RequestMapping("/api/statistics")
@@ -79,10 +69,6 @@ public class StatisticsContoller {
     @Autowired
     @Qualifier("country-configurations")
     private CountryConfigurationsBean countryConfigurations;
-
-    @Autowired
-    @Qualifier("elastic-host") 
-    private HttpHost elasticHost;
 
 	@Operation(
 			summary = "Get statistics for selected place, activity, time",

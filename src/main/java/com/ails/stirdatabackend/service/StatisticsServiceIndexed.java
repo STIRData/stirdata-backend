@@ -18,39 +18,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.http.HttpHost;
-import org.apache.jena.datatypes.xsd.XSDDateTime;
-import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
-import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
-import org.apache.jena.sparql.engine.http.QueryExceptionHTTP;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.core.CountRequest;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.aggregations.Aggregation;
-import org.elasticsearch.search.aggregations.AggregationBuilder;
-import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.Aggregations;
-import org.elasticsearch.search.aggregations.metrics.Max;
-import org.elasticsearch.search.aggregations.metrics.Min;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ails.stirdatabackend.controller.StatisticsContoller;
 import com.ails.stirdatabackend.model.ActivityDB;
 import com.ails.stirdatabackend.model.Code;
 import com.ails.stirdatabackend.model.CountryConfigurationsBean;
@@ -64,12 +43,13 @@ import com.ails.stirdatabackend.model.StatisticResult;
 import com.ails.stirdatabackend.model.UpdateLog;
 import com.ails.stirdatabackend.model.UpdateLogAction;
 import com.ails.stirdatabackend.repository.CountriesDBRepository;
-import com.ails.stirdatabackend.repository.PlacesDBRepository;
 import com.ails.stirdatabackend.repository.StatisticsRepository;
 import com.ails.stirdatabackend.repository.UpdateLogRepository;
-import com.ails.stirdatabackend.service.NutsService.PlaceSelection;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.aggregations.Aggregate;
+import co.elastic.clients.elasticsearch.core.CountRequest;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
 
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 @Service
@@ -103,8 +83,8 @@ public class StatisticsServiceIndexed {
     private int batchSize = 500;
     
     @Autowired
-    @Qualifier("elastic-host") 
-    private HttpHost elasticHost;
+    @Qualifier("elastic-client") 
+    private ElasticsearchClient elasticClient;
     
     public void computeStatistics(CountryDB cc, Collection<Dimension> stats) {
 		UpdateLog log = new UpdateLog();
@@ -1661,39 +1641,51 @@ public class StatisticsServiceIndexed {
    		public void minMaxDates(CountryDB cc, Dimension dimension, Code foundingDate, Code dissolutionDate) {
    		    ElasticQuery elastic = null;
 	    	
-	    	SearchRequest searchRequest = new SearchRequest(cc.getIndexName());
+   		    SearchRequest.Builder searchRequest = new SearchRequest.Builder();
+	    	searchRequest.index(cc.getIndexName());
 	    	
    			if (dimension == Dimension.FOUNDING) {
    				
    				elastic = ElasticQuery.buildCoreQuery(cc, true, null, nutsLauCodes, statNutsLauCodes, null, naceCodes, null, dissolutionDate);
 
-    	    	searchRequest.source(new SearchSourceBuilder()
-    	    			.query(elastic.getQuery())
-    	    			.aggregation(AggregationBuilders.min("min-date").field("founding-date"))
-    	    			.aggregation(AggregationBuilders.max("max-date").field("founding-date")));
+   				searchRequest.query(elastic.getQuery().build()._toQuery())
+   					.aggregations("min-date", a -> a.min(v -> v.field("founding-date")))
+   					.aggregations("max-date", a -> a.max(v -> v.field("founding-date")));
+   				
+//    	    	searchRequest.source(new SearchSourceBuilder()
+//    	    			.query(elastic.getQuery())
+//    	    			.aggregation(AggregationBuilders.min("min-date").field("founding-date"))
+//    	    			.aggregation(AggregationBuilders.max("max-date").field("founding-date")));
 
    			} else if (dimension == Dimension.DISSOLUTION) {
    				elastic = ElasticQuery.buildCoreQuery(cc, true, null, nutsLauCodes, statNutsLauCodes, null, naceCodes, foundingDate, null);
 
-    	    	searchRequest.source(new SearchSourceBuilder()
-    	    			.query(elastic.getQuery())
-    	    			.aggregation(AggregationBuilders.min("min-date").field("dissolution-date"))
-    	    			.aggregation(AggregationBuilders.max("max-date").field("dissolution-date")));
+//    	    	searchRequest.source(new SearchSourceBuilder()
+//    	    			.query(elastic.getQuery())
+//    	    			.aggregation(AggregationBuilders.min("min-date").field("dissolution-date"))
+//    	    			.aggregation(AggregationBuilders.max("max-date").field("dissolution-date")));
+   				
+   				searchRequest.query(elastic.getQuery().build()._toQuery())
+					.aggregations("min-date", a -> a.min(v -> v.field("dissolution-date")))
+					.aggregations("max-date", a -> a.max(v -> v.field("dissolution-date")));
+
 
    			}   
 
-   	    	try (RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(elasticHost))) {
+   	    	try {
    	    			
 // 	   	    	System.out.println(elastic.getQuery());
 
-   	   			Aggregations aggs = client.search(searchRequest, RequestOptions.DEFAULT).getAggregations();
+//   	   		Aggregations aggs = client.search(searchRequest, RequestOptions.DEFAULT).getAggregations();
+   				Map<String, Aggregate> aggs = elasticClient.search(searchRequest.build(), Object.class).aggregations();
    	    			
 //   	   			System.out.println(((Min)aggs.get("min-date")).getValueAsString());
 //   	   			System.out.println(((Max)aggs.get("max-date")).getValueAsString());
    	   		
    	   			try {
 	   	   			minDate = Calendar.getInstance();
-	   	   			minDate.setTime(sdf.parse(((Min)aggs.get("min-date")).getValueAsString()));
+//	   	   			minDate.setTime(sdf.parse(((Min)aggs.get("min-date")).getValueAsString()));
+	   	   			minDate.setTime(sdf.parse(aggs.get("min-date").min().valueAsString()));
    				} catch (Exception ex) {
 //   					ex.printStackTrace();
    		 			minDate = null;
@@ -1701,7 +1693,8 @@ public class StatisticsServiceIndexed {
 
    	   			try {
 	   	   			maxDate = Calendar.getInstance();
-	   	   			maxDate.setTime(sdf.parse(((Max)aggs.get("max-date")).getValueAsString()));
+//	   	   			maxDate.setTime(sdf.parse(((Max)aggs.get("max-date")).getValueAsString()));
+	   	   			maxDate.setTime(sdf.parse(aggs.get("max-date").max().valueAsString()));
    				} catch (Exception ex) {
 //   					ex.printStackTrace();
    		 			maxDate = null;
@@ -1765,7 +1758,7 @@ public class StatisticsServiceIndexed {
    			root = Code.createDateCode(new java.sql.Date(sh.minDate.getTime().getTime()), new java.sql.Date(sh.maxDate.getTime().getTime()), Code.date10Y);
    		}
    		
-   		System.out.println(root);
+//   		System.out.println(root);
    		return dateStatistics(cc, dimension, root, nutsLauCodes, naceCodes, foundingDate, dissolutionDate, allLevels, sh);
    	}
    		
@@ -1837,13 +1830,13 @@ public class StatisticsServiceIndexed {
        			continue;
        		}
     		
-    		try (RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(elasticHost))) {
+    		try {
     			
-    	    	CountRequest searchRequest = new CountRequest(cc.getIndexName());
+    	    	CountRequest.Builder searchRequest = new CountRequest.Builder();
+    	    	searchRequest.index(cc.getIndexName());
+    	    	searchRequest.query(elastic.getQuery().build()._toQuery());
 
-    	    	searchRequest.source(new SearchSourceBuilder().query(elastic.getQuery()));
-
-    			long count = client.count(searchRequest, RequestOptions.DEFAULT).getCount();
+    			long count = elasticClient.count(searchRequest.build()).count();
     				
     			if (count > 0) {
 	    			StatisticResult sr = new StatisticResult();
@@ -1878,13 +1871,13 @@ public class StatisticsServiceIndexed {
 			return sr;
    		}
    		
-   		try (RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(elasticHost))) {
-			
-	    	CountRequest searchRequest = new CountRequest(cc.getIndexName());
+   		try {
+	    	CountRequest.Builder searchRequest = new CountRequest.Builder();
+	    	searchRequest.index(cc.getIndexName());
+	    	searchRequest.query(elastic.getQuery().build()._toQuery());
 
-	    	searchRequest.source(new SearchSourceBuilder().query(elastic.getQuery()));
+			long count = elasticClient.count(searchRequest.build()).count();
 
-			long count = client.count(searchRequest, RequestOptions.DEFAULT).getCount();
 				
 //    		if (count > 0) {
     			StatisticResult sr = new StatisticResult();
@@ -1946,7 +1939,7 @@ public class StatisticsServiceIndexed {
 
 //		Code parentCode = Code.createDateCode(new Date(minDate.getTime().getTime()), new Date(maxDate.getTime().getTime()), interval);
    		
-		System.out.println(minDate.getTime() + " >>> " + maxDate.getTime() );
+//		System.out.println(minDate.getTime() + " >>> " + maxDate.getTime() );
    		
 		Calendar fromDate = (Calendar)minDate.clone();
 
@@ -1982,13 +1975,13 @@ public class StatisticsServiceIndexed {
 //	        System.out.println(dateFormat.format(startDate.getTime()) + " - " + dateFormat.format(endDate.getTime()) + " " + resInterval);
 //	        System.out.println(query);
 	
-    		try (RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(elasticHost))) {
+    		try {
     			
-    	    	CountRequest searchRequest = new CountRequest(cc.getIndexName());
+    	    	CountRequest.Builder searchRequest = new CountRequest.Builder();
+    	    	searchRequest.index(cc.getIndexName());
+    	    	searchRequest.query(elastic.getQuery().build()._toQuery());
 
-    	    	searchRequest.source(new SearchSourceBuilder().query(elastic.getQuery()));
-
-    			long count = client.count(searchRequest, RequestOptions.DEFAULT).getCount();
+    			long count = elasticClient.count(searchRequest.build()).count();
     				
 //    			System.out.println(count);
     			
