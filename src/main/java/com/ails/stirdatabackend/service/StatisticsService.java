@@ -1716,7 +1716,8 @@ public class StatisticsService {
    	//called by controller
    	public List<StatisticResult> statistics(CountryDB cc, Dimension dimension, Code root, List<Code> nutsLauCodes, boolean includeNutsLau, List<Code> naceCodes, Code foundingDate, Code dissolutionDate, boolean allLevels) {
    		
-   		if (cc.getLastIndexed() != null && cc.getLastIndexed().after(cc.getLastUpdated())) {
+//   		if (cc.getLastIndexed() != null && cc.getLastIndexed().after(cc.getLastUpdated())) {
+   		if (cc.getLastIndexed() != null) {
    			return statisticsServiceIndexed.statistics(cc, dimension, root, nutsLauCodes, includeNutsLau, naceCodes, foundingDate, dissolutionDate, allLevels);
    		} else {
    			return statistics(cc, dimension, root, nutsLauCodes, includeNutsLau, naceCodes, foundingDate, dissolutionDate, allLevels, null);
@@ -1725,7 +1726,8 @@ public class StatisticsService {
    	
    	//called by controller
    	public List<StatisticResult> dateStatistics(CountryDB cc, Dimension dimension, Code root, List<Code> nutsLauCodes, boolean includeNutsLau, List<Code> naceCodes, Code foundingDate, Code dissolutionDate, boolean allLevels) {
-   		if (cc.getLastIndexed() != null && cc.getLastIndexed().after(cc.getLastUpdated())) {
+//   		if (cc.getLastIndexed() != null && cc.getLastIndexed().after(cc.getLastUpdated())) {
+   		if (cc.getLastIndexed() != null) {
    			return statisticsServiceIndexed.dateStatistics(cc, dimension, root, nutsLauCodes, includeNutsLau, naceCodes, foundingDate, dissolutionDate, allLevels);
    		} else {
 	   		StatisticsHelper sh = new StatisticsHelper(cc, dimension, nutsLauCodes, includeNutsLau, naceCodes);
@@ -1741,7 +1743,8 @@ public class StatisticsService {
    	
     //called by controller
     public StatisticResult singleStatistic(CountryDB cc, List<Code> nutsLauCodes, boolean includeNutsLau, List<Code> naceCodes, Code foundingDate, Code dissolutionDate) {
-   		if (cc.getLastIndexed() != null && cc.getLastIndexed().after(cc.getLastUpdated())) {
+//   		if (cc.getLastIndexed() != null && cc.getLastIndexed().after(cc.getLastUpdated())) {
+   		if (cc.getLastIndexed() != null) {
    			return statisticsServiceIndexed.singleStatistic(cc, nutsLauCodes, naceCodes, foundingDate, dissolutionDate);
    		} else {
 	        StatisticResult res = null;
