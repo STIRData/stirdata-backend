@@ -89,7 +89,7 @@ public class GenericResponse {
 		if (placedb != null) {
 			for (PlaceDB pl : placedb) {
 				Code code = pl.getCode();
-				sr.addPlace(code.toString(), pl.getLatinName() != null ? pl.getLatinName() : pl.getNationalName(), code.isLau() || (!cc.isLau() && code.getNutsLevel() == 3));
+				sr.addPlace(code.toString(), pl.getPreferredName(), code.isLau() || (!cc.isLau() && code.getNutsLevel() == 3));
 			}
 		}
 		
@@ -134,7 +134,7 @@ public class GenericResponse {
 		if (placedb != null) {
 			for (PlaceDB pl : placedb) {
 				Code code = pl.getCode();
-				sr.addPlace(code.toString(), pl.getLatinName() != null ? pl.getLatinName() : pl.getNationalName(), code.isLau() || (!cc.isLau() && code.getNutsLevel() == 3));
+				sr.addPlace(code.toString(), pl.getPreferredName(), code.isLau() || (!cc.isLau() && code.getNutsLevel() == 3));
 			}
 		}
 		
@@ -195,7 +195,7 @@ public class GenericResponse {
 		if (placedb != null) {
 			for (PlaceDB pl : placedb) {
 				Code code = pl.getCode();
-				sr.addPlace(code.toString(), pl.getLatinName() != null ? pl.getLatinName() : pl.getNationalName(), code.isLau() || (!cc.isLau() && code.getNutsLevel() == 3));
+				sr.addPlace(code.toString(), pl.getPreferredName(), code.isLau() || (!cc.isLau() && code.getNutsLevel() == 3));
 			}
 		}
 		
@@ -255,14 +255,14 @@ public class GenericResponse {
 			for (int i = 0; i < resolution.size(); i++) {
 				String geometry = place.getGeometry(resolution.get(i));
 				if (geometry != null) {
-					sr.addPlace(place.getCode().toString(), place.getNationalName(), geometry);
+					sr.addPlace(place.getCode().toString(), place.getPreferredName(), geometry);
 					break;
 				}
 			}
 		}
 		
 		if (sr.getPlace() == null) {
-			sr.addPlace(place.getCode().toString(), place.getNationalName());
+			sr.addPlace(place.getCode().toString(), place.getPreferredName());
 		}
 		
 		return sr;

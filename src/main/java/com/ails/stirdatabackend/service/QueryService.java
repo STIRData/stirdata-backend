@@ -737,13 +737,13 @@ public class QueryService {
 				for (Object s : (List)adminUnitList) {
 					PlaceDB nuts3 = nutsService.getByCode(Code.fromNutsUri((String)s));
 					if (nuts3 != null) {
-						address.setNuts3(new CodeLabel(nuts3.getCode().toString(), nuts3.getLatinName() != null ? nuts3.getLatinName() : nuts3.getNationalName(), (String)s));
+						address.setNuts3(new CodeLabel(nuts3.getCode().toString(), nuts3.getPreferredName(), (String)s));
 						continue;
 					}	
 					
 					PlaceDB lau = nutsService.getByCode(Code.fromLauUri((String)s, cc));
 					if (lau != null) {
-						address.setLau(new CodeLabel(lau.getCode().toString(), lau.getLatinName() != null ? lau.getLatinName() : lau.getNationalName(), (String)s));
+						address.setLau(new CodeLabel(lau.getCode().toString(), lau.getPreferredName(), (String)s));
 						continue;
 					}
 				}

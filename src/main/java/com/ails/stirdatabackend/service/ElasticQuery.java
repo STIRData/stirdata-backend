@@ -166,7 +166,6 @@ public class ElasticQuery {
             bool.must(rangeQuery.build()._toQuery());
         }
         
-//        System.out.println(cq.getQuery());
         return cq;
     }
     

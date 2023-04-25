@@ -787,7 +787,7 @@ public class NutsService {
        		}
     	}
     	
-//    	System.out.println(res);
+//    	System.out.println("STAT " + res);
     	
     	return res;
     	

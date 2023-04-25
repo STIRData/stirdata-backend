@@ -147,8 +147,8 @@ public class NutsController {
 			responseMap.put("error", "Place does not exist with requested code");
 			return ResponseEntity.badRequest().body(responseMap);
 		}
-        String label = place.getLatinName() != null ? place.getLatinName() : place.getNationalName();
-        return ResponseEntity.ok(new CodeLabel(nutsCode, label));
+
+        return ResponseEntity.ok(new CodeLabel(nutsCode, place.getPreferredName()));
     }
 //    @GetMapping(value = "/getGeoJson", 
 //                produces = "application/json")

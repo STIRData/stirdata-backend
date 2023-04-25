@@ -1713,11 +1713,13 @@ public class StatisticsService {
    		}
    	}
 
+   	public static boolean useIndex = true;
+   	
    	//called by controller
    	public List<StatisticResult> statistics(CountryDB cc, Dimension dimension, Code root, List<Code> nutsLauCodes, boolean includeNutsLau, List<Code> naceCodes, Code foundingDate, Code dissolutionDate, boolean allLevels) {
    		
 //   		if (cc.getLastIndexed() != null && cc.getLastIndexed().after(cc.getLastUpdated())) {
-   		if (cc.getLastIndexed() != null) {
+   		if (useIndex && cc.getLastIndexed() != null) {
    			return statisticsServiceIndexed.statistics(cc, dimension, root, nutsLauCodes, includeNutsLau, naceCodes, foundingDate, dissolutionDate, allLevels);
    		} else {
    			return statistics(cc, dimension, root, nutsLauCodes, includeNutsLau, naceCodes, foundingDate, dissolutionDate, allLevels, null);
@@ -1727,7 +1729,7 @@ public class StatisticsService {
    	//called by controller
    	public List<StatisticResult> dateStatistics(CountryDB cc, Dimension dimension, Code root, List<Code> nutsLauCodes, boolean includeNutsLau, List<Code> naceCodes, Code foundingDate, Code dissolutionDate, boolean allLevels) {
 //   		if (cc.getLastIndexed() != null && cc.getLastIndexed().after(cc.getLastUpdated())) {
-   		if (cc.getLastIndexed() != null) {
+   		if (useIndex && cc.getLastIndexed() != null) {
    			return statisticsServiceIndexed.dateStatistics(cc, dimension, root, nutsLauCodes, includeNutsLau, naceCodes, foundingDate, dissolutionDate, allLevels);
    		} else {
 	   		StatisticsHelper sh = new StatisticsHelper(cc, dimension, nutsLauCodes, includeNutsLau, naceCodes);
@@ -1744,14 +1746,20 @@ public class StatisticsService {
     //called by controller
     public StatisticResult singleStatistic(CountryDB cc, List<Code> nutsLauCodes, boolean includeNutsLau, List<Code> naceCodes, Code foundingDate, Code dissolutionDate) {
 //   		if (cc.getLastIndexed() != null && cc.getLastIndexed().after(cc.getLastUpdated())) {
-   		if (cc.getLastIndexed() != null) {
+   		if (useIndex && cc.getLastIndexed() != null) {
    			return statisticsServiceIndexed.singleStatistic(cc, nutsLauCodes, naceCodes, foundingDate, dissolutionDate);
    		} else {
 	        StatisticResult res = null;
 	
 	   		StatisticsHelper sh = new StatisticsHelper(cc, null, nutsLauCodes, includeNutsLau, naceCodes);
 
-	   		String query = SparqlQuery.buildCoreQuery(cc, true, false, sh.nutsLeafUris, sh.lauUris, sh.naceLeafUris, foundingDate, dissolutionDate).countSelectQuery() ;
+	   		SparqlQuery squery = SparqlQuery.buildCoreQuery(cc, true, false, sh.nutsLeafUris, sh.lauUris, sh.naceLeafUris, foundingDate, dissolutionDate);
+	   		
+	   		if (squery == null) {
+	   			return res;
+	   		}
+	   		
+	   		String query = squery.countSelectQuery() ;
 	//	    System.out.println(query);
 	        
 	        int tries = 0;
@@ -1918,6 +1926,10 @@ public class StatisticsService {
 	        		sparql = SparqlQuery.buildCoreQuery(cc, true, false, sh.nutsLeafUris, lauUris, sh.naceLeafUris, foundingDate, dissolutionDate);
 	        	}
 	        	
+	        	if (sparql == null) {
+        			return;
+        		}
+	        	
 	        	query = sparql.countSelectQuery() ;
 	        } else if (dimension == Dimension.NACE) {
 //	        	List<String> naceLeafUris = (sc == null) ? naceService.getLocalNaceLeafUris(cc, code) : sc.nacelookup(code);
@@ -1944,6 +1956,11 @@ public class StatisticsService {
             		}
             	} else {
             		sparql = SparqlQuery.buildCoreQuery(cc, true, false, sh.nutsLeafUris, sh.lauUris, naceUris, foundingDate, dissolutionDate);
+            		
+            		if (sparql == null) {
+            			return;
+            		}
+            		
             		query = sparql.countSelectQuery() ;
             	}
 	        }
