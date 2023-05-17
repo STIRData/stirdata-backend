@@ -528,28 +528,35 @@ public class CountriesService {
 //    	
 //    	cc.setDataNamedGraph(country.getDataNamedGraph());
 //    	cc.setEntitySparql(country.getEntitySparql());
-//    	cc.setLegalNameSparql(country.getLegalNameSparql());
+    	
+		String legalNameSparql = env.getProperty("sparql.legalName." + cc.getCode());
+		cc.setLegalNameSparql(legalNameSparql);
 //    	cc.setActiveSparql(country.getActiveSparql());
 
     	String addressSparql = env.getProperty("sparql.address." + cc.getCode());
-    	cc.setAddressSparql(addressSparql != null ? addressSparql : null);
+    	cc.setAddressSparql(addressSparql);
 
 		String nuts3Sparql = env.getProperty("sparql.nuts3." + cc.getCode());
-    	cc.setNuts3Sparql(nuts3Sparql != null ? nuts3Sparql : null);
-//    	
+    	cc.setNuts3Sparql(nuts3Sparql);
+   	
     	String lauSparql = env.getProperty("sparql.lau." + cc.getCode());
-    	cc.setLauSparql(lauSparql != null ? lauSparql : null);
+    	cc.setLauSparql(lauSparql);
 
     	String leiCodeSparql = env.getProperty("sparql.leiCode." + cc.getCode());
-    	cc.setLeiCodeSparql(leiCodeSparql != null ? leiCodeSparql : null);
+    	cc.setLeiCodeSparql(leiCodeSparql);
     	
-//    	cc.setFoundingDateSparql(country.getFoundingDateSparql());
-//    	cc.setDissolutionDateSparql(country.getDissolutionDateSparql());
+    	String foundingDateSparql = env.getProperty("sparql.foundingDate." + cc.getCode());
+    	cc.setFoundingDateSparql(foundingDateSparql);
+
+    	String dissolutionDateSparql = env.getProperty("sparql.dissolutionDate." + cc.getCode());
+    	cc.setDissolutionDateSparql(dissolutionDateSparql);
 //
 //    	cc.setCompanyTypeEndpoint(country.getCompanyTypeEndpoint());
 //    	cc.setCompanyTypeScheme(country.getCompanyTypeScheme());
 //    	cc.setCompanyTypeNamespace(country.getCompanyTypeNamespace());
-//    	cc.setCompanyTypeSparql(country.getCompanyTypeSparql());
+    	
+    	String companyTypeSparql = env.getProperty("sparql.companyType." + cc.getCode());
+    	cc.setCompanyTypeSparql(companyTypeSparql);
 //		
 //		cc.setNutsEndpoint(country.getNutsEndpoint() != null ? country.getNutsEndpoint() : defaultNutsEndpoint); 
 //
