@@ -1224,7 +1224,7 @@ public class DataStoring  {
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?csLabel . FILTER (lang(?csLabel) = 'cs') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?daLabel . FILTER (lang(?daLabel) = 'da') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?deLabel . FILTER (lang(?deLabel) = 'de') } . " +
-			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?etLabel . FILTER (lang(?eeLabel) = 'et') } . " +
+			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?etLabel . FILTER (lang(?eLabel) = 'et') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?elLabel . FILTER (lang(?elLabel) = 'el') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?enLabel . FILTER (lang(?enLabel) = 'en') } . " +
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#prefLabel> ?esLabel . FILTER (lang(?esLabel) = 'es') } . " +
@@ -1251,7 +1251,7 @@ public class DataStoring  {
 			   "OPTIONAL { ?nace <http://www.w3.org/2004/02/skos/core#exactMatch> ?exactMatch } " +
 		       "}";
 			
-//			System.out.println(naceSparql);
+			System.out.println(naceSparql);
 			
 	    	try (VirtuosoSelectIterator qe = new VirtuosoSelectIterator(cc.getNaceEndpoint(), naceSparql)) {
 	            while (qe.hasNext()) {

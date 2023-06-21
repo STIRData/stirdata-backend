@@ -389,6 +389,7 @@ public class StirdataBackendApplication implements CommandLineRunner {
 //		ds.copyNACEFromVirtuosoToRDBMS(countryConfigurations.get("NL")); 
 //		ds.copyNACEFromVirtuosoToRDBMS(countryConfigurations.get("NO")); 
 //		ds.copyNACEFromVirtuosoToRDBMS(countryConfigurations.get("UK")); 
+		ds.copyNACEFromVirtuosoToRDBMS(countryConfigurations.get("EE"));
 
 //		ds.copyStatisticsFromMongoToRDBMS();
 //		System.out.println("FINISHED");
