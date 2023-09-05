@@ -30,7 +30,7 @@ public class QueryController {
         return ResponseEntity.ok(lg);
     }
 
-    @GetMapping("/search")
+    @GetMapping("/search_db")
     public ResponseEntity<?> performQuery(@RequestParam(required = false) List<Code> place,
                                           @RequestParam(required = false) List<Code> activity,
                                           @RequestParam(required = false) Code founding,
@@ -47,17 +47,34 @@ public class QueryController {
         return ResponseEntity.ok(res);
     }
     
-    @GetMapping("/statistics")
-    public ResponseEntity<?> groupByQuery(@RequestParam(required = false) List<Code> place,
+    @GetMapping("/search")
+    public ResponseEntity<?> performQuerye(@RequestParam(required = false) List<Code> place,
                                           @RequestParam(required = false) List<Code> activity,
                                           @RequestParam(required = false) Code founding,
                                           @RequestParam(required = false) Code dissolution,
-                                          @RequestParam() boolean gnace,
-                                          @RequestParam() boolean gnuts3) {
-        
-    	List<EndpointResponse> res = queryService.groupedQuery(place, activity, founding, dissolution, gnace, gnuts3 );
+                                          @RequestParam(defaultValue = "1") int page,
+                                          @RequestParam(defaultValue = "false") boolean details
+                                          ) {
+    	
+    	if (activity != null && activity.size() == 0) {
+    		activity = null;
+    	}
+
+        List<QueryResponse> res = queryService.paginatedQueryElastic(place, activity, founding, dissolution, page, details);
         return ResponseEntity.ok(res);
     }
+    
+//    @GetMapping("/statistics")
+//    public ResponseEntity<?> groupByQuery(@RequestParam(required = false) List<Code> place,
+//                                          @RequestParam(required = false) List<Code> activity,
+//                                          @RequestParam(required = false) Code founding,
+//                                          @RequestParam(required = false) Code dissolution,
+//                                          @RequestParam() boolean gnace,
+//                                          @RequestParam() boolean gnuts3) {
+//        
+//    	List<EndpointResponse> res = queryService.groupedQuery(place, activity, founding, dissolution, gnace, gnuts3 );
+//        return ResponseEntity.ok(res);
+//    }
     
  
 }

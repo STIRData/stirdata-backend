@@ -6,7 +6,9 @@ import com.ails.stirdatabackend.model.Code;
 import com.ails.stirdatabackend.model.CompanyTypeDB;
 import com.ails.stirdatabackend.model.CountryConfigurationsBean;
 import com.ails.stirdatabackend.model.CountryDB;
+import com.ails.stirdatabackend.model.Dimension;
 import com.ails.stirdatabackend.model.PlaceDB;
+import com.ails.stirdatabackend.model.StatisticResult;
 import com.ails.stirdatabackend.payload.Address;
 import com.ails.stirdatabackend.payload.CodeLabel;
 import com.ails.stirdatabackend.payload.EndpointResponse;
@@ -15,6 +17,14 @@ import com.ails.stirdatabackend.payload.Page;
 import com.ails.stirdatabackend.payload.QueryResponse;
 import com.ails.stirdatabackend.service.NutsService.PlaceSelection;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.core.CountRequest;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.search.Hit;
+import co.elastic.clients.elasticsearch.core.search.HitsMetadata;
 
 import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.Model;
@@ -65,6 +75,10 @@ public class QueryService {
 	
     @Value("${page.size}")
     private int pageSize;
+    
+    @Autowired
+    @Qualifier("elastic-client") 
+    private ElasticsearchClient elasticClient;
 
     @Autowired
 	@Qualifier("country-addons")
@@ -339,10 +353,14 @@ public class QueryService {
         return responseList;
     }
     
-    public List<EndpointResponse> groupedQuery(List<Code> nutsLauCodes, List<Code> naceCodes, Code founding, Code dissolution, boolean gnace, boolean gnuts3) {
+    
+    public List<QueryResponse> paginatedQueryElastic(List<Code> nutsLauCodes, List<Code> naceCodes, Code founding, Code dissolution, int page, boolean details) {
         
-    	List<EndpointResponse> responseList = new ArrayList<>();
-//        
+    	List<QueryResponse> responseList = new ArrayList<>();
+        
+//    	System.out.println(nutsLauCodes);
+//    	System.out.println(naceCodes);
+    	
     	Map<CountryDB, PlaceSelection> countryPlaceMap;
     	if (nutsLauCodes != null) {
     		countryPlaceMap = nutsService.getEndpointsByNuts(nutsLauCodes);
@@ -350,64 +368,268 @@ public class QueryService {
     		countryPlaceMap = nutsService.getEndpointsByNuts(); 
     	}
     	
-        ObjectMapper mapper = new ObjectMapper();
-
+        int offset = (page - 1) * pageSize;
+        
         for (Map.Entry<CountryDB, PlaceSelection> ccEntry : countryPlaceMap.entrySet()) {
         	CountryDB cc = ccEntry.getKey();
         	PlaceSelection places = ccEntry.getValue();
+        	
+//        	System.out.println(places);
+//        	System.out.println(naceCodes);
+      	
+        	List<Code> enutsLauCodes = places.getNuts3();
+        	if (enutsLauCodes == null) {
+        		enutsLauCodes = places.getLau();
+        	} else if (places.getLau() != null) {
+        		enutsLauCodes.addAll(places.getLau());
+        	}
+        	
+            Page pg = new Page();
+            pg.setPageNumber(page);
 
-        	boolean nace = gnace;
-            boolean nuts3 = gnuts3;
-//	        boolean lau = glau;
+            QueryResponse qr = new QueryResponse();
+            qr.setCountry(new CodeLabel(cc.getCode(), cc.getLabel()));
+            qr.setPage(pg);
+
+//            System.out.println("NACELEAFURIS " +naceLeafUris);
             
-        	List<String> naceLeafUris = cc.getNaceEndpoint() == null ? null : naceService.getLocalNaceLeafUris(cc, naceCodes);
-        	List<String> nutsLeafUris = places == null ? null : nutsService.getLocalNutsLeafUrisDB(cc, places); 
-        	List<String> lauUris = places == null ? null : nutsService.getLocalLauUris(cc, places);
-        	
-        	if (naceLeafUris == null) {
-        		nace = false;
-        	}
-        	
-        	if (nutsLeafUris == null) {
-        		nuts3 = false;
-        	}
-        	
-//	        	if (lauUrisList == null) {
-//	        		lau = false;
-//	        	}
-
-        	SparqlQuery sparql = SparqlQuery.buildCoreQuery(cc, true, false, nutsLeafUris, lauUris, naceLeafUris, founding, dissolution); 
-
-        	if ((nutsLeafUris != null && nutsLeafUris.size() == 0) || (naceLeafUris != null && naceLeafUris.size() == 0)) {
-        		responseList.add(new EndpointResponse(cc.getLabel(), mapper.createArrayNode(), 0, null));
-//        		return responseList;
+        	if ((nutsLauCodes != null && nutsLauCodes.size() == 0) || 
+        			(naceCodes != null && naceCodes.size() == 0) || (!cc.isNace() && naceCodes != null)) {
+        		pg.setPageSize(0);
+        		qr.setLegalEntities(new ArrayList<>());
+        		responseList.add(qr);
         		continue;
         	}
         	
-            
-            String query = sparql.groupBySelectQuery(nuts3, nace);
-//	            System.out.println(sparql);
-//            System.out.println(QueryFactory.create(query));
+          	ElasticQuery elastic = ElasticQuery.buildCoreQuery(cc, true, null, enutsLauCodes, places.getNutsStat(), null, naceCodes, founding, dissolution);
 
-            String json;
-            try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), query)) {
-                ResultSet rs = qe.execSelect();
-                ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-                ResultSetFormatter.outputAsJSON(outStream, rs);
-                json = outStream.toString();
-            }
-            
-            try {
-                responseList.add(new EndpointResponse(cc.getLabel(), mapper.readTree(json), 0, null));
-            } catch (Exception e) {
-                e.printStackTrace();
-//                return null;
-                continue;
-            }
+	  
+//	        System.out.println(uri);
+//    		System.out.println(query);
+//	        long start = System.currentTimeMillis();
+	        
+    		if (elastic == null) {
+       			continue;
+       		}
+    		
+    		try {
+    			
+    			co.elastic.clients.elasticsearch._types.query_dsl.Query q = elastic.getQuery().build()._toQuery();
+    			
+////    			if (page == 1) {
+    	    	CountRequest.Builder countRequest = new CountRequest.Builder();
+    	    	countRequest.index(cc.getIndexName());
+    	    	countRequest.query(q);
+
+    			long count = elasticClient.count(countRequest.build()).count();
+    			
+    			pg.setTotalResults((int)count);
+////    			}
+    		
+    			SearchRequest.Builder searchRequest = new SearchRequest.Builder(); 
+    			searchRequest.index(cc.getIndexName());
+    			searchRequest.query(q);
+    			searchRequest.from(offset); 
+    			searchRequest.size(offset + pageSize); 
+
+    			SearchResponse<Object> searchResponse = elasticClient.search(searchRequest.build(), Object.class);
+
+
+
+//				HitsMetadata<Object> metadata = searchResponse.hits();
+//				metadata.total();
+//				
+//				pg.setTotalResults((int)metadata.total().value());
+
+
+    			Map<String, LegalEntity> companies = new LinkedHashMap<>();
+    				
+    			HitsMetadata<Object> hm = searchResponse.hits();
+    			
+    			for (Hit<Object> hit : hm.hits()) {
+    				Map<String, String> map = (Map<String, String>)hit.source();
+    				
+    				String uri = map.get("iri").toString();
+    				
+    				companies.put(uri, new LegalEntity(uri));
+  
+    			}
+	            
+//	            System.out.println(companies);
+	
+	            if (!companies.isEmpty()) {
+	            	
+	            	String values = "";
+	                for (String uri : companies.keySet()) {
+	                    values += "<" + uri + "> ";
+	                 }
+	
+	            	String sparqlConstruct = null;
+	            	
+	            	if (details) {
+	            		sparqlConstruct = 
+	                		"CONSTRUCT { " + 
+	                                "  ?entity a <http://www.w3.org/ns/legal#LegalEntity> . " + 
+	                                "  ?entity <http://www.w3.org/ns/legal#legalName> ?entityName . " +
+	                                "  ?entity <http://www.w3.org/ns/legal#companyType> ?companyType . " +
+	                                "  ?entity <http://www.w3.org/ns/legal#companyActivity> ?nace . " +
+	                        		"  ?entity <http://www.w3.org/ns/legal#registeredAddress> ?address . ?address ?ap ?ao . " + 
+	                                "  ?entity <https://schema.org/foundingDate> ?foundingDate . }" +	           		
+		            		" WHERE { " +
+	                        cc.getEntitySparql() + " " +
+	                        "OPTIONAL { " + cc.getLegalNameSparql() + " } " + 
+	                        (cc.isDissolutionDate() ? cc.getActiveSparql() : "") + " " +
+	                        "OPTIONAL { " + cc.getAddressSparql() + " ?address ?ap ?ao . } " + 
+	        	            "OPTIONAL { " + cc.getCompanyTypeSparql() + " } " +
+	        	            "OPTIONAL { " + cc.getNaceSparql() + " } " +
+		                    "OPTIONAL { " + cc.getFoundingDateSparql() + " } " +
+		                    "VALUES ?entity { " + values + "} } ";
+	            	} else {
+	            		sparqlConstruct =
+		            		"CONSTRUCT { " + 
+		                            "  ?entity a <http://www.w3.org/ns/legal#LegalEntity> . " + 
+		                            "  ?entity <http://www.w3.org/ns/legal#legalName> ?entityName . " +
+		                            "  ?entity <https://schema.org/foundingDate> ?foundingDate . }" +	           		
+		            		" WHERE { " +
+		                    cc.getEntitySparql() + " " +
+		                    cc.getLegalNameSparql() + " " + 
+		                    "OPTIONAL { " + cc.getFoundingDateSparql() + " } " +
+		                    "VALUES ?entity { " + values + "} } ";
+	            	}
+		
+//	                System.out.println(QueryFactory.create(sparqlConstruct));
+		            try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), QueryFactory.create(sparqlConstruct, Syntax.syntaxARQ))) {
+		                Model model = qe.execConstruct();
+		                
+		                Map<String,Object> jn = (Map)JsonLDWriter.toJsonLDJavaAPI((RDFFormat.JSONLDVariant)RDFFormat.JSONLD_COMPACT_PRETTY.getVariant(), DatasetFactory.wrap(model).asDatasetGraph(), null, null, context);
+		                
+		                List<Map<String, Object>> graph = (List)jn.get("@graph");
+		                
+		                Map<String, Address> addresses = null;
+		                if (details) {
+			                addresses = new HashMap<>();
+			                
+			                for (Map<String, Object> entry : graph) {
+			                	if (entry.get("@type").equals("http://www.w3.org/ns/locn#Address")) {
+			                		addresses.put((String)entry.get("@id"), createAddressFromJsonld(entry, cc));
+			                	}
+			                }
+	
+			                for (Map<String, Object> entry : graph) {
+			                	if (entry.get("@type").equals("http://www.w3.org/ns/legal#LegalEntity")) {
+			                		createLegalEntityFromJsonld(companies.get((String)entry.get("@id")), entry, cc, addresses);
+			                	}
+			                }
+		                } else {
+			                for (Map<String, Object> entry : graph) {
+		                		createLegalEntityFromJsonld(companies.get((String)entry.get("@id")), entry, cc, addresses);
+			                }
+		                }
+	
+		            } catch (IOException e) {
+		    			// TODO Auto-generated catch block
+		    			e.printStackTrace();
+		            }
+	
+		            pg.setPageSize(companies.size());
+		            qr.setLegalEntities(new ArrayList<>(companies.values()));
+	
+		            responseList.add(qr);
+		            
+	            } else {
+	                pg.setPageSize(0);
+	                qr.setLegalEntities(new ArrayList<>());
+	                
+	                responseList.add(qr);
+	            }
+    		} catch (Exception ex) {
+    			ex.printStackTrace();
+    		}
+    		
+//        	} else {
+//                pg.setPageSize(0);
+//                qr.setLegalEntities(new ArrayList<>());
+//                
+//                responseList.add(qr);
+//            } 
+    		
         }
-        	        
+        
         return responseList;
     }
+    
+    
+    
+    
+//    public List<EndpointResponse> groupedQuery(List<Code> nutsLauCodes, List<Code> naceCodes, Code founding, Code dissolution, boolean gnace, boolean gnuts3) {
+//        
+//    	List<EndpointResponse> responseList = new ArrayList<>();
+////        
+//    	Map<CountryDB, PlaceSelection> countryPlaceMap;
+//    	if (nutsLauCodes != null) {
+//    		countryPlaceMap = nutsService.getEndpointsByNuts(nutsLauCodes);
+//    	} else {
+//    		countryPlaceMap = nutsService.getEndpointsByNuts(); 
+//    	}
+//    	
+//        ObjectMapper mapper = new ObjectMapper();
+//
+//        for (Map.Entry<CountryDB, PlaceSelection> ccEntry : countryPlaceMap.entrySet()) {
+//        	CountryDB cc = ccEntry.getKey();
+//        	PlaceSelection places = ccEntry.getValue();
+//
+//        	boolean nace = gnace;
+//            boolean nuts3 = gnuts3;
+////	        boolean lau = glau;
+//            
+//        	List<String> naceLeafUris = cc.getNaceEndpoint() == null ? null : naceService.getLocalNaceLeafUris(cc, naceCodes);
+//        	List<String> nutsLeafUris = places == null ? null : nutsService.getLocalNutsLeafUrisDB(cc, places); 
+//        	List<String> lauUris = places == null ? null : nutsService.getLocalLauUris(cc, places);
+//        	
+//        	if (naceLeafUris == null) {
+//        		nace = false;
+//        	}
+//        	
+//        	if (nutsLeafUris == null) {
+//        		nuts3 = false;
+//        	}
+//        	
+////	        	if (lauUrisList == null) {
+////	        		lau = false;
+////	        	}
+//
+//        	SparqlQuery sparql = SparqlQuery.buildCoreQuery(cc, true, false, nutsLeafUris, lauUris, naceLeafUris, founding, dissolution); 
+//
+//        	if ((nutsLeafUris != null && nutsLeafUris.size() == 0) || (naceLeafUris != null && naceLeafUris.size() == 0)) {
+//        		responseList.add(new EndpointResponse(cc.getLabel(), mapper.createArrayNode(), 0, null));
+////        		return responseList;
+//        		continue;
+//        	}
+//        	
+//            
+//            String query = sparql.groupBySelectQuery(nuts3, nace);
+////	            System.out.println(sparql);
+////            System.out.println(QueryFactory.create(query));
+//
+//            String json;
+//            try (QueryExecution qe = QueryExecutionFactory.sparqlService(cc.getDataEndpoint(), query)) {
+//                ResultSet rs = qe.execSelect();
+//                ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+//                ResultSetFormatter.outputAsJSON(outStream, rs);
+//                json = outStream.toString();
+//            }
+//            
+//            try {
+//                responseList.add(new EndpointResponse(cc.getLabel(), mapper.readTree(json), 0, null));
+//            } catch (Exception e) {
+//                e.printStackTrace();
+////                return null;
+//                continue;
+//            }
+//        }
+//        	        
+//        return responseList;
+//    }
     
 	public LegalEntity createLegalEntityFromJsonld(LegalEntity lg, Map<String, Object> map, CountryDB cc, Map<String, Address> addressMap) {
 		
