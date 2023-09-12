@@ -149,10 +149,10 @@ public class ScheduledTasks {
 				dimensions.add(Dimension.FOUNDING);
 				dimensions.add(Dimension.DISSOLUTION);
 				dimensions.add(Dimension.NUTSLAU_NACE);
-				dimensions.add(Dimension.NUTSLAU_FOUNDING);
-				dimensions.add(Dimension.NUTSLAU_DISSOLUTION);
-				dimensions.add(Dimension.NACE_FOUNDING);
-				dimensions.add(Dimension.NACE_DISSOLUTION);
+//				dimensions.add(Dimension.NUTSLAU_FOUNDING);
+//				dimensions.add(Dimension.NUTSLAU_DISSOLUTION);
+//				dimensions.add(Dimension.NACE_FOUNDING);
+//				dimensions.add(Dimension.NACE_DISSOLUTION);
 				
 				statisticsService.computeStatistics(cc, dimensions); 
 				
