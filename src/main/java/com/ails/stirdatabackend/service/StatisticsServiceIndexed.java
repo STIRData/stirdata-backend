@@ -1134,7 +1134,7 @@ public class StatisticsServiceIndexed {
 	    	
    		    SearchRequest.Builder searchRequest = new SearchRequest.Builder();
 	    	searchRequest.index(cc.getIndexName());
-	    	
+
    			if (dimension == Dimension.FOUNDING) {
    				
    				elastic = ElasticQuery.buildCoreQuery(cc, true, null, nutsLauCodes, statNutsLauCodes, null, naceCodes, null, dissolutionDate);
@@ -1149,7 +1149,8 @@ public class StatisticsServiceIndexed {
 //    	    			.aggregation(AggregationBuilders.max("max-date").field("founding-date")));
 
    			} else if (dimension == Dimension.DISSOLUTION) {
-   				elastic = ElasticQuery.buildCoreQuery(cc, true, null, nutsLauCodes, statNutsLauCodes, null, naceCodes, foundingDate, null);
+   				
+   				elastic = ElasticQuery.buildCoreQuery(cc, false, null, nutsLauCodes, statNutsLauCodes, null, naceCodes, foundingDate, null);
 
 //    	    	searchRequest.source(new SearchSourceBuilder()
 //    	    			.query(elastic.getQuery())
@@ -1165,17 +1166,14 @@ public class StatisticsServiceIndexed {
 
    	    	try {
    	    			
-// 	   	    	System.out.println(elastic.getQuery());
 
-//   	   		Aggregations aggs = client.search(searchRequest, RequestOptions.DEFAULT).getAggregations();
    				Map<String, Aggregate> aggs = elasticClient.search(searchRequest.build(), Object.class).aggregations();
    	    			
-//   	   			System.out.println(((Min)aggs.get("min-date")).getValueAsString());
-//   	   			System.out.println(((Max)aggs.get("max-date")).getValueAsString());
+//   	   			System.out.println(aggs.get("min-date").min().valueAsString());
+//   	   			System.out.println(aggs.get("max-date").max().valueAsString());
    	   		
    	   			try {
 	   	   			minDate = Calendar.getInstance();
-//	   	   			minDate.setTime(sdf.parse(((Min)aggs.get("min-date")).getValueAsString()));
 	   	   			minDate.setTime(sdf.parse(aggs.get("min-date").min().valueAsString()));
    				} catch (Exception ex) {
 //   					ex.printStackTrace();
@@ -1184,7 +1182,6 @@ public class StatisticsServiceIndexed {
 
    	   			try {
 	   	   			maxDate = Calendar.getInstance();
-//	   	   			maxDate.setTime(sdf.parse(((Max)aggs.get("max-date")).getValueAsString()));
 	   	   			maxDate.setTime(sdf.parse(aggs.get("max-date").max().valueAsString()));
    				} catch (Exception ex) {
 //   					ex.printStackTrace();
