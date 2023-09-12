@@ -49,6 +49,7 @@ import com.ails.stirdatabackend.service.NaceService;
 import com.ails.stirdatabackend.service.NutsService;
 import com.ails.stirdatabackend.service.PlaceNode;
 import com.ails.stirdatabackend.service.StatisticsService;
+import com.ails.stirdatabackend.service.StatisticsServiceIndexed;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
@@ -85,7 +86,7 @@ public class StirdataBackendApplication implements CommandLineRunner {
     private CountriesService countriesService;
     
     @Autowired
-    private StatisticsService statisticsService;
+    private StatisticsServiceIndexed statisticsService;
 
     @Autowired
     private NutsService nutsService;
