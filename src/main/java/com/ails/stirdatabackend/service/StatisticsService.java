@@ -1891,7 +1891,7 @@ public class StatisticsService {
 //        System.out.println(">>> >> " + iterCodes);
     	for (Code code : iterCodes) {
 //    		System.out.println("CODE " + code + " " + code.isNuts() + " " + code.isLau());
-    		System.out.println("> " + code);
+//    		System.out.println("> " + code);
     		SparqlQuery sparql = null; 
     		
     		String query = null;

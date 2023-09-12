@@ -1,7 +1,5 @@
 package com.ails.stirdatabackend.configuration;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -35,7 +33,7 @@ import com.ails.stirdatabackend.repository.CountriesDBRepository;
 import com.ails.stirdatabackend.repository.UpdateLogRepository;
 import com.ails.stirdatabackend.service.CountriesService;
 import com.ails.stirdatabackend.service.DataStoring;
-import com.ails.stirdatabackend.service.StatisticsService;
+import com.ails.stirdatabackend.service.StatisticsServiceIndexed;
 
 @Component
 @Profile("PRODUCTION")
@@ -50,7 +48,7 @@ public class ScheduledTasks {
     private CountriesDBRepository countriesDBRepository;
 
     @Autowired
-    private StatisticsService statisticsService;
+    private StatisticsServiceIndexed statisticsService;
 
     @Autowired
     private DataStoring ds;

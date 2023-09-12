@@ -305,18 +305,18 @@ public class StirdataBackendApplication implements CommandLineRunner {
 //		countriesService.replace(md);       // rubik-w3id
 		
 		Set<Dimension> dimensions = new HashSet<>();
-		dimensions.add(Dimension.DATA); // should always be included
-		dimensions.add(Dimension.NACE);  
-		dimensions.add(Dimension.NUTSLAU); 
-		dimensions.add(Dimension.FOUNDING); 
-		dimensions.add(Dimension.DISSOLUTION); 
-		dimensions.add(Dimension.NUTSLAU_NACE);
-		dimensions.add(Dimension.NUTSLAU_FOUNDING);
-		dimensions.add(Dimension.NUTSLAU_DISSOLUTION);
-		dimensions.add(Dimension.NACE_FOUNDING);
-		dimensions.add(Dimension.NACE_DISSOLUTION);
+//		dimensions.add(Dimension.DATA); // should always be included
+//		dimensions.add(Dimension.NACE);  
+//		dimensions.add(Dimension.NUTSLAU); 
+//		dimensions.add(Dimension.FOUNDING); 
+//		dimensions.add(Dimension.DISSOLUTION); 
+//		dimensions.add(Dimension.NUTSLAU_NACE);
+//		dimensions.add(Dimension.NUTSLAU_FOUNDING);
+//		dimensions.add(Dimension.NUTSLAU_DISSOLUTION);
+//		dimensions.add(Dimension.NACE_FOUNDING);
+//		dimensions.add(Dimension.NACE_DISSOLUTION);
 		
-//		statisticsService.computeStatistics(countryConfigurations.get("EE"), dimensions); // ok
+//		statisticsService.computeStatistics(countryConfigurations.get("EE"), dimensions, true, null); // ok
 //		statisticsService.computeStatistics(countryConfigurations.get("LV"), dimensions); // ok
 //		statisticsService.computeStatistics(countryConfigurations.get("FI"), dimensions); // ok
 //		statisticsService.computeStatistics(countryConfigurations.get("RO"), dimensions); // ok

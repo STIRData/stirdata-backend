@@ -111,13 +111,7 @@ public class CountriesService {
     private ActivitiesDBRepository activitiesRepository;
 
     @Autowired
-    private StatisticsRepository statisticsRepository;
-
-    @Autowired
     private UpdateLogRepository updateLogRepository;
-    
-    @Autowired
-    private StatisticsService statisticsService;
     
     @Autowired
     private DataStoring ds;
