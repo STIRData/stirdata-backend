@@ -35,6 +35,9 @@ public class UserService {
     @Autowired 
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private SavedViewService SavedViewService;
+
 
     public Optional<User> checkAndCreateNewUserGoogle(GoogleAccountUserInfoDTO request) {
         Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
@@ -46,27 +49,6 @@ public class UserService {
         }
         else {
             User usr = new User(request);
-            userRepository.save(usr);
-            return Optional.of(usr);
-        }
-    }
-
-    public Optional<User> checkAndCreateNewUserSolid( String email, Optional<String> name, Optional<String> organization  ) {
-        Optional<User> userOpt = userRepository.findByEmail(email);
-        if (userOpt.isPresent() && userOpt.get().getUserLoginType().equals(UserLoginType.SOLID)) {
-            return userOpt;
-        }
-        else if (userOpt.isPresent() && !userOpt.get().getUserLoginType().equals(UserLoginType.SOLID)) {
-            return Optional.empty();
-        }
-        else {
-
-            User usr = new User();
-            name.ifPresent(n -> usr.setFirstName(n));
-            organization.ifPresent(org -> usr.setOrganization(org));
-            usr.setEmail(email);
-            usr.setUserLoginType(UserLoginType.SOLID);
-            usr.setUserType(UserType.USER);
             userRepository.save(usr);
             return Optional.of(usr);
         }
@@ -86,6 +68,22 @@ public class UserService {
         }
     }
 
+    public String encodePassword(String newPassword) {
+        return passwordEncoder.encode(newPassword);
+    }
+
+    public void deleteUser(User user) {
+        SavedViewService.deleteUserSavedViews(user.getId());
+        userRepository.deleteById(user.getId().toString());
+    }
+
+    public Optional<User> changeUserPassword(User user, String oldPassword, String newPassword) {
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            return Optional.empty();
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        return Optional.of(user);
+    }
     
 
     public Optional<String> loginUser(LoginRequestDTO loginRequest) {
@@ -109,4 +107,16 @@ public class UserService {
         return userRepository.findById(id);
     }
 
+    public boolean userExistsWithEmail(String email) {
+        Optional<User> u =  userRepository.findByEmail(email);
+        if (u.isPresent()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public void saveUser(User user) {
+        userRepository.save(user);
+    }
 }

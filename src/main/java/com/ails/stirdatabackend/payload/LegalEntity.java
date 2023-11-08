@@ -23,6 +23,10 @@ public class LegalEntity {
 	private List<Address> registeredAddresses;
 	private Date foundingDate;
 	private Date dissolutionDate;
+	private String leiCode;
+	private List<String> sameAs;
+	
+	private List addOns;
 
 	public LegalEntity(String uri) {
 		this.uri = uri;
@@ -56,4 +60,12 @@ public class LegalEntity {
 		registeredAddresses.add(address);
 	}
 	
+	public void addSameAs(String sameAs) {
+		if (this.sameAs == null) {
+			this.sameAs = new ArrayList<>();
+		}
+		
+		this.sameAs.add(sameAs);
+	}
+
 }

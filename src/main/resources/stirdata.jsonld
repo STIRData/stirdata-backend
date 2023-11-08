@@ -45,6 +45,12 @@
     "foundingDate" : {
       "@id" : "https://schema.org/foundingDate",
       "@type" : "http://www.w3.org/2001/XMLSchema#date"
-    }
+    },
+    "leiCode" : {
+      "@id" : "https://schema.org/leiCode"
+    },
+    "sameAs" : {
+      "@id" : "https://schema.org/sameAs"
+    }    
   }
 }

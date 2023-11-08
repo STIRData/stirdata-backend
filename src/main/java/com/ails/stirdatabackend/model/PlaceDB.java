@@ -39,6 +39,9 @@ public class PlaceDB {
 	@Column(name = "latin_name")
 	private String latinName;
 
+	@Column(name = "custom_name")
+	private String customName;
+	
 	@Column(name = "type", nullable = false)
 	private String type;
 
@@ -107,5 +110,15 @@ public class PlaceDB {
 	
 	public String toString() {
 		return code.toString();
+	}
+	
+	public String getPreferredName() {
+		if (customName != null) {
+			return customName;
+		} else if (latinName != null) {
+			return latinName;
+		} else {
+			return nationalName;
+		}
 	}
 }

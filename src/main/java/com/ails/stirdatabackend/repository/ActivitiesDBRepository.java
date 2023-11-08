@@ -6,6 +6,7 @@ import com.ails.stirdatabackend.model.Code;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -13,6 +14,8 @@ import org.springframework.data.repository.query.Param;
 public interface ActivitiesDBRepository extends JpaRepository<ActivityDB, String> {
 	
 	  public void deleteAllByScheme(String scheme);
+	  
+	  public List<ActivityDB> findByScheme(String cheme);
 	
 	  public ActivityDB findByCode(Code code);
 
@@ -42,4 +45,8 @@ public interface ActivitiesDBRepository extends JpaRepository<ActivityDB, String
       @Query("SELECT a5 FROM ActivityDB a5 WHERE a5.scheme = :scheme AND a5.exactMatch = :activity")
       public List<ActivityDB> findLevel0AfterDescendentFromNaceRev2(@Param("activity") ActivityDB activity, @Param("scheme") String scheme);
 
+      @Modifying
+      @Query("UPDATE ActivityDB a SET a.code = ?2, a.scheme = ?3 where a.code = ?1")
+      void changeActivityCode(Code oldCode, Code newCode, String scheme);
+      
 }

@@ -1,12 +1,18 @@
 package com.ails.stirdatabackend.service;
 
 import com.ails.stirdatabackend.model.Code;
+import com.ails.stirdatabackend.model.CountryConfigurationsBean;
 import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.PlaceDB;
 import com.ails.stirdatabackend.model.StatisticResult;
+import com.ails.stirdatabackend.payload.Address;
 import com.ails.stirdatabackend.payload.CodeLabel;
 import com.ails.stirdatabackend.payload.CubeResponse;
+import com.ails.stirdatabackend.payload.LegalEntity;
+import com.ails.stirdatabackend.payload.Page;
+import com.ails.stirdatabackend.payload.QueryResponse;
 import com.ails.stirdatabackend.repository.PlacesDBRepository;
+import com.ails.stirdatabackend.service.NutsService.PlaceSelection;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -16,17 +22,24 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import org.apache.jena.query.DatasetFactory;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.query.ResultSetFormatter;
+import org.apache.jena.query.Syntax;
+import org.apache.jena.rdf.model.Literal;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.riot.RDFFormat;
+import org.apache.jena.riot.writer.JsonLDWriter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -61,7 +74,7 @@ public class NutsService {
 
     @Autowired
     @Qualifier("country-configurations")
-    private Map<String, CountryDB> countryConfigurations;
+    private CountryConfigurationsBean countryConfigurations;
     
     @Autowired
     private PlacesDBRepository placesRepository;
@@ -94,6 +107,10 @@ public class NutsService {
         		this.nutsStat = new HashSet<>();
     		}
     		this.nutsStat.add(nutsStat);
+    	}
+    	
+    	public String toString() {
+    		return nuts3 + "//" + lau + "//" + nutsStat;
     	}
 
     }
@@ -131,6 +148,7 @@ public class NutsService {
     		} else {
             	Set<String> statNuts3Uris = new HashSet<>();
             	for (Code s : ps.getNutsStat()) {
+//            		System.out.println(">>>>" + s);
             		statNuts3Uris.addAll(getNutsLocalNuts3LeafUrisDB(cc, s));
             	}
 //            	System.out.println("EFF " + statNuts3Uris);
@@ -317,11 +335,15 @@ public class NutsService {
     }
     
     public Map<CountryDB, PlaceSelection> getEndpointsByNuts(List<Code> nutsLauCodes) {
+    	
+//    	System.out.println("GGG " + nutsLauCodes);
+    	
         Map<CountryDB, PlaceSelection> res = new HashMap<>();
 
         List<Code> statCodes = new ArrayList<>();
     
     	for (Code code : nutsLauCodes) {
+//    		System.out.println(">> " + code + " " + code.isNuts() + " " + code.isLau() + " " + code.isStat());
         	if (code.isNuts()) {
         		CountryDB cc = countryConfigurations.get(code.getNutsCountry());
         		
@@ -347,23 +369,58 @@ public class NutsService {
         		statCodes.add(code);
         	}
         }
-
+    	
     	if (!statCodes.isEmpty()) {
 
 	    	for (Map.Entry<CountryDB, PlaceSelection> entry : res.entrySet()) {
 	    		Set<Code> codes = null;
-
-	    		// assume same level nuts for all statCodes !!!!
+	    		
+    			List<List<Code>> allStatCodes = new ArrayList<>();
+    			List<Integer> allStatLevels = new ArrayList<>();
+    			boolean emptyStat = false;
+    			int maxStatLevel = -1;
 
 	    		for (Code stat : statCodes) {
-	    			List<Code> cs = getNutsCodesFromStat(stat, entry.getKey());
+    				List<Code> cs = getNutsCodesFromStat(stat, entry.getKey());
+    				allStatCodes.add(cs);
+    				
+    				if (!cs.isEmpty()) {
+    					int level = cs.get(0).getNutsLevel();
+						allStatLevels.add(level);
+						maxStatLevel = Math.max(maxStatLevel, level);
+    				} else {
+    					allStatLevels.add(-1);
+    					emptyStat = true;
+    				}
+	    		}
+	    		
+    			if (emptyStat) {
+    				codes = new HashSet<>();
+	    		} else {
+    				for (int i = 0; i < allStatCodes.size(); i++) {
+    					List<Code> currentStatCodes = allStatCodes.get(i);
+    					int currentLevel = allStatLevels.get(i);
 
-	    			if (codes == null) {
-	    				codes = new HashSet<>();
-	    				codes.addAll(cs);
-	    			} else {
-	    				codes.retainAll(cs);
-	    			}
+    					List<Code> actualStatCodes;
+    					
+    					if (currentLevel < maxStatLevel) {
+    						actualStatCodes = new ArrayList<>();
+    						for (Code c : currentStatCodes) {
+    							for (PlaceDB ch : getChildren(getByCode(c), maxStatLevel)) {
+    								actualStatCodes.add(ch.getCode());
+    							}
+    						}	
+    					} else {
+    						actualStatCodes = currentStatCodes;
+    					}
+    					
+    		    		if (codes == null) {
+    		    			codes = new HashSet<>();
+    		    			codes.addAll(actualStatCodes);
+    		    		} else {
+    		    			codes.retainAll(actualStatCodes);
+    					}
+    				}
 	    		}
 	    		
     			entry.getValue().setNutsStat(codes);
@@ -371,6 +428,7 @@ public class NutsService {
 	    	}
     	}
     	
+//    	System.out.println(">> " + res);
         return res;
     }
     
@@ -389,36 +447,49 @@ public class NutsService {
     	return parents;
     }
     
-    
-    public PlaceNode buildPlaceTree(CountryDB cc, boolean lau) {
-    	PlaceNode res = new PlaceNode();
-    	
-    	List<PlaceDB> next = this.getNextDeepestListDb(Code.createNutsCode(cc.getCode()), lau);
-    	
-    	for (PlaceDB r : next) {
-    		res.addChild(r);
+    public List<PlaceDB> getChildren(PlaceDB place, int atLevel) {
+    	int startLevel = place.getLevel();
+
+    	if (atLevel - startLevel == 1) {
+    		return placesRepository.findNUTSChildren1(place);
+    	} else if (atLevel - startLevel == 2) {
+    		return placesRepository.findNUTSChildren2(place);
+    	} else if (atLevel - startLevel == 3) {
+    		return placesRepository.findNUTSChildren3(place);
+    	} else {
+    		return new ArrayList<>();
     	}
-    	
-    	for (PlaceNode r : res.getNext()) {
-    		buildPlaceTreeIter(r, lau);
-    	}
-    	
-    	return res;
     }
+   
+//    public PlaceNode buildPlaceTree(CountryDB cc, boolean lau) {
+//    	PlaceNode res = new PlaceNode();
+//    	
+//    	List<PlaceDB> next = this.getNextDeepestListDb(Code.createNutsCode(cc.getCode()), lau);
+//    	
+//    	for (PlaceDB r : next) {
+//    		res.addChild(r);
+//    	}
+//    	
+//    	for (PlaceNode r : res.getNext()) {
+//    		buildPlaceTreeIter(r, lau);
+//    	}
+//    	
+//    	return res;
+//    }
     
-    public void buildPlaceTreeIter(PlaceNode place, boolean lau) {
-    	List<PlaceDB> next = getNextDeepestListDb(place.getNode().getCode(), lau);
-    	
-    	for (PlaceDB r : next) {
-    		place.addChild(r);
-    	}
-    	
-    	if (place.getNext() != null) {
-	    	for (PlaceNode r : place.getNext()) {
-	    		buildPlaceTreeIter(r, lau);
-	    	}
-    	}    	
-    }
+//    public void buildPlaceTreeIter(PlaceNode place, boolean lau) {
+//    	List<PlaceDB> next = getNextDeepestListDb(place.getNode().getCode(), lau);
+//    	
+//    	for (PlaceDB r : next) {
+//    		place.addChild(r);
+//    	}
+//    	
+//    	if (place.getNext() != null) {
+//	    	for (PlaceNode r : place.getNext()) {
+//	    		buildPlaceTreeIter(r, lau);
+//	    	}
+//    	}    	
+//    }
     
     private PlaceDB getNextDeepestSingle(PlaceDB parent, boolean lau) {
     	PlaceDB res = parent;
@@ -474,8 +545,8 @@ public class NutsService {
         return places;
     }
     
-    public List<PlaceDB> getNextNutsLauLevelListDb(Code parent) {
-    	return getNextDeepestListDb(parent, true);
+    public List<PlaceDB> getNextNutsLauLevelListDb(Code parent, boolean lau) {
+    	return getNextDeepestListDb(parent, lau);
     }
     
     public List<PlaceDB> getNextNutsLauLevelListDbSameLevel(Code parent) {
@@ -668,18 +739,22 @@ public class NutsService {
     public List<Code> getNutsCodesFromStat(Code stat, CountryDB cc) {
     	List<CountryDB> list = new ArrayList<>();
     	list.add(cc);
-    	return getNutsCodesFromStat(stat, list);
+		if (stat.isEuroStatValue()) {
+			return getNutsCodesFromEuroStat(stat, cc); 
+		} else {
+			return getNutsCodesFromStat(stat, list);
+		}
     }
     
     public List<Code> getNutsCodesFromStat(Code stat, List<CountryDB> ccList) {
 
     	String countries = "";
     	if (ccList != null) {
-	    	for (CountryDB cc : ccList) {
+	    	for (CountryDB cc : new HashSet<>(ccList)) {
 	    		if (countries.length() > 0) {
 	    			countries += "  ";
 	    		}
-	    		countries += "\"" + cc.getCode() + "\"";
+	    		countries += "\"" + cc.getIsoCode() + "\"";
 	    	}
     	}
     	
@@ -712,39 +787,44 @@ public class NutsService {
        		}
     	}
     	
-//    	System.out.println(res);
+//    	System.out.println("STAT " + res);
     	
     	return res;
     	
     }
+    
+    public List<Code> getNutsCodesFromEuroStat(Code stat, CountryDB cc) {
 
-    public List<CubeResponse> getFilters() {
+    	String otherValues = "";
+    	if (stat.getStatOtherValues() != null) {
+	    	for (Map.Entry<String, String> entry : stat.getStatOtherValues().entrySet()) {
+	    		otherValues += "?obs <" + Code.statPropertyPrefix + entry.getKey() + "> <" + Code.statValuePrefix + entry.getKey() + "/" + entry.getValue() + "> . "; 
+		    }
+    	}
 
-    	String sparql = 
-    			"PREFIX cube: <http://purl.org/linked-data/cube#> " +
-    			"SELECT ?dataset ?prop ?propLabel ?value ?valueLabel " +  
-    			"WHERE { " +
-    				"?dataset a cube:DataSet ; " +
-    	         		"cube:structure " +
-    	                	"[ a cube:DataStructureDefinition ; " +
-    	                  		"cube:component " +
-    								"[ cube:dimension <https://w3id.org/stirdata/vocabulary/stat/refArea> ] ] ; " +
-    	         		"cube:structure " +
-    	                	"[ a cube:DataStructureDefinition ; " +
-    	                  		"cube:component " +
-    								"[ cube:measure ?prop ] ] . " +
-    				"?prop a cube:DimensionProperty ; " +
-      					"<http://www.w3.org/2000/01/rdf-schema#label> ?propLabel ; " +
-    	        		"cube:codeList ?scheme . " +
-    				"?value a <http://www.w3.org/2004/02/skos/core#Concept> ; " +
-    					"<http://www.w3.org/2004/02/skos/core#prefLabel> ?valueLabel ; " +    				
-    	        		"<http://www.w3.org/2004/02/skos/core#inScheme> ?scheme . " + 
-    	        "} ORDER BY ?propLabel ?valueLabel";
+    	List<Code> res = new ArrayList<>();
     	
-    		
-    	Map<String, CubeResponse> res = new LinkedHashMap<>();
-    	
-//    	System.out.println(sparql);
+		String sparql = "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> SELECT DISTINCT(?area) WHERE { " +
+		      "?obs a <http://purl.org/linked-data/cube#Observation> . " +
+		      "?obs <http://purl.org/linked-data/cube#dataSet> <" + stat.getStatDatasetUri() + "> . " +
+		      "?obs <https://w3id.org/stirdata/vocabulary/stat/geo>/<http://www.w3.org/2004/02/skos/core#exactMatch> ?area . " +
+		      "?obs <https://w3id.org/stirdata/vocabulary/stat/time> ?maxTime . " +
+		       otherValues +
+		      "?obs <" + stat.getStatPropertyUri() + "> ?value . " +
+		      "?obs <" + Code.statPropertyPrefix + "unit> <" + Code.statValuePrefix + stat.getStatValue() + "> . " +
+	          (stat.getStatMinValue() != null ? "FILTER (xsd:double(?value) >= " + stat.getStatMinValue() + ") " : "") +
+		      (stat.getStatMaxValue() != null ? "FILTER (xsd:double(?value) <= " + stat.getStatMaxValue() + ") " : "") +
+		      "?area <https://w3id.org/stirdata/vocabulary/iso31661Alpha2Code> \"" + cc.getIsoCode() + "\" . " + 
+		      "{ SELECT (max(?time) AS ?maxTime) WHERE { " +
+		      "  ?obs a <http://purl.org/linked-data/cube#Observation> . " +
+		      "  ?obs <http://purl.org/linked-data/cube#dataSet> <" + stat.getStatDatasetUri() + "> . " +
+		      "  ?obs <https://w3id.org/stirdata/vocabulary/stat/geo>/<http://www.w3.org/2004/02/skos/core#exactMatch> ?area . " +
+		      "  ?obs <https://w3id.org/stirdata/vocabulary/stat/time> ?time . " +
+		      "  ?area <https://w3id.org/stirdata/vocabulary/iso31661Alpha2Code> \"" + cc.getIsoCode()  + "\" ." + 
+		      "} } " +
+		      "}";
+		
+//	    	System.out.println(sparql);
 //    	System.out.println(QueryFactory.create(sparql));
     	
     	try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsStatsEndpointEU, sparql)) {
@@ -753,35 +833,230 @@ public class NutsService {
         	while (rs.hasNext()) {
         		QuerySolution sol = rs.next();
 
-        		String dataset = sol.get("dataset").asResource().toString();
-        		
-     			String prop = sol.get("prop").asResource().toString();
-     			String propLabel = sol.get("propLabel").asLiteral().getLexicalForm();
-     			String value = sol.get("value").asResource().toString();
-     			String valueLabel = sol.get("valueLabel").asLiteral().getLexicalForm();
-
-     			Code datasetCode = Code.fromStatDatasetUri(dataset);
-     			CodeLabel datasetCodeLabel = new CodeLabel(datasetCode.toString(), null, dataset);
-
-     			Code propCode = Code.fromStatPropetyUri(prop);
-     			CodeLabel propCodeLabel = new CodeLabel(propCode.toString(), propLabel, prop);
-
-     			Code valueCode = Code.fromStatValueUri(value);
-     			CodeLabel valueCodeLabel = new CodeLabel(valueCode.toString(), valueLabel, value);
+     			String uri = sol.get("area").asResource().toString();
      			
-     			CubeResponse cube = res.get(dataset + "##" + prop);
-     			if (cube == null) {
-     				cube = new CubeResponse();
-     				cube.setDataset(datasetCodeLabel);
-     				cube.setProperty(propCodeLabel);
-     				res.put(dataset + "##" + prop, cube);
+//     			System.out.println(uri);
+     			if (Code.isNutsUri(uri)) {
+     				res.add(Code.fromNutsUri(uri));
      			}
-     			
-     			cube.getValues().add(valueCodeLabel);
        		}
     	}
     	
-    	return new ArrayList<>(res.values());
+//    	System.out.println("EURSTAT " + res);
     	
+    	return res;
     }
+
+//	  moved to configuration    
+//    public List<CubeResponse> getFilters() {
+//
+//    	String sparql = 
+//    			"PREFIX cube: <http://purl.org/linked-data/cube#> " +
+//    			"SELECT ?dataset ?prop ?propLabel ?value ?valueLabel " +  
+//    			"WHERE { " +
+//    				"?dataset a cube:DataSet ; " +
+//    	         		"cube:structure " +
+//    	                	"[ a cube:DataStructureDefinition ; " +
+//    	                  		"cube:component " +
+//    								"[ cube:dimension <https://w3id.org/stirdata/vocabulary/stat/refArea> ] ] ; " +
+//    	         		"cube:structure " +
+//    	                	"[ a cube:DataStructureDefinition ; " +
+//    	                  		"cube:component " +
+//    								"[ cube:measure ?prop ] ] . " +
+//    				"?prop a cube:DimensionProperty ; " +
+//      					"<http://www.w3.org/2000/01/rdf-schema#label> ?propLabel ; " +
+//    	        		"cube:codeList ?scheme . " +
+//    				"?value a <http://www.w3.org/2004/02/skos/core#Concept> ; " +
+//    					"<http://www.w3.org/2004/02/skos/core#prefLabel> ?valueLabel ; " +    				
+//    	        		"<http://www.w3.org/2004/02/skos/core#inScheme> ?scheme . " + 
+//    	        "} ORDER BY ?propLabel ?valueLabel";
+//    	
+//    		
+//    	Map<String, CubeResponse> res = new LinkedHashMap<>();
+//    	
+////    	System.out.println(sparql);
+////    	System.out.println(QueryFactory.create(sparql));
+//    	
+//    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsStatsEndpointEU, sparql)) {
+//        	ResultSet rs = qe.execSelect();
+//        	
+//        	while (rs.hasNext()) {
+//        		QuerySolution sol = rs.next();
+//
+//        		String dataset = sol.get("dataset").asResource().toString();
+//        		
+//     			String prop = sol.get("prop").asResource().toString();
+//     			String propLabel = sol.get("propLabel").asLiteral().getLexicalForm();
+//     			String value = sol.get("value").asResource().toString();
+//     			String valueLabel = sol.get("valueLabel").asLiteral().getLexicalForm();
+//
+//     			Code datasetCode = Code.fromStatDatasetUri(dataset);
+//     			CodeLabel datasetCodeLabel = new CodeLabel(datasetCode.toString(), null, dataset);
+//
+//     			Code propCode = Code.fromStatPropetyUri(prop);
+//     			CodeLabel propCodeLabel = new CodeLabel(propCode.toString(), propLabel, prop);
+//
+//     			Code valueCode = Code.fromStatValueUri(value);
+//     			CodeLabel valueCodeLabel = new CodeLabel(valueCode.toString(), valueLabel, value);
+//     			
+//     			CubeResponse cube = res.get(dataset + "##" + prop);
+//     			if (cube == null) {
+//     				cube = new CubeResponse();
+//     				cube.setDataset(datasetCodeLabel);
+//     				cube.setProperty(propCodeLabel);
+//     				res.put(dataset + "##" + prop, cube);
+//     			}
+//     			
+//     			cube.addValue(valueCodeLabel);
+//       		}
+//    	}
+//    	
+//    	return new ArrayList<>(res.values());
+//    	
+//    }
+    
+// 	  moved to configuration    
+//    public List<CubeResponse> getEurostatFilters() {
+//    	
+//    	Map<String, CubeResponse> res = new LinkedHashMap<>();
+//
+//    	{
+//
+//    	String sparql = 
+//    			"PREFIX qb: <http://purl.org/linked-data/cube#> " + 
+//    			"SELECT ?dataset ?datasetLabel ?prop WHERE { " + 
+//    			"   ?dataset a qb:DataSet ; " + 
+//    			"      <http://www.w3.org/2000/01/rdf-schema#label>  ?datasetLabel . FILTER (lang(?datasetLabel) = 'en') . " +
+//    			"   ?dataset " +
+//    			"      qb:structure [ " + 
+//    			"         a qb:DataStructureDefinition ; " + 
+//    			"         qb:component [ " + 
+//    			"            qb:dimension <https://w3id.org/stirdata/vocabulary/stat/geo> " + 
+//    			"         ] ; " + 
+//    			"         qb:component [ " + 
+//    			"            qb:dimension <https://w3id.org/stirdata/vocabulary/stat/time> " + 
+//    			"         ]  " +
+//    			"      ] ; " + 
+//    			"      qb:structure [ " + 
+//    			"         a qb:DataStructureDefinition ; " + 
+//    			"         qb:component [ " + 
+//    			"            qb:measure ?prop " + 
+//    			"         ] " + 
+//    			"      ] . " + 
+//    			"  FILTER EXISTS { ?obs a       <http://purl.org/linked-data/cube#Observation> ; " +
+//    			"      qb:dataSet ?dataset . } " +
+//
+//    			" } " ;
+//    	
+//    	
+////    	System.out.println(sparql);
+////    	System.out.println(QueryFactory.create(sparql));
+//    	
+//    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsStatsEndpointEU, sparql)) {
+//        	ResultSet rs = qe.execSelect();
+//        	
+//        	while (rs.hasNext()) {
+//        		QuerySolution sol = rs.next();
+//
+//        		String dataset = sol.get("dataset").asResource().toString();
+//        		
+//     			String prop = sol.get("prop").asResource().toString();
+//     			String datasetLabel = sol.get("datasetLabel").asLiteral().getLexicalForm();
+//
+//     			Code datasetCode = Code.fromStatDatasetUri(dataset);
+//     			CodeLabel datasetCodeLabel = new CodeLabel(datasetCode.toString(), null, dataset);
+//
+//     			Code propCode = Code.fromStatPropetyUri(prop);
+//     			CodeLabel propCodeLabel = new CodeLabel(propCode.toString(), datasetLabel, prop);
+//
+//     			CubeResponse cube = res.get(dataset + "##" + prop);
+//     			if (cube == null) {
+//     				cube = new CubeResponse();
+//     				cube.setDataset(datasetCodeLabel);
+//     				cube.setProperty(propCodeLabel);
+//     				res.put(dataset + "##" + prop, cube);
+//     			}
+//       		}
+//        	
+//    	}}
+//    	
+//    	for (Map.Entry<String, CubeResponse> entry : res.entrySet()) {
+//    		String[] s = entry.getKey().split("##");
+//    		String dataset = s[0];
+//    		String prop = s[1];
+//    		
+//    		CubeResponse cube = entry.getValue();
+//    		
+//    	   	String sparql = 
+//        			"PREFIX qb: <http://purl.org/linked-data/cube#> " + 
+//        			"SELECT ?dimension ?dimensionLabel (min(?value) AS ?min) (max(?value) AS ?max) ?dimensionValue ?dimensionValueLabel WHERE { " + 
+//        			"   <" + dataset + "> a qb:DataSet ; " + 
+//        			"      qb:structure [ " + 
+//        			"         a qb:DataStructureDefinition ; " + 
+//        			"         qb:component [ " + 
+//        			"            qb:dimension ?dimension " + 
+//        			"         ]  " + 
+//        			"      ] . " +
+//        			"  ?dimension <http://www.w3.org/2000/01/rdf-schema#label> ?dimensionLabel . FILTER (lang(?dimensionLabel) = 'en') . " +
+//        			"  FILTER ( ?dimension != <https://w3id.org/stirdata/vocabulary/stat/time> && ?dimension != <https://w3id.org/stirdata/vocabulary/stat/geo> ) " +
+//        			"  ?obs a       <http://purl.org/linked-data/cube#Observation> ; " +
+//        			"      qb:dataSet ?dataset ; " +
+//        			"      <" + prop + "> ?value ; " +        			
+//        			"      ?dimension ?dimensionValue ." +
+//        			"  ?dimensionValue  <http://www.w3.org/2004/02/skos/core#prefLabel>  ?dimensionValueLabel . FILTER ( lang(?dimensionValueLabel) = \"en\" ) " +
+//        			" } " +
+//        			" GROUP BY ?dimension ?dimensionLabel  ?dimensionValue ?dimensionValueLabel " +
+//        			" ORDER BY ?dimension ?dimensionValue " ;
+//        	
+//        	
+////        	System.out.println(sparql);
+////        	System.out.println(QueryFactory.create(sparql));
+//        	
+//        	CodeLabel prevDimensionCodeLabel = null;
+//        	try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsStatsEndpointEU, sparql)) {
+//            	ResultSet rs = qe.execSelect();
+//            	
+//            	while (rs.hasNext()) {
+//            		QuerySolution sol = rs.next();
+//
+//            		String dimension = sol.get("dimension").toString();
+//         			String dimensionLabel = sol.get("dimensionLabel").asLiteral().getLexicalForm();
+//            		String dimensionValue = sol.get("dimensionValue").toString();
+//         			String dimensionValueLabel = sol.get("dimensionValueLabel").asLiteral().getLexicalForm();
+//
+//         			Literal minValue = sol.get("min").asLiteral();
+//         			Literal maxValue = sol.get("max").asLiteral();
+//         			
+//         			if (prevDimensionCodeLabel == null || !prevDimensionCodeLabel.uri.equals(dimension)) {
+//	         			Code dimensionCode = Code.fromStatPropetyUri(dimension);
+//	         			CodeLabel dimensionCodeLabel = new CodeLabel(dimensionCode.toString(), dimensionLabel, dimension);
+//
+//	         			cube.addValue(dimensionCodeLabel);
+//	         			
+//	         			prevDimensionCodeLabel = dimensionCodeLabel;
+//         			}
+//         			
+//         			Code dimensionValueCode = Code.fromStatValueUri(dimensionValue);
+//         			CodeLabel dimensionValueCodeLabel = new CodeLabel(dimensionValueCode.toString(), dimensionValueLabel, dimensionValue);
+//         			if (minValue.getDatatype().toString().equals("http://www.w3.org/2001/XMLSchema#integer")) {
+//         				dimensionValueCodeLabel.minIntValue = minValue.getInt();
+//         				dimensionValueCodeLabel.maxIntValue = maxValue.getInt();
+//         			} else {
+//         				dimensionValueCodeLabel.minDoubleValue = minValue.getDouble();
+//         				dimensionValueCodeLabel.maxDoubleValue = maxValue.getDouble();
+//         			}
+//         			
+//         			prevDimensionCodeLabel.addValue(dimensionValueCodeLabel);
+//         			
+//           		}
+//            	
+////            	System.out.println(res);
+//        	}
+//    		
+//    	}
+//    	
+//    	return new ArrayList<>(res.values());
+//    	
+//    }
+    
 }

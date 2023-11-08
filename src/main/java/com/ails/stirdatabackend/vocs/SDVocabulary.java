@@ -8,7 +8,8 @@ public class SDVocabulary extends Vocabulary {
 	public static String NAMESPACE = "https://w3id.org/stirdata/vocabulary/";
 	public static String PREFIX = "stirdata";
 
-
+	
+	public static Property naceDataset =  model.createProperty(NAMESPACE + "naceDataset");
 	public static Property level =  model.createProperty(NAMESPACE + "level");
  
 }

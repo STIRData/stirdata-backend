@@ -1,10 +1,15 @@
 package com.ails.stirdatabackend.configuration;
 
 import com.ails.stirdatabackend.controller.URIDescriptor;
+import com.ails.stirdatabackend.model.AddOn;
+import com.ails.stirdatabackend.model.Code;
 import com.ails.stirdatabackend.model.CountryConfiguration;
+import com.ails.stirdatabackend.model.CountryConfigurationsBean;
 import com.ails.stirdatabackend.model.CountryDB;
 import com.ails.stirdatabackend.model.ModelConfiguration;
 import com.ails.stirdatabackend.model.StatisticDB;
+import com.ails.stirdatabackend.payload.CodeLabel;
+import com.ails.stirdatabackend.payload.CubeResponse;
 import com.ails.stirdatabackend.repository.CountriesDBRepository;
 import com.ails.stirdatabackend.repository.CountriesRepository;
 import com.ails.stirdatabackend.repository.StatisticsDBRepository;
@@ -12,19 +17,30 @@ import com.ails.stirdatabackend.service.CountriesService;
 import com.ails.stirdatabackend.vocs.DCATVocabulary;
 import com.ails.stirdatabackend.vocs.DCTVocabulary;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
+import co.elastic.clients.transport.ElasticsearchTransport;
+import co.elastic.clients.transport.rest_client.RestClientTransport;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 
+import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustAllStrategy;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.riot.JsonLDWriteContext;
-import org.apache.jena.riot.Lang;
-import org.apache.jena.riot.RDFDataMgr;
-import org.apache.jena.sparql.util.Symbol;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,19 +59,26 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.IDN;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Date;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import javax.net.ssl.SSLContext;
 
 @Configuration
 //@EnableScheduling
 public class ApplicationConfiguration {
 
 	private final static Logger logger = LoggerFactory.getLogger(ApplicationConfiguration.class);
-	
+
 	@Value("${cache.labels.size}")
 	private int cacheSize;
 
@@ -67,6 +90,21 @@ public class ApplicationConfiguration {
 	
 	@Value("${statistics.default.from-date}")
 	private String fromDate;
+
+	@Value("${elastic.host}")
+	private String elasticHost;
+	
+	@Value("${elastic.port}")
+	private int elasticPort;
+
+	@Value("${elastic.protocol}")
+	private String elasticProtocol;
+
+	@Value("${elastic.username}")
+	private String elasticUsername;
+
+	@Value("${elastic.password}")
+	private String elasticPassword;
 
 	@Autowired
 	private CountriesDBRepository countriesRepository;
@@ -111,6 +149,47 @@ public class ApplicationConfiguration {
 	
 	@Autowired
 	private Environment env;
+	
+//	@Bean(name = "elastic-host") 
+//	public HttpHost getElasticHost() {
+//		return new HttpHost(elasticHost, elasticPort, "http");
+//	}
+	
+	@Bean(name = "elastic-client")
+	public ElasticsearchClient getElasticClient() {
+		RestClientBuilder builder = RestClient.builder(new HttpHost(elasticHost, elasticPort, elasticProtocol));
+		
+		if (elasticUsername != null) {
+			final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+			credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(elasticUsername, elasticPassword));
+			
+			builder.setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
+	            @Override
+	            public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
+	//                return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+	            	
+					try {
+		        		SSLContextBuilder builder = new SSLContextBuilder();
+		        		builder.loadTrustMaterial(null, new TrustAllStrategy());
+		        		SSLContext sslContext = builder.build();
+	
+		        		return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider).setSSLContext(sslContext).setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+					} catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
+						e.printStackTrace();
+						
+						return null;
+					}
+	            }
+	        });
+		}
+		
+	
+		RestClient restClient = builder.build();
+		
+		ElasticsearchTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper());
+	
+		return new ElasticsearchClient(transport);
+	}
 	
 	@Bean(name = "endpoint-nace-eu")
 	public String getNaceEndpointEU() {
@@ -173,6 +252,8 @@ public class ApplicationConfiguration {
 		    String companyTypeSparql = env.getProperty("sparql.companyType." + m);
 		    String foundingDateSparql = env.getProperty("sparql.foundingDate." + m); 
 		    String dissolutionDateSparql = env.getProperty("sparql.dissolutionDate." + m);
+		    String leiCodeSparql = env.getProperty("sparql.leiCode." + m);
+		    String sameAsSparql = env.getProperty("sparql.sameAs." + m);
 
 		    mc.setEntitySparql(entitySparql);
 	    	mc.setLegalNameSparql(legalNameSparql);	
@@ -185,7 +266,9 @@ public class ApplicationConfiguration {
 	    	mc.setCompanyTypeSparql(companyTypeSparql);
 	    	mc.setFoundingDateSparql(foundingDateSparql);
 	    	mc.setDissolutionDateSparql(dissolutionDateSparql);
-
+	    	mc.setLeiCodeSparql(leiCodeSparql);
+	    	mc.setSameAsSparql(sameAsSparql);
+	    	
 			map.put(mc.getUrl(), mc);
 		}
 		
@@ -194,21 +277,25 @@ public class ApplicationConfiguration {
 	
 	@Bean(name = "country-configurations")
 	@DependsOn("model-configurations")
-	public Map<String, CountryDB> getSupportedCountriesConfigurations(@Qualifier("model-configurations") Map<String, ModelConfiguration> mcMap) {
-		Map<String, CountryDB> map = new HashMap<>();
+	public CountryConfigurationsBean getSupportedCountriesConfigurations(@Qualifier("model-configurations") Map<String, ModelConfiguration> mcMap) {
+//		Map<String, CountryDB> map = new LinkedHashMap<>();
+		
+		CountryConfigurationsBean ccb = new CountryConfigurationsBean();
 		
 		System.out.println("LOADING COUNTRIES: ");
 		String s = "";
 		for (CountryDB cc  : countriesRepository.findAll()) {
-			cc.setModelConfiguration(mcMap.get(cc.getConformsTo()));
-//			cc.setStatistics(new HashSet<>(statisticsRepository.findDimensionsByCountry(cc.getCode())));
-			
-			s += cc.getCode() + " ";
-			map.put(cc.getCode(), cc);
+			if (cc.getActiveLegalEntityCount() != null) {
+				cc.setModelConfiguration(mcMap.get(cc.getConformsTo()));
+	//			cc.setStatistics(new HashSet<>(statisticsRepository.findDimensionsByCountry(cc.getCode())));
+				
+				s += cc.getCode() + " ";
+				ccb.put(cc.getCode(), cc);
+			}
 		}
 		logger.info("Loaded countries: " + s);
 		
-		return map;
+		return ccb;
 	}
 	
 	@Bean(name = "model-jsonld-context")
@@ -223,5 +310,282 @@ public class ApplicationConfiguration {
 		
 		return ctx;
 	}
+	
+	@Bean(name = "country-addons")
+	@DependsOn("country-configurations")
+	public Map<String, Map<String,AddOn>> getAddons(@Qualifier("country-configurations") CountryConfigurationsBean countryConfigurations) {
+		Map<String, Map<String,AddOn>> map = new HashMap<>();
+		
+		String addons = env.getProperty("app.add-ons");
+		
+		logger.info("Loading addons: " + addons);
+		
+		for (String addon : addons.split(",")) {
+			
+			String properties = env.getProperty("properties." + addon);
+			
+			for (String country : countryConfigurations.keySet()) {
+				
+				AddOn ao = new AddOn();
+				ao.setCountry(country);
+				ao.setName(addon);
+				
+				if (env.getProperty("endpoint." + addon + "." + country) != null) {
+					ao.setLabel(env.getProperty("label." + addon + "." + country));
+					
+//					ao.setOrderBy(env.getProperty("orderby." + addon + "." + country));
+
+					ao.setEndpoint(env.getProperty("endpoint." + addon + "." + country));
+					ao.setNamedGraph(env.getProperty("named-graph." + addon + "." + country));
+					ao.setSparql(env.getProperty("sparql." + addon + "." + country));
+					
+					for (String prop : properties.split(",")) {
+						
+//						String sparql = env.getProperty("sparql." + addon + "." + prop + "." + country);
+//
+						if (prop.equals("entity")) {
+//							ao.setEntitySparql(sparql);
+						} else {
+//							
+							String label = env.getProperty("label." + addon + "." + prop + "." + country);
+
+							if (label == null) {
+								label = prop;
+							}
+//							
+							ao.addProperty(prop, null, label);
+						}
+					}
+					
+					Map<String,AddOn> addonMap = map.get(country);
+					if (addonMap == null) {
+						addonMap = new HashMap<>();
+						map.put(country, addonMap);
+					}
+					
+					addonMap.put(addon, ao);
+				}
+			}
+		}
+		
+		return map;
+		
+	}
+
+	@Bean(name = "filters")
+	@DependsOn("endpoint-nuts-stats-eu")
+    public List<CubeResponse> getFilters(@Qualifier("endpoint-nuts-stats-eu") String nutsStatsEndpointEU) {
+
+		logger.info("Loading filters");
+    	String sparql = 
+    			"PREFIX cube: <http://purl.org/linked-data/cube#> " +
+    			"SELECT ?dataset ?prop ?propLabel ?value ?valueLabel " +  
+    			"WHERE { " +
+    				"?dataset a cube:DataSet ; " +
+    	         		"cube:structure " +
+    	                	"[ a cube:DataStructureDefinition ; " +
+    	                  		"cube:component " +
+    								"[ cube:dimension <https://w3id.org/stirdata/vocabulary/stat/refArea> ] ] ; " +
+    	         		"cube:structure " +
+    	                	"[ a cube:DataStructureDefinition ; " +
+    	                  		"cube:component " +
+    								"[ cube:measure ?prop ] ] . " +
+    				"?prop a cube:DimensionProperty ; " +
+      					"<http://www.w3.org/2000/01/rdf-schema#label> ?propLabel ; " +
+    	        		"cube:codeList ?scheme . " +
+    				"?value a <http://www.w3.org/2004/02/skos/core#Concept> ; " +
+    					"<http://www.w3.org/2004/02/skos/core#prefLabel> ?valueLabel ; " +    				
+    	        		"<http://www.w3.org/2004/02/skos/core#inScheme> ?scheme . " + 
+    	        "} ORDER BY ?propLabel ?valueLabel";
+    	
+    		
+    	Map<String, CubeResponse> res = new LinkedHashMap<>();
+    	
+//    	System.out.println(sparql);
+//    	System.out.println(QueryFactory.create(sparql));
+    	
+    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsStatsEndpointEU, sparql)) {
+        	ResultSet rs = qe.execSelect();
+        	
+        	while (rs.hasNext()) {
+        		QuerySolution sol = rs.next();
+
+        		String dataset = sol.get("dataset").asResource().toString();
+        		
+     			String prop = sol.get("prop").asResource().toString();
+     			String propLabel = sol.get("propLabel").asLiteral().getLexicalForm();
+     			String value = sol.get("value").asResource().toString();
+     			String valueLabel = sol.get("valueLabel").asLiteral().getLexicalForm();
+
+     			Code datasetCode = Code.fromStatDatasetUri(dataset);
+     			CodeLabel datasetCodeLabel = new CodeLabel(datasetCode.toString(), null, dataset);
+
+     			Code propCode = Code.fromStatPropetyUri(prop);
+     			CodeLabel propCodeLabel = new CodeLabel(propCode.toString(), propLabel, prop);
+
+     			Code valueCode = Code.fromStatValueUri(value);
+     			CodeLabel valueCodeLabel = new CodeLabel(valueCode.toString(), valueLabel, value);
+     			
+     			CubeResponse cube = res.get(dataset + "##" + prop);
+     			if (cube == null) {
+     				cube = new CubeResponse();
+     				cube.setDataset(datasetCodeLabel);
+     				cube.setProperty(propCodeLabel);
+     				res.put(dataset + "##" + prop, cube);
+     			}
+     			
+     			cube.addValue(valueCodeLabel);
+       		}
+    	}
+    	
+    	return new ArrayList<>(res.values());
+    	
+    }
+
+	@Bean(name = "eurostat-filters")
+	@DependsOn("endpoint-nuts-stats-eu")
+    public List<CubeResponse> getEurostatFilters(@Qualifier("endpoint-nuts-stats-eu") String nutsStatsEndpointEU) {
+    	
+		logger.info("Loading EUROSTAT filters");
+    	Map<String, CubeResponse> res = new LinkedHashMap<>();
+
+    	{
+
+    	String sparql = 
+    			"PREFIX qb: <http://purl.org/linked-data/cube#> " + 
+    			"SELECT ?dataset ?datasetLabel ?prop WHERE { " + 
+    			"   ?dataset a qb:DataSet ; " + 
+    			"      <http://www.w3.org/2000/01/rdf-schema#label>  ?datasetLabel . FILTER (lang(?datasetLabel) = 'en') . " +
+    			"   ?dataset " +
+    			"      qb:structure [ " + 
+    			"         a qb:DataStructureDefinition ; " + 
+    			"         qb:component [ " + 
+    			"            qb:dimension <https://w3id.org/stirdata/vocabulary/stat/geo> " + 
+    			"         ] ; " + 
+    			"         qb:component [ " + 
+    			"            qb:dimension <https://w3id.org/stirdata/vocabulary/stat/time> " + 
+    			"         ]  " +
+    			"      ] ; " + 
+    			"      qb:structure [ " + 
+    			"         a qb:DataStructureDefinition ; " + 
+    			"         qb:component [ " + 
+    			"            qb:measure ?prop " + 
+    			"         ] " + 
+    			"      ] . " + 
+    			"  FILTER EXISTS { ?obs a       <http://purl.org/linked-data/cube#Observation> ; " +
+    			"      qb:dataSet ?dataset . } " +
+
+    			" } " ;
+    	
+    	
+//    	System.out.println(sparql);
+//    	System.out.println(QueryFactory.create(sparql));
+    	
+    	try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsStatsEndpointEU, sparql)) {
+        	ResultSet rs = qe.execSelect();
+        	
+        	while (rs.hasNext()) {
+        		QuerySolution sol = rs.next();
+
+        		String dataset = sol.get("dataset").asResource().toString();
+        		
+     			String prop = sol.get("prop").asResource().toString();
+     			String datasetLabel = sol.get("datasetLabel").asLiteral().getLexicalForm();
+
+     			Code datasetCode = Code.fromStatDatasetUri(dataset);
+     			CodeLabel datasetCodeLabel = new CodeLabel(datasetCode.toString(), null, dataset);
+
+     			Code propCode = Code.fromStatPropetyUri(prop);
+     			CodeLabel propCodeLabel = new CodeLabel(propCode.toString(), datasetLabel, prop);
+
+     			CubeResponse cube = res.get(dataset + "##" + prop);
+     			if (cube == null) {
+     				cube = new CubeResponse();
+     				cube.setDataset(datasetCodeLabel);
+     				cube.setProperty(propCodeLabel);
+     				res.put(dataset + "##" + prop, cube);
+     			}
+       		}
+        	
+    	}}
+    	
+    	for (Map.Entry<String, CubeResponse> entry : res.entrySet()) {
+    		String[] s = entry.getKey().split("##");
+    		String dataset = s[0];
+    		String prop = s[1];
+    		
+    		CubeResponse cube = entry.getValue();
+    		
+    	   	String sparql = 
+        			"PREFIX qb: <http://purl.org/linked-data/cube#> " + 
+        			"SELECT ?dimension ?dimensionLabel (min(?value) AS ?min) (max(?value) AS ?max) ?dimensionValue ?dimensionValueLabel WHERE { " + 
+        			"   <" + dataset + "> a qb:DataSet ; " + 
+        			"      qb:structure [ " + 
+        			"         a qb:DataStructureDefinition ; " + 
+        			"         qb:component [ " + 
+        			"            qb:dimension ?dimension " + 
+        			"         ]  " + 
+        			"      ] . " +
+        			"  ?dimension <http://www.w3.org/2000/01/rdf-schema#label> ?dimensionLabel . FILTER (lang(?dimensionLabel) = 'en') . " +
+        			"  FILTER ( ?dimension != <https://w3id.org/stirdata/vocabulary/stat/time> && ?dimension != <https://w3id.org/stirdata/vocabulary/stat/geo> ) " +
+        			"  ?obs a       <http://purl.org/linked-data/cube#Observation> ; " +
+        			"      qb:dataSet ?dataset ; " +
+        			"      <" + prop + "> ?value ; " +        			
+        			"      ?dimension ?dimensionValue ." +
+        			"  ?dimensionValue  <http://www.w3.org/2004/02/skos/core#prefLabel>  ?dimensionValueLabel . FILTER ( lang(?dimensionValueLabel) = \"en\" ) " +
+        			" } " +
+        			" GROUP BY ?dimension ?dimensionLabel  ?dimensionValue ?dimensionValueLabel " +
+        			" ORDER BY ?dimension ?dimensionValue " ;
+        	
+        	
+//        	System.out.println(sparql);
+//        	System.out.println(QueryFactory.create(sparql));
+        	
+        	CodeLabel prevDimensionCodeLabel = null;
+        	try (QueryExecution qe = QueryExecutionFactory.sparqlService(nutsStatsEndpointEU, sparql)) {
+            	ResultSet rs = qe.execSelect();
+            	
+            	while (rs.hasNext()) {
+            		QuerySolution sol = rs.next();
+
+            		String dimension = sol.get("dimension").toString();
+         			String dimensionLabel = sol.get("dimensionLabel").asLiteral().getLexicalForm();
+            		String dimensionValue = sol.get("dimensionValue").toString();
+         			String dimensionValueLabel = sol.get("dimensionValueLabel").asLiteral().getLexicalForm();
+
+         			Literal minValue = sol.get("min").asLiteral();
+         			Literal maxValue = sol.get("max").asLiteral();
+         			
+         			if (prevDimensionCodeLabel == null || !prevDimensionCodeLabel.uri.equals(dimension)) {
+	         			Code dimensionCode = Code.fromStatPropetyUri(dimension);
+	         			CodeLabel dimensionCodeLabel = new CodeLabel(dimensionCode.toString(), dimensionLabel, dimension);
+
+	         			cube.addValue(dimensionCodeLabel);
+	         			
+	         			prevDimensionCodeLabel = dimensionCodeLabel;
+         			}
+         			
+         			Code dimensionValueCode = Code.fromStatValueUri(dimensionValue);
+         			CodeLabel dimensionValueCodeLabel = new CodeLabel(dimensionValueCode.toString(), dimensionValueLabel, dimensionValue);
+         			if (minValue.getDatatype().toString().equals("http://www.w3.org/2001/XMLSchema#integer")) {
+         				dimensionValueCodeLabel.minIntValue = minValue.getInt();
+         				dimensionValueCodeLabel.maxIntValue = maxValue.getInt();
+         			} else {
+         				dimensionValueCodeLabel.minDoubleValue = minValue.getDouble();
+         				dimensionValueCodeLabel.maxDoubleValue = maxValue.getDouble();
+         			}
+         			
+         			prevDimensionCodeLabel.addValue(dimensionValueCodeLabel);
+         			
+           		}
+            	
+//            	System.out.println(res);
+        	}
+    		
+    	}
+    	
+    	return new ArrayList<>(res.values());
+    	
+    }
 	
 }
